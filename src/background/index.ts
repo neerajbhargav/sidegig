@@ -1,4 +1,4 @@
-// Margin background worker: routes messages, opens apps, keeps network rules,
+// sidegig background worker: routes messages, opens apps, keeps network rules,
 // menus, alarms and badges in sync with settings.
 import { ext, features, TARGET, uid } from '../shared/api.ts';
 import { loadSettings, saveSettings, getLocal, setLocal, onSettingsChanged } from '../shared/storage.ts';
@@ -50,8 +50,8 @@ async function setupMenus(s: Settings) {
   const ai = aiApp(s)?.name ?? 'AI';
   menus.create({ id: 'ask-selection', title: `Ask ${ai} about "%s"`, contexts: ['selection'] });
   menus.create({ id: 'ask-page', title: `Ask ${ai} about this page`, contexts: ['page'] });
-  menus.create({ id: 'add-stack', title: 'Add to Margin stacks', contexts: ['page', 'link'] });
-  menus.create({ id: 'link-window', title: 'Open link in a Margin mini window', contexts: ['link'] });
+  menus.create({ id: 'add-stack', title: 'Add to sidegig stacks', contexts: ['page', 'link'] });
+  menus.create({ id: 'link-window', title: 'Open link in a sidegig mini window', contexts: ['link'] });
 }
 
 async function registerBridge(s: Settings) {

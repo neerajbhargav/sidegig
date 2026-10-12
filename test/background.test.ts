@@ -42,7 +42,7 @@ test('drawer and mobile rules appear only when needed', () => {
   assert.deepEqual(mobileRule?.condition.tabIds, [-1]);
 });
 
-test('no apps still lets Margin frame its own pages', () => {
+test('no apps still lets sidegig frame its own pages', () => {
   const rules = buildRules([], EXT);
   assert.equal(rules.length, 1);
 });

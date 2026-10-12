@@ -1,5 +1,5 @@
 // Runs inside app sites (WhatsApp, Gmail, Claude, ...), both in normal tabs and
-// inside Margin's panel. Two jobs:
+// inside sidegig's panel. Two jobs:
 //   1. report unread counts parsed from the page title (for rail badges)
 //   2. for AI apps, type a prompt handed over from "Ask AI" into the input box
 import { ext } from '../shared/api.ts';
@@ -12,7 +12,7 @@ import type { ToBackground } from '../shared/messages.ts';
 const host = location.hostname;
 const send = (m: ToBackground) => ext.runtime.sendMessage(m);
 
-/** The app's own top document: a normal tab, or the frame Margin's panel embeds. */
+/** The app's own top document: a normal tab, or the frame sidegig's panel embeds. */
 function isMainFrame(): boolean {
   if (window === window.top) return true;
   const anc = (location as any).ancestorOrigins as DOMStringList | undefined;

@@ -23,9 +23,9 @@ export function defaultSettings(): Settings {
     },
     drawer: { width: 340 },
     theme: {
-      mode: 'system',
+      mode: 'page',
       base: '#808080',
-      accent: '#3b6ef5',
+      accent: '#0b57d0',
       contrast: 50,
       radius: 10,
       customCss: '',

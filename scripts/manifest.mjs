@@ -4,7 +4,7 @@ import { CATALOG } from '../src/shared/catalog.ts';
 
 export const TARGETS = ['chrome', 'opera', 'firefox', 'safari'];
 
-const pkg = { name: 'Margin', version: '0.1.0' };
+const pkg = { name: 'sidegig', version: '0.1.0' };
 
 // Hosts where the bridge script runs (unread badges, AI prompt fill).
 // User-added apps get the bridge registered at runtime via chrome.scripting.
@@ -19,7 +19,7 @@ const icons = { 16: 'icons/16.png', 32: 'icons/32.png', 48: 'icons/48.png', 128:
 const commands = {
   'toggle-rail': {
     suggested_key: { default: 'Alt+Shift+S', mac: 'Alt+Shift+S' },
-    description: 'Show or hide the Margin rail on this page',
+    description: 'Show or hide the sidegig rail on this page',
   },
   'open-search': {
     suggested_key: { default: 'Alt+Shift+K', mac: 'Alt+Shift+K' },
@@ -61,9 +61,9 @@ export function manifestFor(target) {
     short_name: pkg.name,
     version: pkg.version,
     description:
-      'A free, open-source sidebar that lives in the margin of every page. Hover the edge for apps, AI, bookmark stacks and search.',
+      'A free, open-source sidebar for every browser. Hover the edge of any page for your apps, one-tap AI, bookmark stacks and search.',
     icons,
-    action: { default_title: 'Margin', default_icon: icons },
+    action: { default_title: 'sidegig', default_icon: icons },
     permissions,
     optional_permissions: ['webNavigation'],
     host_permissions: ['<all_urls>'],
@@ -84,17 +84,17 @@ export function manifestFor(target) {
   }
   if (target === 'opera') {
     // Opera shows extension panels in its own sidebar (icon, tooltip, badge, panel).
-    m.sidebar_action = { default_panel: 'panel.html', default_title: 'Margin', default_icon: 'icons/32.png' };
+    m.sidebar_action = { default_panel: 'panel.html', default_title: 'sidegig', default_icon: 'icons/32.png' };
   }
   if (target === 'firefox') {
     m.background = { scripts: ['background.js'] };
     m.sidebar_action = {
       default_panel: 'panel.html',
-      default_title: 'Margin',
+      default_title: 'sidegig',
       default_icon: 'icons/32.png',
       open_at_install: false,
     };
-    m.browser_specific_settings = { gecko: { id: 'margin@margin-sidebar.org', strict_min_version: '128.0' } };
+    m.browser_specific_settings = { gecko: { id: 'sidegig@neerajbhargav.com', strict_min_version: '128.0' } };
   }
   if (target === 'safari') {
     m.background = { scripts: ['background.js'], persistent: false };

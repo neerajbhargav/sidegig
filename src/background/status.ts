@@ -1,5 +1,5 @@
 // Status cards: GitHub, Vercel and Gmail. Each uses the user's own token or
-// sign-in; nothing goes through a Margin server (there isn't one).
+// sign-in; nothing goes through a sidegig server (there isn't one).
 import { loadSecrets, loadSettings, setLocal } from '../shared/storage.ts';
 import type { StatusCard } from '../shared/types.ts';
 
@@ -17,7 +17,7 @@ function errorCard(id: StatusCard['id'], title: string, url: string, error: stri
 
 export async function githubCard(token?: string): Promise<StatusCard> {
   const url = 'https://github.com/notifications';
-  if (!token) return errorCard('github', 'GitHub', url, 'Add a token in Margin settings');
+  if (!token) return errorCard('github', 'GitHub', url, 'Add a token in sidegig settings');
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
   const [nRes, rRes] = await Promise.all([
     fetch('https://api.github.com/notifications?per_page=20', { headers }),
@@ -44,7 +44,7 @@ export async function githubCard(token?: string): Promise<StatusCard> {
 
 export async function vercelCard(token?: string, teamId?: string): Promise<StatusCard> {
   const url = 'https://vercel.com/dashboard';
-  if (!token) return errorCard('vercel', 'Vercel', url, 'Add a token in Margin settings');
+  if (!token) return errorCard('vercel', 'Vercel', url, 'Add a token in sidegig settings');
   const q = new URLSearchParams({ limit: '6' });
   if (teamId) q.set('teamId', teamId);
   const res = await fetch(`https://api.vercel.com/v6/deployments?${q}`, { headers: { Authorization: `Bearer ${token}` } });

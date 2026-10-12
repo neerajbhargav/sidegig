@@ -1,5 +1,5 @@
 {
-  "name": "margin-sidebar",
+  "name": "sidegig",
   "version": "0.1.0",
   "private": true,
   "description": "A free, open-source sidebar that lives in the margin of every browser: hover the edge for your apps, AI, bookmark stacks and search.",
@@ -15,7 +15,7 @@
     "preview": "node scripts/build.mjs preview",
     "check": "tsc --noEmit -p .",
     "test": "node --test \"test/**/*.test.ts\"",
-    "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name Margin --bundle-identifier org.margin-sidebar.Margin --macos-only --no-prompt --force"
+    "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name sidegig --bundle-identifier com.neerajbhargav.sidegig --macos-only --no-prompt --force"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.5",

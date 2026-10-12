@@ -5,13 +5,25 @@ import { defaultSettings, appFromCatalog } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
 import type { AppEntry, OpenIn, Settings, StatusCard } from '../shared/types.ts';
-import { h, iconButton, favicon, toast } from '../ui/dom.ts';
+import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
 import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
 import { send } from '../ui/ctx.ts';
 
 let s: Settings;
 const themeStyle = h('style');
-const page = h('div', { class: 'wrap', style: { width: 'min(760px, 100%)', margin: '0 auto', padding: '40px 24px 80px' } });
+const page = h('div', { class: 'opts' });
+const NAV: [string, string][] = [
+  ['rail', 'Rail'],
+  ['appearance', 'Appearance'],
+  ['apps', 'Apps'],
+  ['stacks', 'Stacks and spaces'],
+  ['ai', 'Ask AI'],
+  ['status', 'Status cards'],
+  ['rules', 'Link rules'],
+  ['tabs', 'Tab sleep'],
+  ['backup', 'Backup'],
+  ['privacy', 'Privacy'],
+];
 
 const commit = async (fn: (x: Settings) => void) => {
   fn(s);
@@ -150,7 +162,7 @@ async function stacksSection(): Promise<HTMLElement> {
   return section(
     'stacks',
     'Stacks and spaces',
-    'Stacks are your normal browser bookmarks, so they sync and stay yours. Turn folders on to use them as spaces; each sub-folder becomes a stack. With none selected, Margin uses your bookmarks bar.',
+    'Stacks are your normal browser bookmarks, so they sync and stay yours. Turn folders on to use them as spaces; each sub-folder becomes a stack. With none selected, sidegig uses your bookmarks bar.',
     h('div', { class: 'group', style: { maxHeight: '360px', overflowY: 'auto' } }, rows),
   );
 }
@@ -162,7 +174,7 @@ function aiSection(): HTMLElement {
   return section(
     'ai',
     'Ask AI',
-    'Uses the AI site you’re already signed in to, so there are no API keys and no extra cost. Margin types the prompt for you; you press send.',
+    'Uses the AI site you’re already signed in to, so there are no API keys and no extra cost. sidegig types the prompt for you; you press send.',
     h(
       'div',
       { class: 'group' },
@@ -293,7 +305,7 @@ function appearanceSection(): HTMLElement {
       opt('Contrast', `${s.theme.contrast}`, h('input', { class: 'range', type: 'range', min: '0', max: '100', step: '5', value: String(s.theme.contrast), onchange: (e: Event) => commit((x) => void (x.theme.contrast = Number((e.target as HTMLInputElement).value))) })),
       opt('Corner radius', `${s.theme.radius}px`, h('input', { class: 'range', type: 'range', min: '4', max: '16', step: '1', value: String(s.theme.radius), onchange: (e: Event) => commit((x) => void (x.theme.radius = Number((e.target as HTMLInputElement).value))) })),
     ),
-    h('div', { class: 'label' }, 'Custom CSS (applies to the rail and Margin’s pages)'),
+    h('div', { class: 'label' }, 'Custom CSS (applies to the rail and sidegig’s pages)'),
     h('textarea', { class: 'text-input', rows: '4', style: { width: '100%' }, placeholder: '.rail { border-radius: 0 }', onchange: (e: Event) => commit((x) => void (x.theme.customCss = (e.target as HTMLTextAreaElement).value)) }, s.theme.customCss),
   );
 }
@@ -302,7 +314,7 @@ function railSection(): HTMLElement {
   return section(
     'rail',
     'Rail',
-    'Move the pointer to the edge of any page and the rail slides in. Shortcuts: Alt+Shift+S toggles it, Alt+Shift+K searches, Alt+Shift+A asks AI.',
+    `Move the pointer to the edge of any page and the rail slides in. Shortcuts: ${keys('S')} toggles it, ${keys('K')} searches, ${keys('A')} asks AI.`,
     h(
       'div',
       { class: 'group' },
@@ -344,7 +356,7 @@ function backupSection(): HTMLElement {
       await saveSettings(next);
       toast('Settings imported');
     } catch {
-      toast('That file isn’t a Margin backup');
+      toast('That file isn’t a sidegig backup');
     }
   });
   return section(
@@ -359,12 +371,12 @@ function backupSection(): HTMLElement {
         type: 'button',
         onclick: () => {
           const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
-          const a = h('a', { href: URL.createObjectURL(blob), download: 'margin-settings.json' });
+          const a = h('a', { href: URL.createObjectURL(blob), download: 'sidegig-settings.json' });
           a.click();
         },
       }, 'Export'),
       h('button', { class: 'btn', type: 'button', onclick: () => file.click() }, 'Import'),
-      h('button', { class: 'btn ghost', type: 'button', onclick: () => confirm('Reset all Margin settings?') && void saveSettings(defaultSettings()) }, 'Reset'),
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => confirm('Reset all sidegig settings?') && void saveSettings(defaultSettings()) }, 'Reset'),
       file,
     ),
   );
@@ -376,18 +388,14 @@ async function render() {
   const y = window.scrollY;
   const welcome = location.hash === '#welcome';
   const parts: (HTMLElement | null)[] = [
-    h(
-      'header',
-      { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-      h('img', { src: 'icons/48.png', width: '36', height: '36', alt: '' }),
-      h('div', {}, h('h1', { style: { fontSize: '22px', margin: '0', letterSpacing: '-0.02em' } }, 'Margin'), h('div', { class: 'muted' }, 'A free, open-source sidebar for every browser')),
-    ),
+    h('h1', { style: { fontSize: '24px', margin: '0', letterSpacing: '-0.02em' } }, 'Settings'),
+    h('div', { class: 'muted', style: { marginTop: '4px' } }, 'Everything here is optional. sidegig works out of the box.'),
     welcome
       ? h(
           'div',
           { class: 'card', style: { marginTop: '24px' } },
           h('div', { class: 'card-title' }, 'You’re set up'),
-          h('div', { class: 'card-detail', style: { marginTop: '6px', lineHeight: '1.6' } }, 'Move your pointer to the left edge of any web page and the rail slides in. Click an app to open it in the sidebar, or press Alt+Shift+K to search everything. Everything below is optional.'),
+          h('div', { class: 'card-detail', style: { marginTop: '6px', lineHeight: '1.6' } }, `Move your pointer to the left edge of any web page and the rail slides in. Click an app to open it in the sidebar, or press ${keys('K')} to search everything.`),
         )
       : null,
     railSection(),
@@ -406,13 +414,29 @@ async function render() {
       h(
         'p',
         { class: 'muted', style: { lineHeight: '1.7' } },
-        'Margin has no servers, no accounts and no analytics. Settings sync through your browser’s own sync. Tokens stay on this device. Margin only changes network headers for frames inside its own panel, so sites can load there. Source code: GPL-3.0.',
+        'sidegig has no servers, no accounts and no analytics. Settings sync through your browser’s own sync. Tokens stay on this device. sidegig only changes network headers for frames inside its own panel, so sites can load there. Source code: GPL-3.0.',
       ),
     ),
   ];
-  page.replaceChildren(...parts.filter((p): p is HTMLElement => !!p));
+  const main = h('main', {}, ...parts.filter((p): p is HTMLElement => !!p));
+  const nav = h(
+    'nav',
+    { 'aria-label': 'Settings sections' },
+    h('div', { class: 'brand' }, h('img', { src: 'icons/32.png', width: '24', height: '24', alt: '' }), h('b', {}, 'sidegig')),
+    NAV.map(([id, label]) => h('a', { href: `#${id}`, 'data-id': id }, label)),
+  );
+  page.replaceChildren(nav, main);
+  highlightNav();
   window.scrollTo(0, y);
 }
+
+function highlightNav() {
+  const secs = NAV.map(([id]) => document.getElementById(id)).filter((x): x is HTMLElement => !!x);
+  let current = secs[0]?.id;
+  for (const sec of secs) if (sec.getBoundingClientRect().top < 140) current = sec.id;
+  document.querySelectorAll<HTMLElement>('.opts nav a').forEach((a) => a.classList.toggle('on', a.dataset.id === current));
+}
+window.addEventListener('scroll', () => requestAnimationFrame(highlightNav), { passive: true });
 
 async function boot() {
   document.head.append(themeStyle);

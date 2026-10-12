@@ -1,14 +1,14 @@
-// Network rules that let sites load inside Margin's own panel.
+// Network rules that let sites load inside sidegig's own panel.
 //
 // Most sites refuse to be framed (X-Frame-Options / CSP frame-ancestors). We
-// remove those two headers ONLY for frames that load inside Margin's panel,
+// remove those two headers ONLY for frames that load inside sidegig's panel,
 // never for normal browsing:
 //   - session rules scoped to tabId -1 (requests that don't belong to a tab:
 //     the browser's side panel / sidebar), and
-//   - either initiated by Margin itself, or going to one of the user's app hosts
+//   - either initiated by sidegig itself, or going to one of the user's app hosts
 //     (or a sign-in host they redirect through).
 // "drawer" apps (inside a page) additionally get a rule limited to frames that
-// Margin's own pages initiate.
+// sidegig's own pages initiate.
 import type { AppEntry } from '../shared/types.ts';
 import { ext } from '../shared/api.ts';
 
@@ -57,7 +57,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string): Rule[] {
   const appHosts = [...new Set(apps.map((a) => hostOf(a.url)).filter(Boolean))];
   const sub = ['sub_frame' as chrome.declarativeNetRequest.ResourceType];
 
-  // 1. Frames Margin's panel opens directly.
+  // 1. Frames sidegig's panel opens directly.
   rules.push({ id: id++, priority: 1, action: stripFrameHeaders, condition: { resourceTypes: sub, tabIds: [-1], initiatorDomains: [extensionHost] } });
   // 2. Navigations inside those frames (redirects, sign-in pages).
   if (appHosts.length) {
@@ -78,7 +78,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string): Rule[] {
       condition: { resourceTypes: sub, initiatorDomains: [extensionHost], requestDomains: drawerHosts },
     });
   }
-  // 4. Mobile layout: ask for the phone version inside Margin's panel only.
+  // 4. Mobile layout: ask for the phone version inside sidegig's panel only.
   const mobileHosts = apps.filter((a) => a.mobile).map((a) => hostOf(a.url)).filter(Boolean);
   if (mobileHosts.length) {
     rules.push({

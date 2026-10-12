@@ -53,7 +53,7 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
   const badges = await getLocal<Record<string, number>>('badges', {});
   const bar = h('div', { class: 'appbar' });
-  bar.append(iconButton('logo', 'Margin home', () => ctx.go('home')), h('span', { class: 'sep' }));
+  bar.append(iconButton('logo', 'sidegig home', () => ctx.go('home')), h('span', { class: 'sep' }));
   for (const a of apps.filter((x) => x.openIn === 'panel' || x.openIn === 'drawer' || x.id === app.id)) {
     const n = a.badge ? badges[a.id] ?? 0 : 0;
     bar.append(
