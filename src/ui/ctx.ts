@@ -4,7 +4,7 @@ import { setLocal } from '../shared/storage.ts';
 import type { AppEntry, Settings } from '../shared/types.ts';
 import type { ToBackground } from '../shared/messages.ts';
 
-export type ViewName = 'home' | 'search' | 'status' | 'settings' | 'app';
+export type ViewName = 'home' | 'search' | 'status' | 'settings' | 'app' | 'add';
 export type Kind = 'drawer' | 'panel' | 'newtab';
 
 export interface Ctx {

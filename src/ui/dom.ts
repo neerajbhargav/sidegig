@@ -11,7 +11,12 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
     if (v === undefined || v === null || v === false) continue;
     if (k === 'class') el.className = String(v);
     else if (k === 'html') el.innerHTML = String(v);
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'style' && typeof v === 'object') {
+      for (const [sk, sv] of Object.entries(v as Record<string, unknown>)) {
+        if (sk.startsWith('--')) el.style.setProperty(sk, String(sv));
+        else (el.style as any)[sk] = sv;
+      }
+    }
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v as EventListener);
     else if (k === 'dataset' && typeof v === 'object') Object.assign(el.dataset, v);
     else el.setAttribute(k, v === true ? '' : String(v));
@@ -33,11 +38,24 @@ export function iconButton(name: string, label: string, onClick: (e: MouseEvent)
 export function favicon(url: string, name: string, cls = 'fav'): HTMLElement {
   const letter = (name.trim()[0] ?? '?').toUpperCase();
   const src = faviconFor(url, 32);
-  const fallback = () => h('span', { class: `${cls} mono` }, letter);
+  const fallback = () => h('span', { class: `${cls} mono`, style: { '--h': String(hueOf(url)) } as any }, letter);
   if (!src) return fallback();
   const img = h('img', { class: cls, src, alt: '', loading: 'lazy', decoding: 'async' });
   img.addEventListener('error', () => img.replaceWith(fallback()), { once: true });
   return img;
+}
+
+/** Stable hue (0-359) for a site, used to tint its letter tile. */
+export function hueOf(s: string): number {
+  let host = s;
+  try {
+    host = new URL(s).hostname.replace(/^www\./, '');
+  } catch {
+    /* plain text */
+  }
+  let n = 0;
+  for (const ch of host) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
+  return n % 360;
 }
 
 export const isMac = /Mac|iPhone|iPad/.test(navigator.platform) || (navigator as any).userAgentData?.platform === 'macOS';

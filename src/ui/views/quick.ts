@@ -5,7 +5,7 @@ import type { Settings } from '../../shared/types.ts';
 import { h, iconButton } from '../dom.ts';
 import { type Ctx, activeTab, openOptions } from '../ctx.ts';
 
-export const ACCENTS = ['#3b6ef5', '#0b57d0', '#7c5cff', '#e5484d', '#f2994a', '#2fb36d', '#14b8a6', '#1f2328'];
+export const ACCENTS = ['#0b57d0', '#3b6ef5', '#7c5cff', '#e5484d', '#f2994a', '#2fb36d', '#14b8a6', '#1f2328'];
 
 export function seg<T extends string>(value: T, options: [T, string][], onPick: (v: T) => void): HTMLElement {
   const el = h('div', { class: 'seg', role: 'group' });

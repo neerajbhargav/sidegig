@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping make Margin better.
+Thanks for helping make sidegig better.
 
 1. `npm install`, then `npm test` and `npm run check` should both pass.
 2. Keep the rail light: it runs on every page. Nothing heavy in `src/content/rail.ts`, and no UI frameworks there.

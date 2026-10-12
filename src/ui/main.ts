@@ -1,4 +1,4 @@
-// Entry for Margin's own pages: the in-page drawer, the browser sidebar panel
+// Entry for sidegig's own pages: the in-page drawer, the browser sidebar panel
 // and the new tab page. Picks the context, applies the theme, routes views.
 import { ext } from '../shared/api.ts';
 import { loadSettings, onSettingsChanged, getLocal, onLocalChanged } from '../shared/storage.ts';
@@ -12,8 +12,9 @@ import { statusView } from './views/status.ts';
 import { quickView } from './views/quick.ts';
 import { appBar, framesHost, showFrames } from './views/appview.ts';
 import { newtabView } from './views/newtab.ts';
+import { addView } from './views/add.ts';
 
-const params = new URLSearchParams((globalThis as any).__MARGIN_PARAMS__ ?? (location.hash.slice(1) || location.search.slice(1)));
+const params = new URLSearchParams((globalThis as any).__SIDEGIG_PARAMS__ ?? (location.hash.slice(1) || location.search.slice(1)));
 const kind = (document.body.dataset.ctx ?? params.get('ctx') ?? 'panel') as Kind;
 const nonce = params.get('n') ?? '';
 
@@ -49,8 +50,8 @@ async function boot() {
     windowId: where.windowId,
     tabId: where.tabId,
     go: (name, opts) => void render(name, opts),
-    close: () => window.parent.postMessage({ ns: 'margin', n: nonce, type: 'close' }, '*'),
-    toRail: (msg) => window.parent.postMessage({ ns: 'margin', n: nonce, ...msg }, '*'),
+    close: () => window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'close' }, '*'),
+    toRail: (msg) => window.parent.postMessage({ ns: 'sidegig', n: nonce, ...msg }, '*'),
   };
 
   const applyTheme = () => {
@@ -67,13 +68,14 @@ async function boot() {
     else if (name === 'search') el = await searchView(ctx, opts.q ?? '');
     else if (name === 'status') el = await statusView(ctx);
     else if (name === 'settings') el = await quickView(ctx);
+    else if (name === 'add') el = await addView(ctx);
     else if (name === 'app') el = await appBar(ctx, current.app);
     else el = await homeView(ctx);
     if (my !== token) return;
     view.replaceChildren(el);
     view.style.flex = name === 'app' ? 'none' : '1 1 auto';
     showFrames(name === 'app');
-    if (kind === 'drawer') window.parent.postMessage({ ns: 'margin', n: nonce, type: 'view', view: name }, '*');
+    if (kind === 'drawer') window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'view', view: name }, '*');
   }
 
   applyTheme();
@@ -88,7 +90,7 @@ async function boot() {
   // Drawer: messages from the rail in the hosting page (checked by nonce).
   window.addEventListener('message', (e) => {
     const d = e.data;
-    if (e.source !== window.parent || !d || d.ns !== 'margin' || d.n !== nonce) return;
+    if (e.source !== window.parent || !d || d.ns !== 'sidegig' || d.n !== nonce) return;
     if (d.type === 'view') void render(d.view, { app: d.app });
     if (d.type === 'theme') {
       pageMode = d.mode === 'light' || d.mode === 'dark' ? d.mode : null;
@@ -118,7 +120,7 @@ async function boot() {
     }
     if (e.key === 'Escape' && kind === 'drawer' && current.name !== 'search') ctx.close();
   });
-  if (kind === 'drawer') window.parent.postMessage({ ns: 'margin', n: nonce, type: 'ready' }, '*');
+  if (kind === 'drawer') window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'ready' }, '*');
 }
 
 void boot();

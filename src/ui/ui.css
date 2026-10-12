@@ -1,6 +1,13 @@
-/* Margin UI. Colors come from the theme engine as --m-* variables. */
+/* sidegig UI. Colors come from the theme engine as --m-* variables. */
+@font-face {
+  font-family: "Google Sans Flex";
+  src: url("fonts/GoogleSansFlex-Latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
 :root {
-  font: 13px/1.45 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Google Sans Flex", system-ui, sans-serif;
+  font: 13px/1.45 "Google Sans Flex", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   --m-radius: 10px;
   --m-radius-sm: 6px;
@@ -63,7 +70,12 @@ img { display: block; }
 .tile .name { font-size: 11px; color: var(--m-fg-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fav { width: 24px; height: 24px; border-radius: 6px; flex: none; object-fit: contain; }
 .fav.sm { width: 16px; height: 16px; border-radius: 4px; }
-.mono { display: grid; place-items: center; background: var(--m-surface2); color: var(--m-fg); font-weight: 600; font-size: 11px; }
+.mono {
+  display: grid; place-items: center; font-weight: 600; font-size: 11px;
+  /* Tinted letter tile: hue comes from the site name, tones from the theme. */
+  background: color-mix(in oklch, oklch(0.66 0.13 var(--h, 250)) 24%, var(--m-surface));
+  color: color-mix(in oklch, oklch(0.6 0.16 var(--h, 250)) 48%, var(--m-fg));
+}
 .badge {
   position: absolute; top: 5px; right: 12px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
   background: var(--m-badge); color: var(--m-badge-fg); font-size: 10px; font-weight: 600; line-height: 16px; text-align: center;
@@ -114,6 +126,24 @@ img { display: block; }
 .row .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--m-fg-subtle); }
 .dot.ok { background: #2fb36d; } .dot.warn { background: #e0a52b; } .dot.error { background: var(--m-badge); } .dot.busy { background: var(--m-accent); }
 
+/* tab groups */
+.group-head {
+  all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; margin-top: 4px;
+  border-radius: var(--m-radius-sm); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--m-fg-muted);
+}
+.group-head:hover { background: var(--m-hover); }
+.group-head .swatch-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.group-head .chev { margin-left: auto; color: var(--m-fg-subtle); transition: transform 160ms var(--ease); }
+.group-head[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+.group-body { margin-left: 9px; padding-left: 8px; border-left: 2px solid var(--gc, var(--m-border)); }
+
+/* add view */
+.site-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--m-radius); background: var(--m-surface); }
+.site-card .text { flex: 1; min-width: 0; }
+.site-card .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-card .m { color: var(--m-fg-subtle); font-size: 11.5px; }
+.actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
 /* status cards */
 .card { padding: 12px; border-radius: var(--m-radius); background: var(--m-surface); transition: opacity 200ms ease; }
 .card + .card { margin-top: 8px; }
@@ -137,7 +167,7 @@ img { display: block; }
 .seg button { all: unset; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--m-fg-muted); }
 .seg button[aria-pressed="true"] { background: var(--m-bg); color: var(--m-fg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
 .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
-.swatch { all: unset; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+.swatch { all: unset; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--m-fg) 22%, transparent); }
 .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--m-bg), 0 0 0 4px var(--m-fg); }
 .range { width: 140px; accent-color: var(--m-accent); }
 .toggle { all: unset; width: 34px; height: 20px; border-radius: 10px; background: var(--m-surface2); position: relative; cursor: pointer; flex: none; transition: background 150ms ease; }
@@ -189,3 +219,14 @@ body.ctx-newtab { overflow: auto; }
 .nt .stacks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; align-items: start; margin-top: 12px; }
 .nt .stacks-grid .stack { background: var(--m-surface); }
 .nt .results { background: var(--m-surface); border-radius: 14px; padding: 6px; margin: -18px 0 24px; }
+
+/* settings page */
+body.ctx-options { overflow: auto; }
+.opts { display: grid; grid-template-columns: 200px minmax(0, 720px); gap: 48px; justify-content: center; padding: 40px 32px 96px; }
+.opts nav { position: sticky; top: 40px; align-self: start; display: flex; flex-direction: column; gap: 2px; }
+.opts nav a { color: var(--m-fg-muted); padding: 7px 12px; border-radius: 18px; font-weight: 500; }
+.opts nav a:hover { background: var(--m-hover); color: var(--m-fg); }
+.opts nav a.on { background: var(--m-accent-soft); color: var(--m-accent); }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0 0 18px 8px; }
+.brand b { font-size: 18px; letter-spacing: -0.02em; }
+@media (max-width: 860px) { .opts { grid-template-columns: minmax(0, 1fr); } .opts nav { display: none; } }

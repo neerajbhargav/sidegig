@@ -1,4 +1,4 @@
-// Build Margin for one or more browsers.
+// Build sidegig for one or more browsers.
 //   node scripts/build.mjs            -> all targets
 //   node scripts/build.mjs chrome     -> one target
 //   node scripts/build.mjs --zip      -> all targets + store zips
@@ -60,7 +60,9 @@ async function copyStatic(outdir) {
   }
   await cp(path.join(root, 'src/ui/ui.css'), path.join(outdir, 'ui.css'));
   await cp(path.join(root, 'src/assets/icons'), path.join(outdir, 'icons'), { recursive: true });
+  await cp(path.join(root, 'src/assets/fonts'), path.join(outdir, 'fonts'), { recursive: true });
   await cp(path.join(root, 'LICENSE'), path.join(outdir, 'LICENSE'));
+  await cp(path.join(root, 'THIRD_PARTY_NOTICES.md'), path.join(outdir, 'THIRD_PARTY_NOTICES.md'));
 }
 
 const esbuild = await loadEsbuild();
@@ -78,7 +80,7 @@ for (const target of targets) {
   await copyStatic(outdir);
   await writeFile(path.join(outdir, 'manifest.json'), JSON.stringify(manifestFor(target), null, 2));
   if (zip) {
-    const file = path.join(root, 'dist', `margin-${target}.zip`);
+    const file = path.join(root, 'dist', `sidegig-${target}.zip`);
     await rm(file, { force: true });
     execFileSync('zip', ['-qr', file, '.'], { cwd: outdir });
   }

@@ -171,35 +171,67 @@ async function tabsSection(ctx: Ctx): Promise<HTMLElement> {
   const windowId = here?.windowId ?? ctx.windowId;
   const tabs = windowId !== undefined ? await ext.tabs.query({ windowId }) : [];
   const list = h('div');
+  const GROUP_COLORS: Record<string, string> = {
+    grey: '#8a8d91', blue: '#1a73e8', red: '#d93025', yellow: '#f9ab00', green: '#188038', pink: '#d01884', purple: '#a142f4', cyan: '#007b83', orange: '#fa903e',
+  };
+  const groups = new Map<number, { title: string; color: string; collapsed: boolean }>();
+  if (features.tabGroups && windowId !== undefined) {
+    for (const g of await (ext as any).tabGroups.query({ windowId }).catch(() => [])) {
+      groups.set(g.id, { title: g.title || 'Untitled group', color: GROUP_COLORS[g.color] ?? GROUP_COLORS.grey, collapsed: !!g.collapsed });
+    }
+  }
+  const tabRow = (t: chrome.tabs.Tab) => {
+    const url = t.url ?? '';
+    const fav =
+      t.favIconUrl && /^(https?|data):/.test(t.favIconUrl)
+        ? (() => {
+            const img = h('img', { class: 'fav sm', src: t.favIconUrl, alt: '' });
+            img.addEventListener('error', () => img.replaceWith(favicon(url, t.title ?? '', 'fav sm')), { once: true });
+            return img;
+          })()
+        : favicon(url, t.title ?? '', 'fav sm');
+    const row = h(
+      'button',
+      { class: `row${t.active ? ' current' : ''}`, type: 'button', title: url, onclick: () => switchTo(t) },
+      fav,
+      h('span', { class: 'text' }, h('span', { class: 't' }, t.title || hostOf(url)), h('span', { class: 'm' }, `${t.pinned ? 'pinned · ' : ''}${t.discarded ? 'asleep · ' : ''}${hostOf(url)}`)),
+      h(
+        'span',
+        { class: 'end' },
+        iconButton('close', 'Close tab', (e) => {
+          e.stopPropagation();
+          if (t.id !== undefined) void ext.tabs.remove(t.id).then(() => row.remove());
+        }),
+      ),
+    );
+    row.querySelector('.iconbtn')?.classList.add('x');
+    return row;
+  };
   const render = (all: chrome.tabs.Tab[]) => {
     list.textContent = '';
+    let body: HTMLElement = list;
+    let currentGroup = -1;
     for (const t of all) {
-      const url = t.url ?? '';
-      const fav =
-        t.favIconUrl && /^(https?|data):/.test(t.favIconUrl)
-          ? (() => {
-              const img = h('img', { class: 'fav sm', src: t.favIconUrl, alt: '' });
-              img.addEventListener('error', () => img.replaceWith(favicon(url, t.title ?? '', 'fav sm')), { once: true });
-              return img;
-            })()
-          : favicon(url, t.title ?? '', 'fav sm');
-      const row = h(
-        'button',
-        { class: `row${t.active ? ' current' : ''}`, type: 'button', title: url, onclick: () => switchTo(t) },
-        fav,
-        h('span', { class: 'text' }, h('span', { class: 't' }, t.title || hostOf(url)), h('span', { class: 'm' }, `${t.discarded ? 'asleep · ' : ''}${hostOf(url)}`)),
-        h(
-          'span',
-          { class: 'end' },
-          iconButton('close', 'Close tab', (e) => {
-            e.stopPropagation();
-            if (t.id !== undefined) void ext.tabs.remove(t.id).then(() => row.remove());
-          }),
-        ),
-      );
-      row.querySelector('.iconbtn')?.classList.add('x');
-      if (t.pinned) row.querySelector('.m')!.textContent = `pinned · ${hostOf(url)}`;
-      list.append(row);
+      const gid = t.groupId ?? -1;
+      if (gid !== currentGroup) {
+        currentGroup = gid;
+        const g = groups.get(gid);
+        if (gid >= 0 && g) {
+          const count = all.filter((x) => x.groupId === gid).length;
+          const chev = ico('down', 16);
+          chev.classList.add('chev');
+          const head = h('button', { class: 'group-head', type: 'button', 'aria-expanded': String(!g.collapsed) }, h('span', { class: 'swatch-dot', style: { background: g.color } }), g.title, h('span', { class: 'subtle' }, String(count)), chev);
+          const groupBody = h('div', { class: 'group-body', style: { '--gc': g.color }, hidden: g.collapsed });
+          head.addEventListener('click', () => {
+            const open = groupBody.hidden;
+            groupBody.hidden = !open;
+            head.setAttribute('aria-expanded', String(open));
+          });
+          list.append(head, groupBody);
+          body = groupBody;
+        } else body = list;
+      }
+      body.append(tabRow(t));
     }
   };
   render(tabs);
@@ -307,7 +339,7 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
   const bar = h(
     'div',
     { class: 'bar' },
-    h('span', { class: 'title' }, 'Margin'),
+    h('span', { class: 'title' }, 'sidegig'),
     iconButton('pulse', 'Status', () => ctx.go('status')),
     iconButton('sliders', 'Settings', () => ctx.go('settings')),
     ctx.kind === 'drawer' ? iconButton('close', 'Close (Esc)', () => ctx.close()) : null,

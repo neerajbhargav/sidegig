@@ -20,11 +20,11 @@ export type ToContent =
   | { type: 'open-view'; view: View }
   | { type: 'ask-ai'; selection?: string };
 
-export type View = 'home' | 'search' | 'status' | 'settings';
+export type View = 'home' | 'search' | 'status' | 'settings' | 'add';
 
 /** Messages between the in-page drawer iframe and the rail (window.postMessage). */
 export type DrawerMsg =
-  | { ns: 'margin'; type: 'close' }
-  | { ns: 'margin'; type: 'pin'; pinned: boolean }
-  | { ns: 'margin'; type: 'navigate'; url: string; newTab: boolean }
-  | { ns: 'margin'; type: 'ready' };
+  | { ns: 'sidegig'; type: 'close' }
+  | { ns: 'sidegig'; type: 'pin'; pinned: boolean }
+  | { ns: 'sidegig'; type: 'navigate'; url: string; newTab: boolean }
+  | { ns: 'sidegig'; type: 'ready' };

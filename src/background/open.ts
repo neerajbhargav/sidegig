@@ -21,7 +21,7 @@ function requestPanel(req: { appId?: string; view?: View }) {
 }
 
 /**
- * Open the browser's own sidebar with Margin's panel. Returns false when this
+ * Open the browser's own sidebar with sidegig's panel. Returns false when this
  * browser has no sidebar we can open (caller falls back to a mini window).
  */
 export function openPanel(windowId: number | undefined, req: { appId?: string; view?: View }): boolean {

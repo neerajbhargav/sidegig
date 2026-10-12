@@ -1,4 +1,4 @@
-// Preview-only stand-in for the extension APIs, so Margin's real UI code can
+// Preview-only stand-in for the extension APIs, so sidegig's real UI code can
 // run inside an ordinary page for screenshots and UI checks. Never shipped.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Listener = (...a: any[]) => any;
@@ -7,8 +7,8 @@ const ev = () => {
   return { addListener: (f: Listener) => ls.push(f), removeListener: (f: Listener) => ls.splice(ls.indexOf(f), 1), fire: (...a: any[]) => ls.forEach((f) => f(...a)), hasListeners: () => ls.length > 0 };
 };
 
-const fx = (globalThis as any).__MARGIN_FIXTURES__ ?? {};
-const log: any[] = ((globalThis as any).__MARGIN_LOG__ = []);
+const fx = (globalThis as any).__SIDEGIG_FIXTURES__ ?? {};
+const log: any[] = ((globalThis as any).__SIDEGIG_LOG__ = []);
 
 function area(name: string, data: Record<string, any>, changed: ReturnType<typeof ev>) {
   return {
@@ -85,6 +85,9 @@ const mock: any = {
       log.push({ type: 'tabs.remove', id });
     },
     async discard() {},
+    async group() {
+      return 1;
+    },
     async sendMessage() {},
     onRemoved: ev(),
     onCreated: ev(),
@@ -121,6 +124,14 @@ const mock: any = {
     onCreated: ev(),
     onRemoved: ev(),
     onChanged: ev(),
+  },
+  tabGroups: {
+    async query() {
+      return structuredClone(fx.groups ?? []);
+    },
+    async get(id: number) {
+      return (fx.groups ?? []).find((g: any) => g.id === id);
+    },
   },
   history: {
     async search({ text }: { text: string }) {

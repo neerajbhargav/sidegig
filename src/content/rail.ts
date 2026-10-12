@@ -10,11 +10,12 @@ import { hostExcluded } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
 import { buildPrompt } from '../shared/prompt.ts';
 import { appFromCatalog } from '../shared/defaults.ts';
-import { catalogById } from '../shared/catalog.ts';
+import { catalogById, CATALOG } from '../shared/catalog.ts';
+import { hueOf } from '../ui/dom.ts';
 import type { AppEntry, Settings, StatusCard } from '../shared/types.ts';
 import type { ToBackground, ToContent, View } from '../shared/messages.ts';
 
-type DrawerView = View | 'app';
+type DrawerView = View | 'app' | 'add';
 
 const send = (msg: ToBackground) => ext.runtime.sendMessage(msg).catch(() => undefined);
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -28,7 +29,7 @@ export function extractPage() {
 }
 
 class Rail {
-  private host = document.createElement('margin-rail');
+  private host = document.createElement('sidegig-rail');
   // Closed so pages can't poke at it (open only in the screenshot preview build).
   private root = this.host.attachShadow({ mode: TARGET === 'preview' ? 'open' : 'closed' });
   private style = document.createElement('style');
@@ -36,6 +37,10 @@ class Rail {
   private rail = document.createElement('nav');
   private drawer = document.createElement('div');
   private tip = document.createElement('div');
+  private flyout = document.createElement('div');
+  private flyTimer = 0;
+  private ready = false;
+  private pending: Record<string, unknown> | null = null;
   private hint = document.createElement('div');
   private iframe: HTMLIFrameElement | null = null;
   private nonce = Math.random().toString(36).slice(2);
@@ -53,12 +58,16 @@ class Rail {
   constructor(private s: Settings) {
     this.shell.className = 'shell';
     this.rail.className = 'rail';
-    this.rail.setAttribute('aria-label', 'Margin');
+    this.rail.setAttribute('aria-label', 'sidegig');
     this.drawer.className = 'drawer';
     this.tip.className = 'tip';
+    this.flyout.className = 'flyout';
+    this.flyout.setAttribute('role', 'menu');
+    this.flyout.addEventListener('pointerenter', () => clearTimeout(this.flyTimer));
+    this.flyout.addEventListener('pointerleave', () => this.hideFlyout(250));
     this.hint.className = 'hint';
     this.shell.append(this.rail, this.drawer);
-    this.root.append(this.style, this.hint, this.shell, this.tip);
+    this.root.append(this.style, this.hint, this.shell, this.tip, this.flyout);
     this.applySettings(s);
     this.mount();
     this.listen();
@@ -144,13 +153,23 @@ class Rail {
     const letter = (app.name.trim()[0] ?? '?').toUpperCase();
     return src
       ? `<img alt="" src="${src}" data-letter="${letter}"><span class="badge" hidden></span>`
-      : `<span class="mono">${letter}</span><span class="badge" hidden></span>`;
+      : `<span class="mono" style="--h:${hueOf(app.url)}">${letter}</span><span class="badge" hidden></span>`;
+  }
+
+  /** Swap a broken site icon for a tinted letter tile. */
+  private wireFallback(b: HTMLElement, app: AppEntry) {
+    const img = b.querySelector('img');
+    img?.addEventListener('error', () => {
+      const m = Object.assign(document.createElement('span'), { className: 'mono', textContent: img.dataset.letter ?? '?' });
+      m.style.setProperty('--h', String(hueOf(app.url)));
+      img.replaceWith(m);
+    });
   }
 
   private renderRail() {
     const s = this.s;
     this.rail.textContent = '';
-    this.rail.append(this.button('Home', icon('logo', 22), () => this.toggleDrawer('home'), 'logo'));
+    this.rail.append(this.tool('home', 'Home', icon('logo', 22), 'logo'));
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
 
     const apps = document.createElement('div');
@@ -158,24 +177,95 @@ class Rail {
     for (const app of s.apps) {
       const b = this.button(app.name, this.appIcon(app), () => this.openApp(app));
       b.dataset.app = app.id;
-      const img = b.querySelector('img');
-      img?.addEventListener('error', () => {
-        img.replaceWith(Object.assign(document.createElement('span'), { className: 'mono', textContent: img.dataset.letter ?? '?' }));
-      });
+      this.wireFallback(b, app);
       apps.append(b);
     }
+    apps.append(this.tool('add', 'Add this site', icon('plus', 20), 'add'));
     this.rail.append(apps);
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
-    this.rail.append(this.button(`Search  ${keys('K')}`, icon('search'), () => this.toggleDrawer('search')));
-    this.rail.append(this.button('Status', icon('pulse'), () => this.toggleDrawer('status'), this.statusNews ? 'glow status' : 'status'));
-    this.rail.append(this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, icon('sparkle'), () => this.askAi()));
+    this.rail.append(this.tool('search', `Search  ${keys('K')}`, icon('search')));
+    this.rail.append(this.tool('status', 'Status', icon('pulse'), this.statusNews ? 'glow status' : 'status'));
+    const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, icon('sparkle'), () => this.askAi(), 'ai');
+    ai.addEventListener('pointerenter', () => this.showFlyout(ai, 450));
+    ai.addEventListener('pointerleave', () => this.hideFlyout(300));
+    ai.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.showFlyout(ai, 0);
+    });
+    this.rail.append(ai);
     this.rail.append(Object.assign(document.createElement('div'), { className: 'spacer' }));
     const pinned = s.rail.mode === 'pinned';
     const pin = this.button(pinned ? 'Unpin (show on hover)' : 'Keep visible', icon(pinned ? 'pinOff' : 'pin'), () => this.togglePin());
     pin.setAttribute('aria-pressed', String(pinned));
     this.rail.append(pin);
-    this.rail.append(this.button('Settings', icon('sliders'), () => this.toggleDrawer('settings')));
+    this.rail.append(this.tool('settings', 'Settings', icon('sliders')));
     this.setBadges(this.badges);
+    this.markActive();
+  }
+
+  /** A rail button that opens a drawer view and shows as pressed while it's open. */
+  private tool(view: DrawerView, label: string, inner: string, extra = ''): HTMLButtonElement {
+    const b = this.button(label, inner, () => this.toggleDrawer(view), extra);
+    b.dataset.view = view;
+    return b;
+  }
+
+  private markActive() {
+    for (const b of this.rail.querySelectorAll<HTMLElement>('button[data-view]')) {
+      b.setAttribute('aria-pressed', String(!!this.view && b.dataset.view === this.view));
+    }
+  }
+
+  // ------------------------------------------------------------ AI picker
+
+  private aiChoices(): AppEntry[] {
+    const mine = this.s.apps.filter((a) => catalogById(a.catalogId ?? '')?.category === 'AI');
+    const rest = CATALOG.filter((c) => c.category === 'AI' && !mine.some((a) => a.catalogId === c.id)).map((c) => appFromCatalog(c.id));
+    return [...mine, ...rest];
+  }
+
+  private showFlyout(anchor: HTMLElement, delay: number) {
+    clearTimeout(this.flyTimer);
+    this.flyTimer = window.setTimeout(() => {
+      this.hideTip();
+      this.flyout.textContent = '';
+      const label = Object.assign(document.createElement('div'), { className: 'fly-label', textContent: 'Ask about this page' });
+      this.flyout.append(label);
+      const row = document.createElement('div');
+      row.className = 'fly-row';
+      for (const app of this.aiChoices()) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'item';
+        b.title = app.name;
+        b.setAttribute('aria-label', `Ask ${app.name}`);
+        b.innerHTML = this.appIcon(app);
+        this.wireFallback(b, app);
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.addEventListener('click', () => {
+          this.hideFlyout(0);
+          this.askAi(undefined, app);
+        });
+        row.append(b);
+      }
+      this.flyout.append(row);
+      const r = anchor.getBoundingClientRect();
+      const shell = this.rail.getBoundingClientRect();
+      this.flyout.style.top = `${r.top + r.height / 2}px`;
+      if (this.s.rail.side === 'left') {
+        this.flyout.style.left = `${shell.right + 8}px`;
+        this.flyout.style.right = '';
+      } else {
+        this.flyout.style.right = `${window.innerWidth - shell.left + 8}px`;
+        this.flyout.style.left = '';
+      }
+      this.flyout.classList.add('show');
+    }, delay);
+  }
+
+  private hideFlyout(delay: number) {
+    clearTimeout(this.flyTimer);
+    this.flyTimer = window.setTimeout(() => this.flyout.classList.remove('show'), delay);
   }
 
   private setBadges(b: Record<string, number>) {
@@ -213,6 +303,7 @@ class Rail {
     }
     if (this.s.theme.mode === 'page') this.applyTheme();
     this.host.dataset.open = '';
+    this.preload();
   }
 
   hide() {
@@ -230,8 +321,9 @@ class Rail {
 
   private scheduleHide(ms = 350) {
     clearTimeout(this.hideTimer);
-    if (this.sticky || this.s.rail.mode === 'pinned' || this.drawerFocused()) return;
-    this.hideTimer = window.setTimeout(() => this.hide(), this.view ? 700 : ms);
+    // A drawer you opened on purpose stays until Esc, a click on the page, or close.
+    if (this.sticky || this.s.rail.mode === 'pinned' || this.view || this.drawerFocused()) return;
+    this.hideTimer = window.setTimeout(() => this.hide(), ms);
   }
 
   private drawerFocused(): boolean {
@@ -245,11 +337,11 @@ class Rail {
     const f = document.createElement('iframe');
     const params = new URLSearchParams({ ctx: 'drawer', view, side: this.s.rail.side, n: this.nonce, mode: this.mode });
     if (appId) params.set('app', appId);
-    const preview = (globalThis as any).__MARGIN_PREVIEW__;
+    const preview = (globalThis as any).__SIDEGIG_PREVIEW__;
     if (TARGET === 'preview' && preview) f.srcdoc = preview.drawerHtml(String(params));
     else f.src = `${ext.runtime.getURL('drawer.html')}#${params}`;
     f.allow = 'clipboard-read; clipboard-write; microphone';
-    f.title = 'Margin';
+    f.title = 'sidegig';
     const resize = document.createElement('div');
     resize.className = 'resize';
     const cover = document.createElement('div');
@@ -260,7 +352,19 @@ class Rail {
   }
 
   private post(msg: Record<string, unknown>) {
-    this.iframe?.contentWindow?.postMessage({ ns: 'margin', n: this.nonce, ...msg }, '*');
+    if (!this.iframe) return;
+    if (!this.ready && msg.type === 'view') {
+      this.pending = msg;
+      return;
+    }
+    this.iframe.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, ...msg }, '*');
+  }
+
+  /** Load the drawer quietly after the rail first appears, so opening it is instant. */
+  private preload() {
+    if (this.iframe) return;
+    const idle = (window as any).requestIdleCallback ?? ((f: () => void) => setTimeout(f, 300));
+    idle(() => this.ensureIframe('home'));
   }
 
   openDrawer(view: DrawerView, appId?: string) {
@@ -271,14 +375,17 @@ class Rail {
     this.view = view;
     this.drawer.style.width = `${this.s.drawer.width}px`;
     this.drawer.classList.add('show');
-    for (const b of this.rail.querySelectorAll<HTMLElement>('button.item')) b.removeAttribute('aria-pressed');
-    if (this.s.rail.mode === 'pinned') this.rail.querySelector('button.item:nth-last-child(2)')?.setAttribute('aria-pressed', 'true');
-    if (view === 'status') this.statusNews = false;
+    this.markActive();
+    if (view === 'status') {
+      this.statusNews = false;
+      this.rail.querySelector('.status')?.classList.remove('glow');
+    }
   }
 
   closeDrawer() {
     this.view = null;
     this.drawer.classList.remove('show');
+    this.markActive();
   }
 
   toggleDrawer(view: DrawerView) {
@@ -321,8 +428,8 @@ class Rail {
     send({ type: 'open-app', appId: app.id, url: app.url, openIn: app.openIn, side: this.s.rail.side });
   }
 
-  askAi(selection?: string) {
-    const app = this.aiApp();
+  askAi(selection?: string, chosen?: AppEntry) {
+    const app = chosen ?? this.aiApp();
     if (!app) return this.openDrawer('settings');
     const page = extractPage();
     const sel = selection ?? page.selection;
@@ -423,11 +530,22 @@ class Rail {
     window.addEventListener('message', (e) => {
       if (!this.iframe || e.source !== this.iframe.contentWindow) return;
       const d = e.data;
-      if (!d || d.ns !== 'margin' || d.n !== this.nonce) return;
+      if (!d || d.ns !== 'sidegig' || d.n !== this.nonce) return;
       if (d.type === 'close') this.hide();
-      if (d.type === 'view') this.view = d.view;
+      if (d.type === 'view' && this.view) {
+        this.view = d.view;
+        this.markActive();
+      }
       if (d.type === 'ask-ai') this.askAi();
-      if (d.type === 'ready') this.post({ type: 'theme', mode: this.mode });
+      if (d.type === 'ready') {
+        this.ready = true;
+        this.post({ type: 'theme', mode: this.mode });
+        if (this.pending) {
+          const p = this.pending;
+          this.pending = null;
+          this.post(p);
+        }
+      }
     });
     ext.runtime.onMessage.addListener((msg: ToContent | { type: 'extract' }, _sender, reply) => {
       if (msg.type === 'extract') {
@@ -457,11 +575,11 @@ class Rail {
 }
 
 async function main() {
-  if ((window as any).__marginRail) return;
-  (window as any).__marginRail = true;
+  if ((window as any).__sidegigRail) return;
+  (window as any).__sidegigRail = true;
   const settings = await loadSettings();
   const rail = new Rail(settings);
-  // Mini windows Margin opens for apps stay clean: no rail inside them.
+  // Mini windows sidegig opens for apps stay clean: no rail inside them.
   const info = (await send({ type: 'tab-info' })) as { popup?: boolean } | undefined;
   if (info?.popup) rail.disableHere();
 }
