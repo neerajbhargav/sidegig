@@ -1,0 +1,29 @@
+{
+  "name": "margin-sidebar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A free, open-source sidebar that lives in the margin of every browser: hover the edge for your apps, AI, bookmark stacks and search.",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:chrome": "node scripts/build.mjs chrome",
+    "build:firefox": "node scripts/build.mjs firefox",
+    "build:opera": "node scripts/build.mjs opera",
+    "build:safari": "node scripts/build.mjs safari",
+    "zip": "node scripts/build.mjs --zip",
+    "preview": "node scripts/build.mjs preview",
+    "check": "tsc --noEmit -p .",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name Margin --bundle-identifier org.margin-sidebar.Margin --macos-only --no-prompt --force"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.5",
+    "@types/node": "^24.0.0",
+    "esbuild-wasm": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "optionalDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
