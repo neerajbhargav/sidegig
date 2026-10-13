@@ -7,7 +7,7 @@ import type { Ctx, Kind, ViewName } from './ctx.ts';
 import { send } from './ctx.ts';
 import { panelRail } from './views/prail.ts';
 import { updateSettings, setLocal } from '../shared/storage.ts';
-import { iconButton, setFavMissing } from './dom.ts';
+import { iconButton, setFavMissing, setIconStyle } from './dom.ts';
 import { h } from './dom.ts';
 import { homeView } from './views/home.ts';
 import { searchView } from './views/search.ts';
@@ -94,11 +94,14 @@ async function boot() {
     close: () => window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'close' }, '*'),
     toRail: (msg) => window.parent.postMessage({ ns: 'sidegig', n: nonce, ...msg }, '*'),
   };
+  setIconStyle(settings.theme.icons);
 
   const applyTheme = () => {
     const t = ctx.settings.theme;
     const mode = t.mode === 'page' ? pageMode ?? 'system' : t.mode;
     themeStyle.textContent = themeCss(':root', mode, t, t.radius) + (t.customCss || '');
+    document.documentElement.dataset.icons = t.icons;
+    setIconStyle(t.icons);
     if (kind !== 'newtab') document.documentElement.dataset.ui = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
   };
 

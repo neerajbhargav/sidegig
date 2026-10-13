@@ -502,6 +502,14 @@ function themeTab(ctx: Ctx): HTMLElement {
     { class: 'cz-themes-wrap' },
     h('div', { class: 'cz-themes' }, THEMES.map((t) => themeCard(ctx, t))),
     nameSection(ctx),
+    h(
+      'section',
+      { class: 'cz-sec' },
+      h('div', { class: 'cz-sec-h' }, 'Icons'),
+      seg(ctx.settings.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => set((s) => void (s.theme.icons = v))),
+      h('p', { class: 'cz-hint' }, 'Original keeps each site’s own icon, sized to match. Themed draws known logos in your theme’s ink, here and in the sidebar.'),
+    ),
+
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Custom theme'), customEditor(ctx)),
     h(
       'section',

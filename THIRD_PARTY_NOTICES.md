@@ -30,3 +30,9 @@ Wallpaper collections are fetched at run time, never bundled: Wallhaven
 NASA Image and Video Library (public domain), and Bing's photo of the day (credited
 as Bing provides). The "Super Visuals" background library by Ahmed Hassan inspired
 the Film, Dream, LED and Mosaic effects; none of its images are included.
+
+## Anatomy kit
+
+- Source: https://github.com/wheresryan22/anatomy (vendored in `vendor/anatomy/`)
+- License: MIT, Copyright (c) Ryan (@wheresryan22)
+- Used to draw the isometric Pomodoro timer at build time.

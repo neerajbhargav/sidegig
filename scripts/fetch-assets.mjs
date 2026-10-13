@@ -84,7 +84,8 @@ const ICONS = {
   playArrow: 'play_arrow',
   restart: 'restart_alt',
   feed: 'newspaper',
-  ai: 'auto_awesome',
+  ai: 'chat_bubble',
+  ask: 'chat_bubble',
 };
 
 async function fetchIcon(name) {

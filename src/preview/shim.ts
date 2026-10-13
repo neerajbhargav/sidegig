@@ -51,7 +51,7 @@ const mock: any = {
   storage: { local: area('local', fx.local ?? {}, onChanged), sync: area('sync', fx.sync ?? {}, onChanged), onChanged },
   runtime: {
     id: 'preview',
-    getURL: (p: string) => `https://margin.preview/${p.replace(/^\//, '')}`,
+    getURL: (p: string) => new URL(p.replace(/^\//, ''), location.href).href,
     async sendMessage(m: any) {
       log.push(m);
       if (m.type === 'tab-info') return { tabId: 1, windowId: 1, popup: false };

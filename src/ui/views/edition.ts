@@ -233,10 +233,10 @@ function card(i: EdItem, a: Actions, lead = false): HTMLElement {
     h(
       'div',
       { class: 'ed-body' },
-      h('div', { class: 'ed-kicker' }, lead ? h('span', { class: 'ed-lead-tag' }, 'Front page') : null, faviconOnly(i.url, 'fav xs'), h('span', {}, [i.by, i.meta].filter(Boolean).join(' · ') || i.source)),
+      h('div', { class: 'ed-kicker' }, lead ? h('span', { class: 'ed-lead-tag' }, 'Front page') : null, faviconOnly(i.url, 'fav xs'), h('span', {}, [i.by, i.meta].filter(Boolean).join(', ') || i.source)),
       link('ed-title', i.title),
       lead && i.summary ? h('p', { class: 'ed-sum' }, i.summary) : null,
-      why ? h('div', { class: 'ed-why' }, i.why ? ico('sparkle', 14) : null, h('span', {}, why)) : null,
+      why ? h('div', { class: 'ed-why' }, h('span', {}, why)) : null,
       i.discuss || i.alt
         ? h(
             'div',
@@ -380,7 +380,7 @@ function savedView(saved: SavedItem[], rerender: () => void, filter: { kind: EdK
           'div',
           { class: 'ed-row-body' },
           h('a', { class: 'ed-title', href: s.url }, s.title),
-          h('div', { class: 'ed-kicker' }, h('span', {}, [s.by ?? hostOf(s.url), `saved ${ago(s.savedAt)}`].join(' · '))),
+          h('div', { class: 'ed-kicker' }, h('span', {}, [s.by ?? hostOf(s.url), `saved ${ago(s.savedAt)}`].join(', '))),
         ),
         iconButton('trash', 'Remove', async () => {
           const all = await getLocal<SavedItem[]>('edSaved', []);
@@ -647,7 +647,7 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
             'div',
             { class: 'ed-date' },
             tab === 'today' && ed
-              ? `No. ${pad2(ed.no ?? 1)} · ${ed.items.length} items · ${st?.building ? 'updating…' : `updated ${ago(ed.built)}`}`
+              ? `No. ${pad2(ed.no ?? 1)}, ${ed.items.length} items, ${st?.building ? 'updating…' : `updated ${ago(ed.built)}`}`
               : date,
           ),
         ),

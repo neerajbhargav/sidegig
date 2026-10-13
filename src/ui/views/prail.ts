@@ -42,7 +42,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
   nav.append(
     btn('Search', [ico('search', 20)], () => ctx.go('search'), current.name === 'search'),
     btn('Status', [ico('pulse', 20)], () => ctx.go('status'), current.name === 'status', news ? 'glow' : ''),
-    btn(`Ask ${ai?.name ?? 'AI'} about this page`, [ico('sparkle', 20)], () => {
+    btn(`Ask ${ai?.name ?? 'AI'} about this page`, [ico('ask', 20)], () => {
       if (!ai) return ctx.go('settings');
       void send({ type: 'ask-page' }).catch(() => undefined);
       ctx.go('app', { app: ai.id });

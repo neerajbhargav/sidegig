@@ -6,12 +6,12 @@ import { getLocal, setLocal, onLocalChanged, updateSettings } from '../../shared
 import { CAL_APPS, eventIcs, feedUrl, monthGrid, occurrences, parseIcs, sameDay, weekStartFor, type CalEvent } from '../../shared/ntcal.ts';
 import { clockText, freshPomo, msLeft, next, pause, phaseMs, settle, start, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
 import { greetingFor, parseWeather, weatherLabel, weatherUrl, type WeatherNow } from '../../shared/ntdata.ts';
-import { h, ico, favicon, faviconOnly, appFavicon, hueOf, toast } from '../dom.ts';
-import { CATALOG } from '../../shared/catalog.ts';
+import { h, ico, favicon, faviconOnly, toast } from '../dom.ts';
 import { type Ctx, openUrl } from '../ctx.ts';
 import { spacesFor } from './home.ts';
 import { analogClockEl, findPlace } from './ntwidgets.ts';
 import { play } from '../sound.ts';
+import { TIMER } from '../figures/timer.ts';
 
 const locale = navigator.language || 'en-US';
 
@@ -63,8 +63,8 @@ export function timeBlock(ctx: Ctx): HTMLElement {
   const date = h('div', { class: 'nt-date' });
   const paintDate = () => (date.textContent = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' }));
   paintDate();
-  if (!n.clock) return h('section', { class: 'nt-timeblock' }, date);
-  if (n.clockStyle === 'analog') return h('section', { class: 'nt-timeblock analog' }, analogClockEl(), date);
+  if (!n.clock) return h('section', { class: 'nt-timeblock nt-card' }, date);
+  if (n.clockStyle === 'analog') return h('section', { class: 'nt-timeblock nt-card analog' }, analogClockEl(), date);
   const digits = h('span', { class: 'nt-hm' });
   const ampmEl = h('span', { class: 'nt-ampm' });
   const time = h('div', { class: 'nt-time' }, digits, ampmEl);
@@ -78,7 +78,7 @@ export function timeBlock(ctx: Ctx): HTMLElement {
   paint();
   const tick = () => setTimeout(() => (time.isConnected ? (paint(), tick()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
   tick();
-  return h('section', { class: 'nt-timeblock' }, time, date);
+  return h('section', { class: 'nt-timeblock nt-card' }, time, date);
 }
 
 // ---------------------------------------------------------------- weather
@@ -286,27 +286,35 @@ export function calendarCard(ctx: Ctx): HTMLElement {
 
 const PHASE_NAME = { focus: 'Focus', short: 'Short break', long: 'Long break' } as const;
 
+// The Anatomy kit's isometric camera, enough of it to move the needle.
+const RAD = Math.PI / 180;
+function isoPoint([x, y, z]: [number, number, number]): string {
+  const P = TIMER.projection;
+  const a = P.azimuth * RAD;
+  const e = P.elevation * RAD;
+  const k = P.scale * Math.sqrt(1.6);
+  const sx = P.origin[0] + (x * Math.sin(a) - y * Math.cos(a)) * k;
+  const sy = P.origin[1] + ((x * Math.cos(a) + y * Math.sin(a)) * Math.sin(e) - z * Math.cos(e)) * k;
+  return `${sx.toFixed(1)} ${sy.toFixed(1)}`;
+}
+/** The needle for this many minutes left on a 60-minute dial. */
+function needlePath(minutes: number): string {
+  const t = (Math.max(0, Math.min(60, minutes)) / 60) * Math.PI * 2;
+  const { x, y, z, tip } = TIMER.dial;
+  return `M${isoPoint([x - Math.sin(t) * 3, y + Math.cos(t) * 3, z])}L${isoPoint([x + Math.sin(t) * tip, y - Math.cos(t) * tip, z])}`;
+}
+
 export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
   const cfg: PomoConfig = ctx.settings.newtab.pomodoro;
   let st = await getLocal<PomoState | null>('ntPomo', null) ?? freshPomo(cfg);
-  const R = 44;
-  const C = 2 * Math.PI * R;
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', '0 0 100 100');
-  svg.setAttribute('class', 'pomo-ring');
-  svg.setAttribute('aria-hidden', 'true');
-  const track = document.createElementNS(ns, 'circle');
-  const arc = document.createElementNS(ns, 'circle');
-  for (const c of [track, arc]) {
-    c.setAttribute('cx', '50');
-    c.setAttribute('cy', '50');
-    c.setAttribute('r', String(R));
-  }
-  track.setAttribute('class', 'pomo-track');
-  arc.setAttribute('class', 'pomo-arc');
-  arc.setAttribute('stroke-dasharray', String(C));
-  svg.append(track, arc);
+  // The timer is drawn as a real one (an Anatomy figure): the needle shows the minutes left.
+  const fig = h('button', {
+    type: 'button',
+    class: 'pomo-figbtn',
+    html: `<svg class="iso-svg" viewBox="0 0 ${TIMER.width} ${TIMER.height}" aria-hidden="true">${TIMER.below}<path class="iso-line pomo-needle" data-tone="lit" d=""/><g class="pomo-lever">${TIMER.lever}</g>${TIMER.above}</svg>`,
+  });
+  const needle = fig.querySelector<SVGPathElement>('.pomo-needle')!;
+  const lever = fig.querySelector<SVGGElement>('.pomo-lever')!;
   const time = h('div', { class: 'pomo-time', role: 'timer' });
   const phase = h('div', { class: 'pomo-phase' });
   const dots = h('div', { class: 'pomo-dots', 'aria-hidden': 'true' });
@@ -327,17 +335,22 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     const total = phaseMs(st.phase, cfg);
     rollText(time, clockText(left));
     phase.textContent = PHASE_NAME[st.phase];
-    arc.setAttribute('stroke-dashoffset', String(C * (1 - left / total)));
+    needle.setAttribute('d', needlePath(left / 60_000));
+    lever.style.transform = st.running ? `translate(${TIMER.leverShift[0]}px, ${TIMER.leverShift[1]}px)` : '';
+    fig.setAttribute('aria-label', `${st.running ? 'Pause' : 'Start'}: ${clockText(left)} of ${PHASE_NAME[st.phase].toLowerCase()} left`);
+    void total;
     root.dataset.phase = st.phase;
     root.dataset.running = String(st.running);
     go.textContent = st.running ? 'Pause' : left < total ? 'Resume' : 'Start';
     dots.replaceChildren(...Array.from({ length: cfg.every }, (_, i) => h('i', { class: i < st.rounds % cfg.every ? 'on' : '' })));
-    document.title = st.running ? `${clockText(left)} · ${PHASE_NAME[st.phase]}` : 'New Tab';
+    document.title = st.running ? `${clockText(left)} ${PHASE_NAME[st.phase].toLowerCase()}` : 'New Tab';
   };
-  go.addEventListener('click', () => {
+  const toggle = () => {
     play(st.running ? 'off' : 'on');
     void save(st.running ? pause(st, Date.now()) : start(st, Date.now())).then(paint);
-  });
+  };
+  go.addEventListener('click', toggle);
+  fig.addEventListener('click', toggle);
   const root = card(
     'nt-pomo',
     'Pomodoro',
@@ -345,7 +358,8 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
       iconBtn('refresh', 'Reset', () => void save({ ...freshPomo(cfg), rounds: st.rounds }).then(paint)),
       iconBtn('next', 'Skip to next', () => void save(next(st, cfg)).then(paint)),
     ],
-    h('div', { class: 'pomo-body' }, h('div', { class: 'pomo-dial' }, svg as unknown as Node, h('div', { class: 'pomo-read' }, time, phase)), h('div', { class: 'pomo-side' }, go, dots)),
+    h('div', { class: 'pomo-fig iso' }, fig),
+    h('div', { class: 'pomo-row' }, h('div', { class: 'pomo-read' }, time, phase), dots, go),
   );
   paint();
   const timer = setInterval(() => (root.isConnected ? paint() : clearInterval(timer)), 1000);
@@ -439,12 +453,8 @@ const hostName = (u: string) => {
   }
 };
 
-/** A site's icon; known apps (ChatGPT, X...) get their bundled logo where the browser has none or it's black. */
-function markIcon(url: string, title: string): HTMLElement {
-  const host = hostName(url);
-  const cat = CATALOG.find((c) => hostName(c.url) === host);
-  return cat ? appFavicon({ id: cat.id, catalogId: cat.id, url, name: title || cat.name }, 'fav') : favicon(url, title || host, 'fav');
-}
+/** A site's icon (the shared icon system picks a logo, the site icon or a letter). */
+const markIcon = (url: string, title: string) => favicon(url, title || hostName(url), 'fav');
 
 /** A folder you can see into: a few of its sites peek out of the top, like papers. */
 function folderArt(f: Mark, kids: Mark[]): HTMLElement {
@@ -454,7 +464,7 @@ function folderArt(f: Mark, kids: Mark[]): HTMLElement {
     .map((k) => h('span', { class: 'fold-paper' }, faviconOnly(k.url!, 'fav') ?? favicon(k.url!, k.title, 'fav')));
   return h(
     'span',
-    { class: 'fold-art', 'aria-hidden': 'true', style: { '--h': String(hueOf(f.title || f.id)) } },
+    { class: 'fold-art', 'aria-hidden': 'true' },
     h('span', { class: 'fold-back' }),
     h('span', { class: 'fold-papers', dataset: { n: String(papers.length) } }, papers),
     h('span', { class: 'fold-front' }),
@@ -503,7 +513,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
   const head = h('div', { class: 'shelf-head' });
   const grid = h('div', { class: 'nt-keys shelf-grid', role: 'list', 'aria-label': 'Bookmarks' });
   const form = h('form', { class: 'shelf-add nt-card', hidden: true });
-  const root = h('section', { class: 'nt-shelf', 'aria-label': 'Bookmarks' }, head, grid, form);
+  const root = h('section', { class: 'nt-shelf nt-card', 'aria-label': 'Bookmarks' }, head, grid, form);
   const here = () => trail[trail.length - 1]?.id ?? active.id;
 
   const tile = (label: string, icon: Node, props: Record<string, unknown>) =>
@@ -534,7 +544,25 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
             ]
           : []),
     );
-    head.hidden = !head.childElementCount;
+    head.append(
+      h('span', { class: 'ask-gap' }),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'nt-chip shelf-addbtn',
+          'aria-expanded': String(!form.hidden),
+          title: 'Add a site or a folder here',
+          onclick: () => {
+            form.hidden = !form.hidden;
+            if (!form.hidden) (form.querySelector('input') as HTMLInputElement | null)?.focus();
+            void paint();
+          },
+        },
+        ico('plus', 18),
+        h('span', {}, 'Add'),
+      ),
+    );
     const tiles = kids.map((k, n) => {
       const menu = (e: MouseEvent) => {
         e.preventDefault();
@@ -559,17 +587,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
         oncontextmenu: menu,
       });
     });
-    const add = tile('Add', h('span', { class: 'nt-cap nt-cap-add' }, ico('plus', 22)), {
-      class: 'nt-key is-add',
-      title: 'Add a site or a folder here',
-      'aria-expanded': String(!form.hidden),
-      onclick: () => {
-        form.hidden = !form.hidden;
-        if (!form.hidden) (form.querySelector('input') as HTMLInputElement | null)?.focus();
-        void paint();
-      },
-    });
-    reveal(grid, ...tiles, add);
+    reveal(grid, ...tiles);
     if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
   };
 

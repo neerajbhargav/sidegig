@@ -1,5 +1,6 @@
 import { faviconFor, ext } from '../shared/api.ts';
-import { BRAND_ICONS, DARK_BRANDS } from '../shared/brands.ts';
+import { glyphFor, iconPixels, type Glyph } from '../shared/siteicon.ts';
+import { fitTransform, iconPrint, measureIcon, type IconFit } from '../shared/iconfit.ts';
 import { icon } from '../shared/icons.ts';
 
 type Kid = Node | string | number | null | undefined | false;
@@ -35,37 +36,130 @@ export function iconButton(name: string, label: string, onClick: (e: MouseEvent)
   return h('button', { class: 'iconbtn', type: 'button', title: label, 'aria-label': label, 'aria-pressed': pressed === undefined ? undefined : String(pressed), onclick: onClick, html: icon(name, 18) });
 }
 
-/** Site icon with a lettered fallback when the favicon can't load. */
-export function favicon(url: string, name: string, cls = 'fav'): HTMLElement {
-  const letter = (name.trim()[0] ?? '?').toUpperCase();
-  const fallback = () => h('span', { class: `${cls} mono`, style: { '--h': String(hueOf(url)) } as any }, letter);
+/** A letter for sites with no icon at all. */
+function letterTile(name: string, cls: string): HTMLElement {
+  return h('span', { class: `${cls} mono`, 'aria-hidden': 'true' }, (name.trim()[0] ?? '?').toUpperCase());
+}
+
+/** A bundled vector logo in the brand's own colour (black logos follow the ink so they never vanish). */
+function glyphEl(g: Glyph, cls: string): HTMLElement {
+  return h('span', {
+    class: `${cls} glyph${g.dark ? ' glyph-dark' : ''}`,
+    'aria-hidden': 'true',
+    style: { '--glyph': `url("${ext.runtime.getURL(`icons/brands/${g.file}.svg`)}")`, '--brand': g.hex } as any,
+  });
+}
+
+// ---------------------------------------------------------------- fitting
+
+const fits = new Map<string, IconFit | 'blank'>();
+let blankPrint: Promise<number | null> | undefined;
+
+function pixelsOf(img: HTMLImageElement, size = 64): Uint8ClampedArray | null {
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const x = c.getContext('2d', { willReadFrequently: true })!;
+    x.drawImage(img, 0, 0, size, size);
+    return x.getImageData(0, 0, size, size).data;
+  } catch {
+    return null;
+  }
+}
+
+/** The browser's blank globe, to spot sites it has no icon for yet. */
+function blankGlobe(): Promise<number | null> {
+  return (blankPrint ??= new Promise((done) => {
+    const src = faviconFor('https://sidegig-blank.invalid/', 64);
+    if (!src || !src.includes('_favicon')) return done(null);
+    const i = new Image();
+    i.onload = () => {
+      const px = pixelsOf(i);
+      done(px ? iconPrint(px) : null);
+    };
+    i.onerror = () => done(null);
+    i.src = src;
+  }));
+}
+
+export const applyFit = (el: HTMLElement, f: IconFit) => {
+  el.style.transform = fitTransform(f);
+  el.toggleAttribute('data-sq', f.q);
+  el.toggleAttribute('data-ink', f.d);
+};
+
+/** Once the site icon loads: measure it, then size it like every other icon (or swap a blank globe). */
+function fitOnLoad(img: HTMLImageElement, url: string, name: string, cls: string, catalogId?: string) {
+  img.addEventListener(
+    'load',
+    async () => {
+      let f = fits.get(img.src);
+      if (!f) {
+        const px = pixelsOf(img);
+        if (!px) return void (img.dataset.fit = '');
+        const blank = await blankGlobe();
+        f = blank !== null && iconPrint(px) === blank ? 'blank' : measureIcon(px, 64, 64);
+        fits.set(img.src, f);
+      }
+      if (f === 'blank') {
+        const g = glyphFor(url, catalogId);
+        img.replaceWith(g ? glyphEl(g, cls) : letterTile(name, cls));
+        return;
+      }
+      applyFit(img, f);
+      img.dataset.fit = '';
+    },
+    { once: true },
+  );
+}
+
+/**
+ * Every site icon goes through here: the site's own icon in its own colours,
+ * requested at screen resolution and fitted to the same size as the rest;
+ * the bundled logo when the browser has none; a letter when nothing is known.
+ */
+export function favicon(url: string, name: string, cls = 'fav', catalogId?: string): HTMLElement {
   // Browser and extension pages have no site icon (the browser draws a "blocked" glyph): use a letter.
-  if (!/^https?:/i.test(url)) return fallback();
-  const src = faviconFor(url, 32);
-  if (!src) return fallback();
-  const img = h('img', { class: cls, src, alt: '', loading: 'lazy', decoding: 'async' });
-  img.addEventListener('error', () => img.replaceWith(fallback()), { once: true });
+  if (!/^https?:/i.test(url)) return letterTile(name, cls);
+  // Themed: known services draw as crisp logos in the theme's ink.
+  if (iconStyle === 'themed') {
+    const g = (ext as { runtime?: unknown } | undefined)?.runtime ? glyphFor(url, catalogId) : null;
+    if (g) return glyphEl(g, cls);
+  }
+  const src = faviconFor(url, iconPixels(cls.includes('xs') || cls.includes('sm') ? 16 : 32));
+  if (!src) return letterTile(name, cls);
+  const img = h('img', { class: cls, src, alt: '', decoding: 'async' });
+  const cached = fits.get(src);
+  if (cached && cached !== 'blank') {
+    applyFit(img, cached);
+    img.dataset.fit = '';
+  } else fitOnLoad(img, url, name, cls, catalogId);
+  img.addEventListener(
+    'error',
+    () => {
+      const g = (ext as { runtime?: unknown } | undefined)?.runtime ? glyphFor(url, catalogId) : null;
+      img.replaceWith(g ? glyphEl(g, cls) : letterTile(name, cls));
+    },
+    { once: true },
+  );
   return img;
 }
+
+/** Original (each site's own icon) or themed (logos in the theme's ink). */
+let iconStyle: 'original' | 'themed' = 'original';
+export const setIconStyle = (s: 'original' | 'themed') => void (iconStyle = s);
 
 /** Apps whose site icon the browser doesn't know yet (filled in by the background check). */
 let favMissing = new Set<string>();
 export const setFavMissing = (ids: string[]) => void (favMissing = new Set(ids));
 
-/**
- * An app's icon: the site's own icon when the browser has it; otherwise (and
- * always for black logos, which vanish on dark surfaces) the bundled brand icon.
- */
+/** An app's icon: its own site icon; the bundled logo if the browser has none yet. */
 export function appFavicon(app: { id: string; catalogId?: string; url: string; name: string }, cls = 'fav'): HTMLElement {
-  const cat = app.catalogId ?? app.id;
-  if (BRAND_ICONS.has(cat) && (favMissing.has(app.id) || DARK_BRANDS.has(cat)) && ext?.runtime?.getURL) {
-    const img = h('img', { class: `${cls} brandmark${DARK_BRANDS.has(cat) ? ' brandmark-dark' : ''}`, src: ext.runtime.getURL(`icons/brands/${cat}.svg`), alt: '', decoding: 'async' });
-    img.addEventListener('error', () => img.replaceWith(favicon(app.url, app.name, cls)), { once: true });
-    return img;
+  if (favMissing.has(app.id)) {
+    const g = (ext as { runtime?: unknown } | undefined)?.runtime ? glyphFor(app.url, app.catalogId ?? app.id) : null;
+    return g ? glyphEl(g, cls) : letterTile(app.name, cls);
   }
-  // No icon known and no bundled one: a tinted letter beats a blank globe.
-  if (favMissing.has(app.id)) return h('span', { class: `${cls} mono`, style: { '--h': String(hueOf(app.url)) } as any }, (app.name.trim()[0] ?? '?').toUpperCase());
-  return favicon(app.url, app.name, cls);
+  return favicon(app.url, app.name, cls, app.catalogId ?? app.id);
 }
 
 /** Stable hue (0-359) for a site, used to tint its letter tile. */
@@ -86,10 +180,12 @@ export const isMac = /Mac|iPhone|iPad/.test(navigator.platform) || (navigator as
 export const keys = (k: string) => (isMac ? `⌥⇧${k}` : `Alt+Shift+${k}`);
 
 /** Site icon for tight spots: hides itself instead of showing a letter. */
-export function faviconOnly(url: string, cls = 'fav sm'): HTMLImageElement | null {
-  const src = faviconFor(url, 32);
+export function faviconOnly(url: string, cls = 'fav sm'): HTMLElement | null {
+  if (!/^https?:/i.test(url)) return null;
+  const src = faviconFor(url, iconPixels(16));
   if (!src) return null;
   const img = h('img', { class: cls, src, alt: '', loading: 'lazy', decoding: 'async' });
+  fitOnLoad(img, url, hostOf(url), cls);
   img.addEventListener('error', () => img.remove(), { once: true });
   return img;
 }

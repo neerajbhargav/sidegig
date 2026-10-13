@@ -30,7 +30,7 @@ test('hacker news: stories with article link, thread and points', () => {
   for (const i of items) {
     assert.match(i.id, /^hn:\d+$/);
     assert.match(i.discuss!, /news\.ycombinator\.com\/item\?id=/);
-    assert.match(i.meta!, /points · .* comments/);
+    assert.match(i.meta!, /points, .* comments/);
     assert.equal(i.kind, 'read');
     assert.ok(i.published! > 0);
   }
@@ -86,7 +86,7 @@ test('books need a cover; papers drop the version; reddit drops NSFW', () => {
   const b = books.parse(fx('openlibrary.json'), 'ai agents', NOW);
   assert.ok(b.every((x) => x.image?.includes('covers.openlibrary.org')));
   assert.ok(!b.some((x) => x.title === 'No cover book'));
-  assert.ok(b.some((x) => x.meta === '2019 · 4.2★'));
+  assert.ok(b.some((x) => x.meta === '2019, 4.2★'));
   const p = arxiv.parse(fx('arxiv.xml'), 'agent evaluation', NOW);
   assert.equal(p.length, 2);
   assert.ok(p.every((x) => /^arxiv:\d{4}\.\d{4,5}$/.test(x.id) && x.url.startsWith('https://arxiv.org/abs/') && x.summary));

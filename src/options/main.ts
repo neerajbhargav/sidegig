@@ -198,7 +198,7 @@ function aiSection(): HTMLElement {
       opt('Send automatically', 'Press send for you after typing the prompt', toggle(s.ai.autoSend, (v) => commit((x) => void (x.ai.autoSend = v)), 'Send automatically')),
       opt('Longest page text', 'Characters sent from a page', textInput(String(s.ai.maxChars), (v) => commit((x) => void (x.ai.maxChars = Math.max(500, Number(v) || 12000))), { type: 'number', style: { width: '100px' } })),
     ),
-    h('div', { class: 'label' }, 'Prompt for selected text  ·  {text} {title} {url}'),
+    h('div', { class: 'label' }, 'Prompt for selected text (use {text}, {title} and {url})'),
     area(s.ai.selectionTemplate, (v) => commit((x) => void (x.ai.selectionTemplate = v))),
     h('div', { class: 'label' }, 'Prompt for a whole page'),
     area(s.ai.pageTemplate, (v) => commit((x) => void (x.ai.pageTemplate = v))),
@@ -252,7 +252,7 @@ async function statusSection(): Promise<HTMLElement> {
           onclick: async () => {
             result.textContent = 'Checking…';
             const cards = ((await send({ type: 'refresh-status' }).catch(() => [])) ?? []) as StatusCard[];
-            result.textContent = cards.length ? cards.map((c) => `${c.title}: ${c.error ?? `${c.value} ${c.detail}`}`).join('  ·  ') : 'No cards are turned on.';
+            result.textContent = cards.length ? cards.map((c) => `${c.title}: ${c.error ?? `${c.value} ${c.detail}`}`).join('; ') : 'No cards are turned on.';
           },
         },
         'Check now',
@@ -309,6 +309,7 @@ function appearanceSection(): HTMLElement {
       { class: 'group' },
       opt('Theme', 'Page = match each website’s light or dark look', seg(s.theme.mode, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['page', 'Page']], (v) => commit((x) => void (x.theme.mode = v)))),
       opt('Accent', null, h('div', { class: 'swatches', style: { alignItems: 'center' } }, ACCENTS.map((c) => h('button', { class: 'swatch', type: 'button', title: c, style: { background: c }, 'aria-pressed': String(c === s.theme.accent), onclick: () => commit((x) => void (x.theme.accent = c)) })), color(s.theme.accent, (v) => commit((x) => void (x.theme.accent = v))))),
+      opt('Icons', 'Themed draws known logos in your theme’s ink and greys the rest', seg(s.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => commit((x) => void (x.theme.icons = v)))),
       opt('Base tint', 'A whisper of color in the surfaces', color(s.theme.base, (v) => commit((x) => void (x.theme.base = v)))),
       opt('Contrast', `${s.theme.contrast}`, h('input', { class: 'range', type: 'range', min: '0', max: '100', step: '5', value: String(s.theme.contrast), onchange: (e: Event) => commit((x) => void (x.theme.contrast = Number((e.target as HTMLInputElement).value))) })),
       opt('Corner radius', `${s.theme.radius}px`, h('input', { class: 'range', type: 'range', min: '4', max: '16', step: '1', value: String(s.theme.radius), onchange: (e: Event) => commit((x) => void (x.theme.radius = Number((e.target as HTMLInputElement).value))) })),
@@ -635,7 +636,7 @@ function applyDialog(bundle: SetupBundle, onDone: () => void): HTMLElement {
   };
   box.append(
     h('div', { class: 'card-title' }, bundle.name),
-    h('div', { class: 'card-detail' }, [describe(bundle) || 'Settings', bundle.from ? `made in ${bundle.from}` : '', new Date(bundle.created).toLocaleDateString()].filter(Boolean).join(' · ')),
+    h('div', { class: 'card-detail' }, [describe(bundle) || 'Settings', bundle.from ? `made in ${bundle.from}` : '', new Date(bundle.created).toLocaleDateString()].filter(Boolean).join(', ')),
     h(
       'div',
       { class: 'setup-parts', role: 'group', 'aria-label': 'Parts to apply' },
@@ -727,7 +728,7 @@ async function setupsSection(): Promise<HTMLElement> {
           h(
             'div',
             { class: 'setup-row' },
-            h('div', { class: 'setup-row-text' }, h('b', {}, x.name), h('small', {}, [describe(x.bundle), x.bundle.from ? `from ${x.bundle.from}` : '', new Date(x.saved).toLocaleDateString()].filter(Boolean).join(' · '))),
+            h('div', { class: 'setup-row-text' }, h('b', {}, x.name), h('small', {}, [describe(x.bundle), x.bundle.from ? `from ${x.bundle.from}` : '', new Date(x.saved).toLocaleDateString()].filter(Boolean).join(', '))),
             h('button', { class: 'btn primary', type: 'button', onclick: () => showApply(x.bundle) }, 'Apply'),
             h('button', { class: 'btn', type: 'button', onclick: () => download(x.bundle) }, 'Export'),
             h('button', { class: 'btn', type: 'button', onclick: () => void copyCode(x.bundle) }, 'Copy code'),

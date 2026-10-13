@@ -80,7 +80,7 @@ export function weatherEl(ctx: Ctx): HTMLElement | null {
       h('span', { class: 'wx-icon' }, ico(icon, 20)),
       h('span', { class: 'wx-temp' }, `${w.temp}°`),
       h('span', { class: 'wx-label' }, label),
-      h('span', { class: 'wx-meta' }, `Feels ${w.feels}° · H ${w.hi}° L ${w.lo}° · ${w.humidity}% humidity`),
+      h('span', { class: 'wx-meta' }, `Feels ${w.feels}°, H ${w.hi}° L ${w.lo}°, ${w.humidity}% humidity`),
       h('span', { class: 'wx-place' }, ico('place', 14), w.place),
     );
     el.title = `${w.temp}${u}, ${label}. Feels like ${w.feels}${u}. High ${w.hi}${u}, low ${w.lo}${u}. Humidity ${w.humidity}%. ${w.place}.`;

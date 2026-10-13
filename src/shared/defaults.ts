@@ -29,6 +29,7 @@ export function defaultSettings(): Settings {
       accent: '#0b57d0',
       contrast: 50,
       radius: 10,
+      icons: 'original',
       customCss: '',
     },
     apps: DEFAULT_PINNED.filter((id) => CATALOG.some((c) => c.id === id)).map(appFromCatalog),

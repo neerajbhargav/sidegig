@@ -320,7 +320,7 @@ let pageListeners: AbortController | undefined;
 /** A two-way switch with a pill that slides to the chosen side. */
 function segmented<T extends string>(label: string, options: [T, string, string][], value: T, onPick: (v: T) => void): { el: HTMLElement; set: (v: T) => void } {
   const el = h('div', { class: 'nt-seg', role: 'tablist', 'aria-label': label, style: { '--n': String(options.length) } });
-  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, ico(icon, 18), h('span', {}, text)));
+  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, icon ? ico(icon, 18) : null, h('span', {}, text)));
   el.append(...btns);
   const set = (v: T) => {
     const i = Math.max(0, options.findIndex(([o]) => o === v));
@@ -369,14 +369,16 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     h('i', { class: 'ask-sw', 'aria-hidden': 'true' }),
   );
   const seg = aiOn
-    ? segmented<Mode>('Search or ask AI', [['home', 'Search', 'search'], ['ai', 'AI', 'ai']], mode, (m) => void setMode(m))
+    ? segmented<Mode>('Search or ask', [['home', 'Search', ''], ['ai', 'Ask', '']], mode, (m) => void setMode(m))
     : null;
   const searchVoice = voiceButton(input);
   // Which controls belong to which side of the switch.
   for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai']] as const) if (el) el.dataset.for = side;
+  const greet = greetingLine(ctx);
   const box = h(
     'div',
     { class: 'nt-ask nt-card' },
+    greet ? h('div', { class: 'ask-head' }, greet, w.brief ? await briefEl(ctx) : null) : null,
     h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
     h('div', { class: 'ask-bar' }, seg?.el ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
   );
@@ -387,7 +389,6 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     'main',
     { class: 'nt-center' },
     await choiceCard(ctx, browser),
-    h('div', { class: 'nt-greetwrap' }, greetingLine(ctx), w.brief ? await briefEl(ctx) : null),
     box,
     results,
     h('div', { class: 'nt-home' }, w.bookmarks ? await bookmarkShelf(ctx) : null, feedHost),
@@ -460,7 +461,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   );
 
   // The edition, under your apps.
-  if (feedOn) void editionSection(ctx).then((ed) => feedHost.append(ed));
+  if (feedOn) void editionSection(ctx).then((ed) => (feedHost.classList.add('nt-card'), feedHost.append(ed)));
 
   pageListeners?.abort();
   pageListeners = new AbortController();

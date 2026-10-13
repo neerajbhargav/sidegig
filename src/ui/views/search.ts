@@ -42,7 +42,7 @@ function commands(ctx: Ctx): Result[] {
   const list: Result[] = [];
   if (ai) {
     list.push(
-      c(`Ask ${ai.name} about this page`, 'Sends the page (or your selection) to AI', 'sparkle', () => {
+      c(`Ask ${ai.name} about this page`, 'Sends the page (or your selection) to AI', 'ask', () => {
         if (ctx.kind === 'drawer') return ctx.toRail({ type: 'ask-ai' });
         void send({ type: 'ask-page' } as any);
         if (ctx.kind === 'panel') ctx.go('app', { app: ai.id });

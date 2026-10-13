@@ -87,7 +87,7 @@ export const hackerNews: Source = {
           url,
           by: host(url) || 'news.ycombinator.com',
           published: dateMs(h.created_at),
-          meta: `${num(h.points ?? 0)} points · ${num(h.num_comments ?? 0)} comments`,
+          meta: `${num(h.points ?? 0)} points, ${num(h.num_comments ?? 0)} comments`,
           pop: h.points ?? 0,
           topic: term,
           discuss: thread,
@@ -120,7 +120,7 @@ export const substack: Source = {
           image: typeof r.cover_image === 'string' ? r.cover_image : undefined,
           published: dateMs(r.post_date),
           summary: clip(r.subtitle ? decodeEntities(r.subtitle) : r.description, 180),
-          meta: [mins ? `${mins} min read` : '', r.reaction_count ? `${num(r.reaction_count)} likes` : ''].filter(Boolean).join(' · '),
+          meta: [mins ? `${mins} min read` : '', r.reaction_count ? `${num(r.reaction_count)} likes` : ''].filter(Boolean).join(', '),
           pop: (r.reaction_count ?? 0) + (r.comment_count ?? 0) * 2,
           topic: term,
         };
@@ -194,7 +194,7 @@ export const youtube: Source = {
           // hq720 is what YouTube's own results use (sharp enough for the lead story).
           image: `https://i.ytimg.com/vi/${v.videoId}/hq720.jpg`,
           published: relativeAgo(when, now),
-          meta: [len, views ? `${num(views)} views` : '', when?.replace(/^Streamed /, '')].filter(Boolean).join(' · '),
+          meta: [len, views ? `${num(views)} views` : '', when?.replace(/^Streamed /, '')].filter(Boolean).join(', '),
           pop: views,
           topic: term,
         });
@@ -261,7 +261,7 @@ export const music: Source = {
           by: r.artistName,
           image: typeof r.artworkUrl100 === 'string' ? r.artworkUrl100.replace('100x100bb', '400x400bb') : undefined,
           published: dateMs(r.releaseDate),
-          meta: [r.primaryGenreName, year].filter(Boolean).join(' · '),
+          meta: [r.primaryGenreName, year].filter(Boolean).join(', '),
           topic: term,
           tags: r.primaryGenreName ? [r.primaryGenreName] : undefined,
         };
@@ -295,7 +295,7 @@ export const books: Source = {
           by: b.author_name?.[0],
           image: `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg`,
           published: b.first_publish_year ? Date.UTC(b.first_publish_year, 0, 1) : undefined,
-          meta: [b.first_publish_year, rating].filter(Boolean).join(' · '),
+          meta: [b.first_publish_year, rating].filter(Boolean).join(', '),
           pop: (b.want_to_read_count ?? 0) + (b.edition_count ?? 0) * 3,
           topic: term,
           tags: Array.isArray(b.subject) ? b.subject.slice(0, 25) : undefined,
@@ -355,7 +355,7 @@ export const reddit: Source = {
         image: /^https:\/\//.test(p.thumbnail ?? '') ? p.thumbnail : undefined,
         published: p.created_utc ? p.created_utc * 1000 : undefined,
         summary: clip(p.selftext, 180),
-        meta: `${num(p.ups ?? 0)} upvotes · ${num(p.num_comments ?? 0)} comments`,
+        meta: `${num(p.ups ?? 0)} upvotes, ${num(p.num_comments ?? 0)} comments`,
         pop: p.ups ?? 0,
         topic: term,
       }));

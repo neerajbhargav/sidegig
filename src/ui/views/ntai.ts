@@ -110,7 +110,6 @@ export async function aiParts(ctx: Ctx, onHome: () => void): Promise<AiParts> {
           h('b', { class: 'ai-led' }),
           appFavicon({ id: p.id, catalogId: p.id, url: p.home.startsWith('http') ? p.home : 'https://aside.com', name: p.name }, 'fav xs'),
           p.name,
-          p.native ? h('span', { class: 'ai-native' }, 'built in') : null,
         ),
       ),
     );
@@ -251,7 +250,6 @@ export async function aiParts(ctx: Ctx, onHome: () => void): Promise<AiParts> {
       ? h(
           'div',
           { class: 'ai-native-row' },
-          h('span', { class: 'ai-native-mark' }, '◆'),
           h('span', { class: 'ai-native-text' }, 'Your Aside chats, projects and routines live in Aside.'),
           h('button', { type: 'button', class: 'ai-link', onclick: () => void ask(ctx, PROVIDERS.aside, '', false) }, 'New Aside chat'),
           h(
@@ -264,7 +262,7 @@ export async function aiParts(ctx: Ctx, onHome: () => void): Promise<AiParts> {
                 if (id !== undefined) await ext.tabs.update(id, { url: PROVIDERS.aside.chats! });
               },
             },
-            'All Aside chats →',
+            'All Aside chats',
           ),
           h(
             'button',
@@ -284,12 +282,12 @@ export async function aiParts(ctx: Ctx, onHome: () => void): Promise<AiParts> {
 
   const below = h(
     'section',
-    { class: 'nt-ai' },
+    { class: 'nt-ai nt-card' },
     keysRow,
     contextRow,
     starters.childElementCount ? starters : null,
     asideRow,
-    h('section', { class: 'nt-card ai-sec', 'aria-label': 'Chats' }, h('header', { class: 'nt-card-h' }, h('h2', {}, 'Chats'), h('div', { class: 'nt-card-a' }, chips)), list),
+    h('section', { class: 'ai-sec', 'aria-label': 'Chats' }, h('header', { class: 'nt-card-h' }, h('h2', {}, 'Chats'), h('div', { class: 'nt-card-a' }, chips)), list),
   );
   return { box, send, voice: voiceButton(box, grow), below };
 }
