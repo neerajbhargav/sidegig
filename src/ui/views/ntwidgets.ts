@@ -7,6 +7,7 @@ import { greetingFor, dailyReset, dayKey, sortTodos, weatherLabel, weatherUrl, p
 import { h, ico, iconButton, favicon, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
 import { secHead } from './edition.ts';
+import { play } from '../sound.ts';
 
 // ---------------------------------------------------------------- greeting
 
@@ -126,12 +127,25 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
           { class: 'todo', dataset: { done: String(t.done), pinned: String(t.pinned) } },
           h(
             'button',
-            { type: 'button', class: 'todo-check', role: 'checkbox', 'aria-checked': String(t.done), 'aria-label': t.done ? `Mark “${t.text}” not done` : `Mark “${t.text}” done`, onclick: () => void save(todos.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x))) },
+            {
+              type: 'button',
+              class: 'todo-check',
+              role: 'checkbox',
+              'aria-checked': String(t.done),
+              'aria-label': t.done ? `Mark “${t.text}” not done` : `Mark “${t.text}” done`,
+              onclick: () => {
+                play(t.done ? 'off' : 'on');
+                void save(todos.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)));
+              },
+            },
             t.done ? ico('check', 14) : null,
           ),
           h('span', { class: 'todo-text' }, t.text),
           iconButton(t.pinned ? 'pin' : 'pin', t.pinned ? 'Unpin (stops coming back each day)' : 'Pin (comes back each day)', () => void save(todos.map((x) => (x.id === t.id ? { ...x, pinned: !x.pinned } : x))), t.pinned),
-          iconButton('close', 'Delete', () => void save(todos.filter((x) => x.id !== t.id))),
+          iconButton('close', 'Delete', () => {
+            play('dismiss');
+            void save(todos.filter((x) => x.id !== t.id));
+          }),
         ),
       ),
     );
@@ -139,6 +153,7 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
   const input = h('input', { class: 'todo-input', placeholder: 'Add a task and press Enter', 'aria-label': 'Add a task' });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && input.value.trim()) {
+      play('confirm');
       void save([...todos, { id: uid('t_'), text: input.value.trim().slice(0, 200), done: false, pinned: false, created: Date.now() }]);
       input.value = '';
     }
@@ -252,30 +267,4 @@ export function voiceButton(input: HTMLInputElement | HTMLTextAreaElement, onDon
   return btn;
 }
 
-// ---------------------------------------------------------------- wallpaper
-
-export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
-  const mode = ctx.settings.newtab.wallpaper;
-  if (mode === 'none') return null;
-  let src = '';
-  if (mode === 'custom') src = await getLocal<string>('ntWallpaper', '');
-  // A new photo each day, from Lorem Picsum (free, no account).
-  else src = `https://picsum.photos/seed/sidegig-${dayKey()}/2560/1600`;
-  if (!src) return null;
-  const img = h('img', { src, alt: '', decoding: 'async', referrerpolicy: 'no-referrer' });
-  img.addEventListener('error', () => wrap.remove(), { once: true });
-  const wrap = h('div', { class: 'nt-wall', 'aria-hidden': 'true' }, img);
-  return wrap;
-}
-
-/** Shrink an uploaded picture so it fits comfortably in local storage. */
-export async function prepareWallpaper(file: File): Promise<string> {
-  const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, 2560 / Math.max(bmp.width, bmp.height));
-  const c = document.createElement('canvas');
-  c.width = Math.round(bmp.width * scale);
-  c.height = Math.round(bmp.height * scale);
-  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
-  return c.toDataURL('image/jpeg', 0.85);
-}
 

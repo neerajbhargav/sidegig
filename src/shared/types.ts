@@ -7,8 +7,20 @@ export type RailMode = 'docked' | 'hover' | 'off';
 export type OpenIn = 'panel' | 'window' | 'tab' | 'drawer';
 export type ThemeMode = 'system' | 'light' | 'dark' | 'page';
 export type BadgeKind = 'parens' | 'gmail' | 'none';
-/** New tab look: paper (light), night (dark), ultramarine (electric blue), or follow the system. */
-export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine';
+/** New tab theme. "auto" matches the browser; the rest are sidegig's studio themes; "custom" is yours. */
+export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom';
+export type BgKind = 'none' | 'daily' | 'monuments' | 'photo' | 'gradient' | 'pattern' | 'upload' | 'url' | 'color';
+export interface NtBackground {
+  kind: BgKind;
+  /** Which one: a gallery id ("p:54", "m:3"), gradient or pattern id, upload id, URL or colour. */
+  ref: string;
+  /** auto = printed as a risograph in studio themes, a photo in Match browser. */
+  treatment: 'auto' | 'photo' | 'print';
+  /** 0–90: how much the page colour veils the picture. */
+  dim: number;
+  /** 0–24 px. */
+  blur: number;
+}
 
 export interface AppEntry {
   id: string;
@@ -97,7 +109,11 @@ export interface Settings {
     engine: string;
     /** Accent colour override; empty = the look's own. */
     accent: string;
-    wallpaper: 'none' | 'daily' | 'custom';
+    background: NtBackground;
+    /** Your own theme: page, ink and accent colours. */
+    custom: { bg: string; ink: string; accent: string };
+    /** Quiet interface sounds (opt-in). */
+    sounds: boolean;
     weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };
     todo: boolean;
   };

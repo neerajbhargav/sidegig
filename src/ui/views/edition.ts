@@ -23,6 +23,7 @@ import { xSearchUrl } from '../../shared/edition/sources.ts';
 import { h, ico, iconButton, faviconOnly, hostOf, toast, ago } from '../dom.ts';
 import { type Ctx, openApp, send } from '../ctx.ts';
 import { seg, toggle } from './quick.ts';
+import { play } from '../sound.ts';
 
 type Tab = 'today' | 'saved' | 'interests';
 
@@ -603,11 +604,13 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
             await setLocal('edSaved', all.filter((x) => x.id !== i.id));
             return toast('Removed from saved');
           }
+          play('confirm');
           await setLocal('edSaved', [{ ...i, savedAt: Date.now() }, ...all].slice(0, 1000));
           await setProfile(learnFromSave(await getProfile(), i));
           toast('Saved. Expect more like this.');
         },
         async dismiss(i) {
+          play('dismiss');
           const [cur, dis] = await Promise.all([getLocal<Edition | null>('edition', null), getLocal<Record<string, number>>('edDismissed', {})]);
           dis[i.id] = Date.now();
           const keys = Object.keys(dis);

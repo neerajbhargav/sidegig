@@ -1,7 +1,7 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById } from './catalog.ts';
 
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
@@ -54,7 +54,9 @@ export function defaultSettings(): Settings {
       message: '',
       engine: 'default',
       accent: '',
-      wallpaper: 'none',
+      background: { kind: 'none', ref: '', treatment: 'auto', dim: 35, blur: 0 },
+      custom: { bg: '#f1ede4', ink: '#1d1b16', accent: '#ff4f00' },
+      sounds: false,
       weather: { enabled: false, place: '', lat: 0, lon: 0, units: 'f' },
       todo: true,
     },

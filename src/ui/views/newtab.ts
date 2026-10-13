@@ -13,7 +13,10 @@ import { createSearch } from './search.ts';
 import { spacesFor, stackEl } from './home.ts';
 import { editionSection, KIND_COLOR } from './edition.ts';
 import { aiView } from './ntai.ts';
-import { greetingEl, analogClockEl, weatherEl, todoSection, launcherEl, addKey, voiceButton, wallpaperEl } from './ntwidgets.ts';
+import { greetingEl, analogClockEl, weatherEl, todoSection, launcherEl, addKey, voiceButton } from './ntwidgets.ts';
+import { wallpaperEl, addUpload, prepareImage } from './ntwall.ts';
+import { customize } from './ntcustom.ts';
+import { configureSound, play } from '../sound.ts';
 import { detectBrowser, type DetectedBrowser } from '../browser.ts';
 import { setLocal } from '../../shared/storage.ts';
 
@@ -46,11 +49,29 @@ function isoWeek(d: Date): number {
 const dayOfYear = (d: Date) => Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86_400_000);
 
 /** "auto" = match the browser (native); the others are sidegig's own studio looks. */
-export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '') {
+export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }) {
   const root = document.documentElement;
   root.dataset.look = look === 'auto' ? 'native' : look;
+  // Your own theme: three colours, the rest is mixed from them in CSS.
+  for (const v of ['--c-bg', '--c-ink', '--c-signal']) root.style.removeProperty(v);
+  if (look === 'custom' && custom) {
+    root.style.setProperty('--c-bg', custom.bg);
+    root.style.setProperty('--c-ink', custom.ink);
+    root.style.setProperty('--c-signal', custom.accent);
+    try {
+      localStorage.setItem('sidegig.ntCustom', JSON.stringify(custom));
+    } catch {
+      /* fine */
+    }
+  }
   if (accent) root.style.setProperty('--c-signal', accent);
   else root.style.removeProperty('--c-signal');
+  // Text on the accent colour: dark on light accents, white on dark ones.
+  const sig = accent || (look === 'custom' ? custom?.accent : '');
+  if (sig && /^#[0-9a-f]{6}$/i.test(sig)) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(sig.slice(i, i + 2), 16) / 255);
+    root.style.setProperty('--c-on-signal', 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? '#111111' : '#ffffff');
+  } else root.style.removeProperty('--c-on-signal');
   root.dataset.scheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   if (browser) {
     root.dataset.browser = browser.id;
@@ -66,39 +87,51 @@ export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '') 
 
 // ---------------------------------------------------------------- top bar
 
-function lookSwitch(ctx: Ctx): HTMLElement {
-  const cur = ctx.settings.newtab.look;
-  const opts: [NtLook, string][] = [
-    ['auto', 'Match browser'],
-    ['paper', 'Paper (studio)'],
-    ['night', 'Night (studio)'],
-    ['ultramarine', 'Ultramarine (studio)'],
-  ];
+/** Sound is opt-in, and the mute is always visible (Velvet's first rule). */
+function soundToggle(ctx: Ctx): HTMLElement {
+  const on = ctx.settings.newtab.sounds;
   return h(
-    'div',
-    { class: 'nt-switch', role: 'radiogroup', 'aria-label': 'Look' },
-    opts.map(([v, label]) =>
-      h(
-        'button',
-        {
-          type: 'button',
-          role: 'radio',
-          'aria-checked': String(cur === v),
-          title: label,
-          'aria-label': label,
-          dataset: { v },
-          onclick: () => {
-            applyLook(v);
-            void updateSettings((s) => void (s.newtab.look = v));
-          },
-        },
-        h('span', { class: 'nt-sw-dot' }),
-      ),
-    ),
+    'button',
+    {
+      class: 'nt-gear',
+      type: 'button',
+      title: on ? 'Interface sounds on' : 'Interface sounds off',
+      'aria-label': 'Interface sounds',
+      'aria-pressed': String(on),
+      onclick: () => {
+        configureSound(!on, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
+        play(!on ? 'on' : 'off');
+        void updateSettings((s) => void (s.newtab.sounds = !on));
+      },
+    },
+    ico(on ? 'soundOn' : 'soundOff', 17),
   );
 }
 
-function topBar(ctx: Ctx): HTMLElement {
+/** One quiet line under the greeting, key facts in ink, the rest in grey. */
+async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
+  const [ed, todos, badges] = await Promise.all([
+    getLocal<Edition | null>('edition', null),
+    getLocal<{ done: boolean }[]>('ntTodos', []),
+    getLocal<Record<string, number>>('badges', {}),
+  ]);
+  const parts: (Node | string)[] = [];
+  const add = (strong: string, rest: string) => {
+    if (parts.length) parts.push(', ');
+    parts.push(h('b', {}, strong), rest);
+  };
+  if (ctx.settings.edition.enabled && ed?.items.length) add(`${ed.items.length} picks`, ' in today’s edition');
+  const open = ctx.settings.newtab.todo ? todos.filter((t) => !t.done).length : 0;
+  if (open) add(`${open} ${open === 1 ? 'task' : 'tasks'}`, ' to do');
+  const unread = ctx.settings.apps.reduce((n, a) => n + (a.badge && (badges[a.id] ?? 0) > 0 ? badges[a.id] : 0), 0);
+  if (unread) add(`${unread} unread`, ' across your apps');
+  if (!parts.length) return null;
+  const last = parts.lastIndexOf(', ');
+  if (last > 0) parts[last] = ' and ';
+  return h('p', { class: 'nt-brief' }, 'Today: ', ...parts, '.');
+}
+
+function topBar(ctx: Ctx, czButton: HTMLElement): HTMLElement {
   const d = new Date();
   const code = `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}  ·  W${pad(isoWeek(d))}  ·  D${String(dayOfYear(d)).padStart(3, '0')}`;
   return h(
@@ -110,7 +143,8 @@ function topBar(ctx: Ctx): HTMLElement {
       'div',
       { class: 'nt-meta' },
       h('span', { class: 'nt-code' }, code),
-      lookSwitch(ctx),
+      czButton,
+      soundToggle(ctx),
       launcherEl(),
       h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 16)),
     ),
@@ -119,10 +153,10 @@ function topBar(ctx: Ctx): HTMLElement {
 
 // ---------------------------------------------------------------- hero
 
-function clockEl(ctx: Ctx): HTMLElement {
+function clockEl(ctx: Ctx, brief: HTMLElement | null): HTMLElement {
   if (ctx.settings.newtab.clockStyle === 'analog') {
     const date = h('div', { class: 'nt-date' }, new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
-    return h('div', { class: 'nt-clock analog' }, greetingEl(ctx), analogClockEl(), date, weatherEl(ctx));
+    return h('div', { class: 'nt-clock analog' }, greetingEl(ctx), brief, analogClockEl(), date, weatherEl(ctx));
   }
   const time = h('div', { class: 'nt-time' });
   const date = h('div', { class: 'nt-date' });
@@ -138,7 +172,7 @@ function clockEl(ctx: Ctx): HTMLElement {
   // Tick on the minute, not every second: a new tab should be still.
   const next = () => setTimeout(() => (time.isConnected ? (paint(), next()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
   next();
-  return h('div', { class: 'nt-clock' }, greetingEl(ctx), time, date, weatherEl(ctx));
+  return h('div', { class: 'nt-clock' }, greetingEl(ctx), brief, time, date, weatherEl(ctx));
 }
 
 /** The little screen: reads out today's edition like an OP-1 display. */
@@ -206,6 +240,7 @@ function displayEl(ctx: Ctx): HTMLElement {
 
 /** From a new tab, a shortcut opens right here (like any start page). Shift-click opens it in the sidebar instead. */
 function launch(ctx: Ctx, app: AppEntry, e?: MouseEvent | KeyboardEvent) {
+  play('key');
   if (e?.shiftKey && !(e.metaKey || e.ctrlKey)) return openApp(ctx, app);
   void openUrl(ctx, app.url, e);
 }
@@ -326,9 +361,13 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
   return card;
 }
 
+/** Window listeners for the current render (replaced on each re-render). */
+let pageListeners: AbortController | undefined;
+
 export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const browser = await detectBrowser();
-  applyLook(ctx.settings.newtab.look, browser, ctx.settings.newtab.accent);
+  applyLook(ctx.settings.newtab.look, browser, ctx.settings.newtab.accent, ctx.settings.newtab.custom);
+  configureSound(ctx.settings.newtab.sounds, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
   document.body.toggleAttribute('data-calm', ctx.settings.newtab.calmImages);
   const root = h('div', { class: 'nt2' });
   const input = h('input', { class: 'nt-input', placeholder: 'Search or type a URL', autocomplete: 'off', spellcheck: 'false', autofocus: true, 'aria-label': 'Search or type a URL' });
@@ -336,7 +375,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const content = h('div', { class: 'nt-content' });
 
   const field = h('label', { class: 'nt-field' }, h('span', { class: 'nt-field-tag' }, 'srch'), h('span', { class: 'nt-field-icon' }, ico('search', 20)), input, voiceButton(input), h('kbd', { class: 'nt-kbd' }, '/'));
-  const hero = h('section', { class: 'nt-hero' }, ctx.settings.newtab.clock ? clockEl(ctx) : h('div', { class: 'nt-clock' }, greetingEl(ctx), weatherEl(ctx)), displayEl(ctx));
+  const hero = h('section', { class: 'nt-hero' }, ctx.settings.newtab.clock ? clockEl(ctx, await briefEl(ctx)) : h('div', { class: 'nt-clock' }, greetingEl(ctx), await briefEl(ctx), weatherEl(ctx)), displayEl(ctx));
   const badges = await getLocal<Record<string, number>>('badges', {});
 
   // Home | AI: our dashboard, or your browser's AI and every assistant's chats.
@@ -347,6 +386,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   let aiBuilt = false;
   const modeBtns: HTMLButtonElement[] = [];
   const setMode = async (m: Mode) => {
+    if (m !== mode) play(m === 'ai' ? 'on' : 'off');
     mode = m;
     saveMode(m);
     root.dataset.mode = m;
@@ -371,12 +411,14 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       )
     : null;
   const wall = await wallpaperEl(ctx);
-  if (wall) root.dataset.wall = ctx.settings.newtab.wallpaper;
+  if (wall) root.dataset.wall = ctx.settings.newtab.background.kind;
+  const cz = customize(ctx);
   if (wall) root.append(wall);
   root.append(
     h('div', { class: 'nt-frame', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'), h('i')),
     h('div', { class: 'nt-grain', 'aria-hidden': 'true' }),
-    h('div', { class: 'nt-page' }, topBar(ctx), modes, home, aiHost),
+    h('div', { class: 'nt-page' }, topBar(ctx, cz.button), modes, home, aiHost),
+    cz.panel,
   );
   root.dataset.mode = mode;
   document.documentElement.dataset.mode = mode;
@@ -427,13 +469,19 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       { class: 'nt-foot' },
       h('span', {}, h('kbd', {}, '/'), ' search   ', h('kbd', {}, '1–9'), ' apps   ', h('kbd', {}, keys('K')), ' anywhere'),
       h('span', { class: 'nt-ascii' }, '~:*-/  =+|<  /\\-_'),
-      h('span', {}, 'sidegig · free and open source'),
+      h('span', {}, wall?.dataset.credit ? `Wallpaper: ${wall.dataset.credit}` : 'sidegig · free and open source'),
     ),
   );
 
+  // Window listeners live for one render: the page re-renders on every
+  // settings change, so the previous render's listeners are removed here.
+  pageListeners?.abort();
+  pageListeners = new AbortController();
+  const signal = pageListeners.signal;
+
   // Keys: "/" to search, 1–9 to open apps (when you're not typing).
   const onKey = (e: KeyboardEvent) => {
-    if (!root.isConnected) return removeEventListener('keydown', onKey);
+    if (!root.isConnected) return;
     const t = e.target as HTMLElement;
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable) return;
     if (e.key === '/') {
@@ -449,9 +497,49 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       }
     }
   };
-  addEventListener('keydown', onKey);
-  addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => k.classList.remove('pressed')));
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(ctx.settings.newtab.look, browser, ctx.settings.newtab.accent));
+  addEventListener('keydown', onKey, { signal });
+  addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => k.classList.remove('pressed')), { signal });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(ctx.settings.newtab.look, browser, ctx.settings.newtab.accent, ctx.settings.newtab.custom), { signal });
+
+  // Drop any picture (or an image link) on the page to make it the background.
+  const dropHint = h('div', { class: 'nt-drop', hidden: true }, h('span', {}, 'Drop to make this your background'));
+  root.append(dropHint);
+  let depth = 0;
+  const hasImage = (e: DragEvent) => [...(e.dataTransfer?.items ?? [])].some((i) => i.type.startsWith('image/') || i.type === 'text/uri-list');
+  addEventListener('dragenter', (e) => {
+    if (!root.isConnected || !hasImage(e)) return;
+    depth++;
+    dropHint.hidden = false;
+  }, { signal });
+  addEventListener('dragleave', () => {
+    if (--depth <= 0) {
+      depth = 0;
+      dropHint.hidden = true;
+    }
+  }, { signal });
+  addEventListener('dragover', (e) => root.isConnected && hasImage(e) && e.preventDefault(), { signal });
+  addEventListener('drop', async (e) => {
+    if (!root.isConnected || !hasImage(e)) return;
+    e.preventDefault();
+    depth = 0;
+    dropHint.hidden = true;
+    const file = [...(e.dataTransfer?.files ?? [])].find((f) => f.type.startsWith('image/'));
+    try {
+      if (file) {
+        const up = await addUpload(await prepareImage(file));
+        play('confirm');
+        await updateSettings((s) => void (s.newtab.background = { ...s.newtab.background, kind: 'upload', ref: up.id }));
+        return;
+      }
+      const url = e.dataTransfer?.getData('text/uri-list')?.split('\n')[0]?.trim();
+      if (url && /^https?:\/\//.test(url)) {
+        play('confirm');
+        await updateSettings((s) => void (s.newtab.background = { ...s.newtab.background, kind: 'url', ref: url }));
+      }
+    } catch {
+      play('fail');
+    }
+  }, { signal });
   if (mode === 'ai') void setMode('ai');
   else requestAnimationFrame(() => input.focus());
   return root;

@@ -68,6 +68,8 @@ const ICONS = {
   mic: 'mic',
   place: 'location_on',
   wallpaper: 'wallpaper',
+  soundOn: 'volume_up',
+  soundOff: 'volume_off',
 };
 
 async function fetchIcon(name) {

@@ -29,6 +29,14 @@
   var look = ls('sidegig.ntLook') || 'auto';
   var dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
   root.dataset.look = look === 'auto' ? 'native' : look;
+  if (look === 'custom') {
+    try {
+      var c = JSON.parse(ls('sidegig.ntCustom') || '{}');
+      if (c.bg) root.style.setProperty('--c-bg', c.bg);
+      if (c.ink) root.style.setProperty('--c-ink', c.ink);
+      if (c.accent) root.style.setProperty('--c-signal', c.accent);
+    } catch (e) {}
+  }
   root.dataset.scheme = dark ? 'dark' : 'light';
   root.dataset.browser = ls('sidegig.ntBrowser') || 'chromium';
   root.dataset.mode = ls('sidegig.ntMode') === 'ai' ? 'ai' : 'home';
