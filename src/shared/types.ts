@@ -7,6 +7,8 @@ export type RailMode = 'docked' | 'hover' | 'off';
 export type OpenIn = 'panel' | 'window' | 'tab' | 'drawer';
 export type ThemeMode = 'system' | 'light' | 'dark' | 'page';
 export type BadgeKind = 'parens' | 'gmail' | 'none';
+/** New tab look: paper (light), night (dark), ultramarine (electric blue), or follow the system. */
+export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine';
 
 export interface AppEntry {
   id: string;
@@ -77,6 +79,28 @@ export interface Settings {
   };
   rules: LinkRule[];
   sleep: { enabled: boolean; afterMin: number };
+  newtab: {
+    /** Use sidegig as the new tab page. Off sends new tabs straight to the browser's own. */
+    enabled: boolean;
+    look: NtLook;
+    /** Show pictures in grayscale until you hover them, so thumbnails don't shout. */
+    calmImages: boolean;
+    clock: boolean;
+    /** A Home | AI switch: your browser's own AI and every assistant's chats, one tab away. */
+    aiTab: boolean;
+    clockStyle: 'digital' | 'analog';
+    /** Your name for the greeting. */
+    name: string;
+    /** Shown instead of the time-of-day greeting when set. */
+    message: string;
+    /** Search engine for the search box ("default" = the browser's own). */
+    engine: string;
+    /** Accent colour override; empty = the look's own. */
+    accent: string;
+    wallpaper: 'none' | 'daily' | 'custom';
+    weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };
+    todo: boolean;
+  };
   /** The new tab edition: a short, finite issue picked from your interests. */
   edition: {
     enabled: boolean;

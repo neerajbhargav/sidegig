@@ -5,7 +5,8 @@
 // Drawn in a closed shadow root so page styles can't reach it.
 import css from './rail.css';
 import { ext, faviconFor, TARGET } from '../shared/api.ts';
-import { loadSettings, onSettingsChanged, getLocal, onLocalChanged, updateSettings } from '../shared/storage.ts';
+import { loadSettings, onSettingsChanged, getLocal, setLocal, onLocalChanged, updateSettings } from '../shared/storage.ts';
+import { ASIDE_EXTENSION } from '../shared/browserai.ts';
 import { themeCss, modeForBackground } from '../shared/theme.ts';
 import { iconNode } from '../shared/icons.ts';
 import { hostExcluded } from '../shared/rules.ts';
@@ -674,6 +675,7 @@ async function main() {
   const start = async () => {
     const rail = new Rail(settings, dock);
     // Mini windows sidegig opens for apps stay clean: no rail inside them.
+    void detectBrowserAi();
     const info = (await send({ type: 'tab-info' })) as { popup?: boolean; windowId?: number } | undefined;
     if (info?.popup) rail.disableHere();
     else if (typeof info?.windowId === 'number') rail.setWindow(info.windowId);
@@ -684,4 +686,23 @@ async function main() {
 
 if (window.top === window && document.documentElement && !(document.contentType && !/html/.test(document.contentType))) {
   void main();
+}
+
+
+/**
+ * Is this browser Aside? Aside's agent publishes a few files to web pages, so a
+ * page is the one place the check reliably works. Checked at most once a day;
+ * the new tab reads the answer to put Aside's own AI first.
+ */
+async function detectBrowserAi() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  const last = await getLocal<{ aside: boolean; at: number } | null>('browserAi', null);
+  if (last && Date.now() - last.at < 86_400_000) return;
+  let aside = false;
+  try {
+    aside = (await fetch(`chrome-extension://${ASIDE_EXTENSION}/iframe.html`, { method: 'HEAD', cache: 'no-store' })).ok;
+  } catch {
+    /* not Aside */
+  }
+  await setLocal('browserAi', { aside, at: Date.now() });
 }

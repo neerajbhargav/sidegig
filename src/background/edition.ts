@@ -96,7 +96,9 @@ async function run(): Promise<Edition | null> {
     await setLocal(ED.status, status);
     return null;
   }
-  const ed: Edition = { id: uid('ed_'), built: now, items, reserve, terms: [...new Set(queries.map((q) => q.term))], errors: status.errors };
+  const no = (await getLocal<number>('edCount', 0)) + 1;
+  await setLocal('edCount', no);
+  const ed: Edition = { id: uid('ed_'), no, built: now, items, reserve, terms: [...new Set(queries.map((q) => q.term))], errors: status.errors };
   await setLocal(ED.edition, ed);
   await setLocal(ED.status, status);
   return ed;

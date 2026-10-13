@@ -33,6 +33,31 @@ interface EdStatus {
   imported?: { host: string; count: number; at: number };
 }
 
+/** OP-1 style colour coding: each kind of thing has its own encoder colour. */
+export const KIND_COLOR: Record<EdKind, string> = {
+  read: 'var(--c-blue)',
+  watch: 'var(--c-orange, var(--c-signal))',
+  podcast: 'var(--c-green)',
+  book: 'var(--c-sand)',
+  paper: 'var(--c-cyan)',
+  discuss: 'var(--c-pink)',
+  music: 'var(--c-yellow)',
+};
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Numbered section header (numbers come from a CSS counter, so they run on into the shelf). */
+export function secHead(name: string, color: string, right?: Node | string | null): HTMLElement {
+  return h(
+    'div',
+    { class: 'ed-sec-h' },
+    h('span', { class: 'sec-no' }),
+    h('span', { class: 'sec-dot', style: { '--c': color } }),
+    h('span', { class: 'sec-name' }, name),
+    h('span', { class: 'sec-rule' }),
+    right ? h('span', { class: 'sec-count' }, right) : null,
+  );
+}
+
 const KIND_ICON: Record<EdKind, string> = { read: 'article', watch: 'play', podcast: 'headphones', book: 'book', paper: 'science', discuss: 'forum', music: 'music' };
 
 const getProfile = async () => sanitizeProfile(await getLocal('edProfile', null));
@@ -207,7 +232,7 @@ function card(i: EdItem, a: Actions, lead = false): HTMLElement {
     h(
       'div',
       { class: 'ed-body' },
-      h('div', { class: 'ed-kicker' }, faviconOnly(i.url, 'fav xs'), h('span', {}, [i.by, i.meta].filter(Boolean).join(' · ') || i.source)),
+      h('div', { class: 'ed-kicker' }, lead ? h('span', { class: 'ed-lead-tag' }, 'Front page') : null, faviconOnly(i.url, 'fav xs'), h('span', {}, [i.by, i.meta].filter(Boolean).join(' · ') || i.source)),
       link('ed-title', i.title),
       lead && i.summary ? h('p', { class: 'ed-sum' }, i.summary) : null,
       why ? h('div', { class: 'ed-why' }, i.why ? ico('sparkle', 14) : null, h('span', {}, why)) : null,
@@ -296,8 +321,8 @@ function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions
     wrap.append(
       h(
         'section',
-        { class: 'ed-sec' },
-        h('div', { class: 'ed-sec-h' }, ico(KIND_ICON[kind], 16), KIND_LABEL[kind]),
+        { class: 'ed-sec', dataset: { kind } },
+        secHead(KIND_LABEL[kind], KIND_COLOR[kind], `${pad2(items.length)} ${items.length === 1 ? 'item' : 'items'}`),
         h('div', { class: 'ed-grid', dataset: { kind } }, items.map((i) => card(i, a))),
       ),
     );
@@ -308,7 +333,7 @@ function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions
       h(
         'section',
         { class: 'ed-sec' },
-        h('div', { class: 'ed-sec-h' }, ico('forum', 16), 'Posts on X', h('span', { class: 'ed-sec-note' }, 'live search, opens X')),
+        secHead('Posts on X', 'var(--c-ink)', 'live search'),
         h('div', { class: 'chips' }, topics.map((t) => h('a', { class: 'chip', href: xSearchUrl(t.term) }, t.term))),
       ),
     );
@@ -318,8 +343,8 @@ function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions
     h(
       'div',
       { class: 'ed-end' },
-      h('div', {}, 'That’s today’s edition.'),
-      h('div', { class: 'muted' }, `Next one around ${clock(next)}. Save what you like and wave off what you don’t; the next edition learns from both.`),
+      h('div', { class: 'ed-end-mark' }, `End of edition ${pad2(ed.no ?? 1)}`),
+      h('div', { class: 'muted' }, `That’s all for now. Next edition around ${clock(next)}. Save what you like and wave off what you don’t; the next one learns from both.`),
       ed.errors.length ? h('div', { class: 'ed-fine' }, `Couldn’t reach: ${ed.errors.map((e) => e.split(':')[0]).join(', ')}`) : null,
     ),
   );
@@ -614,8 +639,14 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
         h(
           'div',
           { class: 'ed-mast' },
-          h('div', { class: 'ed-name' }, tab === 'today' && ed ? editionName(ed.built) : 'Your edition'),
-          h('div', { class: 'ed-date' }, date, ed && tab === 'today' ? ` · ${st?.building ? 'updating…' : `updated ${ago(ed.built)}`}` : ''),
+          h('div', { class: 'ed-name' }, tab === 'today' && ed ? editionName(ed.built) : tab === 'saved' ? 'Saved' : tab === 'interests' ? 'Interests' : 'Your edition'),
+          h(
+            'div',
+            { class: 'ed-date' },
+            tab === 'today' && ed
+              ? `No. ${pad2(ed.no ?? 1)} · ${ed.items.length} items · ${st?.building ? 'updating…' : `updated ${ago(ed.built)}`}`
+              : date,
+          ),
         ),
         h(
           'div',

@@ -33,8 +33,31 @@ async function whereAmI(): Promise<{ tabId?: number; windowId?: number }> {
 }
 
 async function boot() {
+  if (document.documentElement.dataset.off) return; // handing this tab back to the browser's own new tab
   document.body.classList.add(`ctx-${kind}`);
   const [settings, where] = await Promise.all([loadSettings(), whereAmI()]);
+  if (kind === 'newtab' && !settings.newtab.enabled) {
+    // Turned off (maybe on another device): remember, and go to the browser's own new tab.
+    const fallback = (await getLocal<{ ntp?: string } | null>('browserInfo', null))?.ntp ?? 'chrome://new-tab-page/';
+    try {
+      localStorage.setItem('sidegig.ntOff', '1');
+      localStorage.setItem('sidegig.ntFallback', fallback);
+    } catch {
+      /* fine */
+    }
+    const tab = await ext.tabs.getCurrent().catch(() => undefined);
+    if (tab?.id !== undefined) await ext.tabs.update(tab.id, { url: fallback });
+    return;
+  }
+  if (kind === 'newtab') {
+    try {
+      localStorage.removeItem('sidegig.ntOff');
+    } catch {
+      /* fine */
+    }
+  }
+  // Match the browser we're in (fonts, corner radius) so sidegig never looks alien.
+  void getLocal<{ id?: string } | null>('browserInfo', null).then((b) => b?.id && (document.body.dataset.browser = b.id));
   const themeStyle = h('style');
   document.head.append(themeStyle);
   let pageMode: 'light' | 'dark' | null = (params.get('mode') as 'light' | 'dark' | null) ?? null;

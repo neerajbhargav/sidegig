@@ -8,6 +8,8 @@ import type { AppEntry, OpenIn, Settings, StatusCard } from '../shared/types.ts'
 import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
 import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
 import { send } from '../ui/ctx.ts';
+import { ENGINES } from '../shared/ntdata.ts';
+import { findPlace, prepareWallpaper } from '../ui/views/ntwidgets.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -21,6 +23,7 @@ const NAV: [string, string][] = [
   ['status', 'Status cards'],
   ['rules', 'Link rules'],
   ['tabs', 'Tab sleep'],
+  ['newtab', 'New tab'],
   ['edition', 'New tab edition'],
   ['backup', 'Backup'],
   ['privacy', 'Privacy'],
@@ -348,6 +351,139 @@ function tabsSection(): HTMLElement {
   );
 }
 
+function textField(value: string, placeholder: string, onSave: (v: string) => void): HTMLElement {
+  const i = h('input', { class: 'text-input', value, placeholder, style: { width: '220px' } });
+  i.addEventListener('change', () => onSave(i.value.trim()));
+  return i;
+}
+
+function wallpaperControl(): HTMLElement {
+  const file = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  file.addEventListener('change', async () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    try {
+      await ext.storage.local.set({ ntWallpaper: await prepareWallpaper(f) });
+      await commit((x) => void (x.newtab.wallpaper = 'custom'));
+      toast('Wallpaper set');
+    } catch {
+      toast('Couldn’t use that picture');
+    }
+  });
+  return h(
+    'div',
+    { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
+    seg(s.newtab.wallpaper, [['none', 'None'], ['daily', 'Daily photo'], ['custom', 'Your own']], (v) => {
+      if (v === 'custom') return file.click();
+      void commit((x) => void (x.newtab.wallpaper = v));
+    }),
+    file,
+  );
+}
+
+function weatherControl(): HTMLElement {
+  const w = s.newtab.weather;
+  const q = h('input', { class: 'text-input', placeholder: 'City', value: w.place, style: { width: '200px' } });
+  const results = h('div', { class: 'chips', style: { flexWrap: 'wrap', marginTop: '6px' } });
+  const find = async () => {
+    if (!q.value.trim()) return;
+    results.textContent = 'Looking…';
+    const places = await findPlace(q.value.trim()).catch(() => []);
+    results.replaceChildren(
+      ...(places.length
+        ? places.map((p) =>
+            h('button', { type: 'button', class: 'chip', onclick: () => commit((x) => void (x.newtab.weather = { ...x.newtab.weather, enabled: true, place: p.name, lat: p.lat, lon: p.lon })) }, p.name),
+          )
+        : [h('span', { class: 'muted' }, 'No places found')]),
+    );
+  };
+  q.addEventListener('keydown', (e) => e.key === 'Enter' && void find());
+  return h(
+    'div',
+    {},
+    h(
+      'div',
+      { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
+      toggle(w.enabled && !!w.place, (v) => commit((x) => void (x.newtab.weather.enabled = v)), 'Weather'),
+      q,
+      h('button', { type: 'button', class: 'btn', onclick: () => void find() }, 'Find'),
+      seg(w.units, [['f', '°F'], ['c', '°C']], (v) => commit((x) => void (x.newtab.weather.units = v))),
+    ),
+    results,
+  );
+}
+
+function newtabSection(): HTMLElement {
+  const n = s.newtab;
+  const setOff = async (on: boolean) => {
+    const b = (await ext.storage.local.get('browserInfo')).browserInfo as { ntp?: string; browser?: string } | undefined;
+    try {
+      if (on) localStorage.removeItem('sidegig.ntOff');
+      else {
+        localStorage.setItem('sidegig.ntOff', '1');
+        localStorage.setItem('sidegig.ntFallback', b?.ntp ?? 'chrome://new-tab-page/');
+      }
+    } catch {
+      /* fine */
+    }
+    await ext.storage.local.set({ ntChoiceMade: true });
+  };
+  return section(
+    'newtab',
+    'New tab',
+    'Optional. With it off, new tabs go straight to your browser’s own new tab page (or a blank page where the browser has none to return to). Browsers only let an extension replace the new tab at install, so “off” hands each new tab back instantly instead.',
+    h(
+      'div',
+      { class: 'group' },
+      opt('Use sidegig as the new tab page', null, toggle(n.enabled, (v) => void setOff(v).then(() => commit((x) => void (x.newtab.enabled = v))), 'Use sidegig as the new tab page')),
+      opt(
+        'Look',
+        '“Match browser” follows your browser’s own style (Chrome, Edge, Arc, Dia, Aside, Opera, Brave…). The studio looks are sidegig’s own: industrial, a little retro.',
+        seg(n.look, [['auto', 'Match browser'], ['paper', 'Paper'], ['night', 'Night'], ['ultramarine', 'Ultramarine']], (v) =>
+          commit((x) => {
+            x.newtab.look = v;
+            try {
+              localStorage.setItem('sidegig.ntLook', v);
+            } catch {
+              /* fine */
+            }
+          }),
+        ),
+      ),
+      opt('Home | AI switch', 'Your browser’s own AI and your chats with every assistant, one tab away (press Tab in the empty search box).', toggle(n.aiTab, (v) => commit((x) => void (x.newtab.aiTab = v)), 'Home and AI switch')),
+      opt('Clock', null, toggle(n.clock, (v) => commit((x) => void (x.newtab.clock = v)), 'Clock')),
+      opt('Clock style', null, seg(n.clockStyle, [['digital', 'Digital'], ['analog', 'Analog']], (v) => commit((x) => void (x.newtab.clockStyle = v)))),
+      opt('Your name', 'For the greeting: “Good morning, …”', textField(n.name, 'Name', (v) => commit((x) => void (x.newtab.name = v)))),
+      opt('Custom message', 'Shown instead of the greeting.', textField(n.message, 'Optional', (v) => commit((x) => void (x.newtab.message = v)))),
+      opt(
+        'Search engine',
+        '“Browser default” uses whatever your browser is set to.',
+        h(
+          'select',
+          { class: 'text-input', onchange: (e: Event) => commit((x) => void (x.newtab.engine = (e.target as HTMLSelectElement).value)) },
+          Object.entries(ENGINES).map(([id, en]) => h('option', { value: id, selected: id === n.engine }, en.name)),
+        ),
+      ),
+      opt(
+        'Accent',
+        'Colours the new tab’s highlights. Empty uses the look’s own.',
+        h(
+          'div',
+          { class: 'swatches' },
+          h('button', { type: 'button', class: 'swatch', title: 'The look’s own', 'aria-pressed': String(!n.accent), style: { background: 'conic-gradient(#ff4f00, #2c5bff, #12a150, #ff4f00)' }, onclick: () => commit((x) => void (x.newtab.accent = '')) }),
+          ['#ff4f00', '#0b57d0', '#6e56ff', '#e0407f', '#12a150', '#e7a800', '#121212'].map((c) =>
+            h('button', { type: 'button', class: 'swatch', title: c, 'aria-pressed': String(n.accent === c), style: { background: c }, onclick: () => commit((x) => void (x.newtab.accent = c)) }),
+          ),
+        ),
+      ),
+      opt('Wallpaper', 'A daily photo comes from Lorem Picsum. Your own picture stays on this device.', wallpaperControl()),
+      opt('Weather', 'From Open-Meteo: free, no account. Only the place you pick is sent.', weatherControl()),
+      opt('To-do list', 'Finished tasks clear each morning; pinned tasks come back every day.', toggle(n.todo, (v) => commit((x) => void (x.newtab.todo = v)), 'To-do list')),
+      opt('Calm pictures', 'Thumbnails stay grey until you point at them, so they don’t compete for attention.', toggle(n.calmImages, (v) => commit((x) => void (x.newtab.calmImages = v)), 'Calm pictures')),
+    ),
+  );
+}
+
 function editionSection(): HTMLElement {
   const e = s.edition;
   const clear = h('button', { class: 'btn', type: 'button' }, 'Clear interests, saves and history');
@@ -437,6 +573,7 @@ async function render() {
     await statusSection(),
     rulesSection(),
     tabsSection(),
+    newtabSection(),
     editionSection(),
     backupSection(),
     section(

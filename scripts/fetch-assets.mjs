@@ -56,6 +56,18 @@ const ICONS = {
   music: 'music_note',
   notFor: 'do_not_disturb_on',
   interests: 'interests',
+  wxSun: 'sunny',
+  wxNight: 'clear_night',
+  wxPartly: 'partly_cloudy_day',
+  wxPartlyNight: 'partly_cloudy_night',
+  wxCloud: 'cloud',
+  wxFog: 'foggy',
+  wxRain: 'rainy',
+  wxSnow: 'weather_snowy',
+  wxStorm: 'thunderstorm',
+  mic: 'mic',
+  place: 'location_on',
+  wallpaper: 'wallpaper',
 };
 
 async function fetchIcon(name) {
@@ -134,6 +146,23 @@ if (!fontUrl) throw new Error('font url not found');
 await mkdir(path.join(root, 'src/assets/fonts'), { recursive: true });
 const font = Buffer.from(await (await fetch(fontUrl)).arrayBuffer());
 await writeFile(path.join(root, 'src/assets/fonts/GoogleSansFlex-Latin.woff2'), font);
+// New tab type: Barlow Condensed (display) and IBM Plex Mono (labels), Latin subset, static weights.
+const UA = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36' };
+for (const [family, file, weights, license] of [
+  ['Barlow Condensed', 'BarlowCondensed', [200, 300, 500], 'https://raw.githubusercontent.com/google/fonts/main/ofl/barlowcondensed/OFL.txt'],
+  ['IBM Plex Mono', 'IBMPlexMono', [400, 500], 'https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexmono/OFL.txt'],
+]) {
+  const sheet = await (await fetch(`https://fonts.googleapis.com/css2?family=${family.replace(/ /g, '+')}:wght@${weights.join(';')}&display=swap`, { headers: UA })).text();
+  for (const block of sheet.split('/* latin */').slice(1)) {
+    const w = block.match(/font-weight:\s*(\d+)/)?.[1];
+    const url = block.match(/url\((https:[^)]+\.woff2)\)/)?.[1];
+    if (!w || !url) continue;
+    const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+    await writeFile(path.join(root, `src/assets/fonts/${file}-${w}.woff2`), buf);
+    console.log(`${family} ${w}: ${(buf.length / 1024).toFixed(0)} KB`);
+  }
+  await writeFile(path.join(root, `src/assets/fonts/${file}-OFL.txt`), await (await fetch(license)).text());
+}
 const ofl = await (await fetch('https://raw.githubusercontent.com/googlefonts/googlesans-flex/main/OFL.txt')).text();
 await writeFile(path.join(root, 'src/assets/fonts/OFL.txt'), ofl);
 console.log(`font ${(font.length / 1024).toFixed(0)} KB, license ${ofl.length} chars`);
