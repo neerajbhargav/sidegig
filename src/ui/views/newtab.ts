@@ -511,7 +511,8 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const content = h('div', { class: 'nt-content' });
 
   const field = h('label', { class: 'nt-field' }, h('span', { class: 'nt-field-tag' }, 'srch'), h('span', { class: 'nt-field-icon' }, ico('search', 20)), input, voiceButton(input), h('kbd', { class: 'nt-kbd' }, '/'));
-  const hero = h('section', { class: 'nt-hero' }, ctx.settings.newtab.clock ? clockEl(ctx, await briefEl(ctx)) : h('div', { class: 'nt-clock' }, greetingEl(ctx), await briefEl(ctx), weatherEl(ctx)), displayEl(ctx));
+  // One centred column: greeting, time, date and weather; the search under it; then the day.
+  const hero = h('section', { class: 'nt-hero' }, ctx.settings.newtab.clock ? clockEl(ctx, await briefEl(ctx)) : h('div', { class: 'nt-clock' }, greetingEl(ctx), await briefEl(ctx), weatherEl(ctx)));
   const badges = await getLocal<Record<string, number>>('badges', {});
 
   // Home | AI: our dashboard, or your browser's AI and every assistant's chats.
@@ -594,8 +595,10 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     true,
   );
 
+  // Today: your list and the edition's readout, side by side as two equal cards.
   const todo = await todoSection(ctx);
-  if (todo) content.append(todo);
+  const today = [todo, ctx.settings.edition.enabled ? h('section', { class: 'nt-today-display' }, displayEl(ctx)) : null].filter((x): x is HTMLElement => !!x);
+  if (today.length) content.append(h('div', { class: 'nt-today', dataset: { n: String(today.length) } }, ...today));
   if (ctx.settings.edition.enabled) content.append(await editionSection(ctx));
   const sh = await shelf(ctx);
   if (sh) content.append(sh);

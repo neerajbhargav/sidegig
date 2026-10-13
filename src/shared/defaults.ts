@@ -1,12 +1,12 @@
 import type { AppEntry, Settings } from './types.ts';
-import { CATALOG, DEFAULT_PINNED, catalogById } from './catalog.ts';
+import { CATALOG, DEFAULT_PINNED, catalogById, NO_FRAME } from './catalog.ts';
 
-export const SETTINGS_VERSION = 5;
+export const SETTINGS_VERSION = 6;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
   if (!c) throw new Error(`Unknown catalog app: ${id}`);
-  return { id: c.id, name: c.name, url: c.url, openIn: 'panel', mobile: false, badge: c.badge !== 'none', catalogId: c.id };
+  return { id: c.id, name: c.name, url: c.url, openIn: NO_FRAME.has(c.id) ? 'window' : 'panel', mobile: false, badge: c.badge !== 'none', catalogId: c.id };
 }
 
 export function defaultSettings(): Settings {

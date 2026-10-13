@@ -59,7 +59,7 @@ export const setFavMissing = (ids: string[]) => void (favMissing = new Set(ids))
 export function appFavicon(app: { id: string; catalogId?: string; url: string; name: string }, cls = 'fav'): HTMLElement {
   const cat = app.catalogId ?? app.id;
   if (BRAND_ICONS.has(cat) && (favMissing.has(app.id) || DARK_BRANDS.has(cat)) && ext?.runtime?.getURL) {
-    const img = h('img', { class: `${cls} brand${DARK_BRANDS.has(cat) ? ' brand-dark' : ''}`, src: ext.runtime.getURL(`icons/brands/${cat}.svg`), alt: '', decoding: 'async' });
+    const img = h('img', { class: `${cls} brandmark${DARK_BRANDS.has(cat) ? ' brandmark-dark' : ''}`, src: ext.runtime.getURL(`icons/brands/${cat}.svg`), alt: '', decoding: 'async' });
     img.addEventListener('error', () => img.replaceWith(favicon(app.url, app.name, cls)), { once: true });
     return img;
   }

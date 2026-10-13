@@ -13,6 +13,13 @@ export interface CatalogApp {
   aiSend?: string[];
 }
 
+/**
+ * Sites that refuse to run inside another page: they detect the frame and
+ * break out, or show an error (Gmail, X, Meta's apps). These open in a slim
+ * side window docked next to the browser instead, signed in and complete.
+ */
+export const NO_FRAME = new Set(['gmail', 'x', 'grok', 'instagram', 'messenger']);
+
 export const CATALOG: CatalogApp[] = [
   {
     id: 'claude',

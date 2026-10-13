@@ -7,6 +7,7 @@ import { updateSettings } from '../../shared/storage.ts';
 import type { AppEntry } from '../../shared/types.ts';
 import { h, iconButton, appFavicon } from '../dom.ts';
 import { type Ctx, send } from '../ctx.ts';
+import { NO_FRAME } from '../../shared/catalog.ts';
 
 const SLEEP_MS = 30 * 60_000;
 const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number }>();
@@ -50,7 +51,9 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   const apps = ctx.settings.apps;
   const app = apps.find((a) => a.id === appId) ?? apps.find((a) => a.openIn === 'panel') ?? apps[0];
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
-    const bar = h('div', { class: 'appbar' });
+    // Sites that refuse to run inside another page get a docked side window instead.
+  if (NO_FRAME.has(app.catalogId ?? '')) return sideWindowCard(ctx, app);
+  const bar = h('div', { class: 'appbar' });
   // The rail (or the panel's own buttons list) already lists the apps: just name this one.
   bar.append(appFavicon(app, 'fav sm'), h('span', { class: 'app-title' }, app.name));
   bar.append(
@@ -112,6 +115,26 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   }
   attach(app);
   return bar;
+}
+
+let lastWindowed = '';
+
+function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
+  const open = () => void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'window', side: ctx.settings.rail.side });
+  // Open it right away the first time you pick it (not on every refresh of this view).
+  if (lastWindowed !== app.id) {
+    lastWindowed = app.id;
+    open();
+  }
+  for (const f of frames.values()) f.el.hidden = true;
+  return h(
+    'div',
+    { class: 'sidewin' },
+    h('div', { class: 'sidewin-icon' }, appFavicon(app, 'fav')),
+    h('h2', { class: 'sidewin-title' }, `${app.name} is open beside this window`),
+    h('p', { class: 'sidewin-text' }, `${app.name} doesn’t allow itself to run inside another page, so sidegig gives it a slim side window, signed in, right next to your browser. Your browser makes room for it and gets the space back when you close it.`),
+    h('button', { class: 'btn primary sidewin-btn', type: 'button', onclick: open }, `Show ${app.name}`),
+  );
 }
 
 function attach(app: AppEntry) {

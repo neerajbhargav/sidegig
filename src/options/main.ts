@@ -1,6 +1,6 @@
 // Full settings page.
 import { ext, features, uid, TARGET } from '../shared/api.ts';
-import { loadSettings, saveSettings, onSettingsChanged, loadSecrets, saveSecrets, mergeSettings, migrate } from '../shared/storage.ts';
+import { loadSettings, saveSettings, onSettingsChanged, loadSecrets, saveSecrets } from '../shared/storage.ts';
 import { defaultSettings, appFromCatalog } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
@@ -13,6 +13,7 @@ import { findPlace } from '../ui/views/ntwidgets.ts';
 import { addUpload, prepareImage } from '../ui/views/ntwall.ts';
 import { THEMES } from '../ui/views/ntcustom.ts';
 import { PACKS } from '../shared/walls.ts';
+import { PARTS, allLocalKeys, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -28,7 +29,7 @@ const NAV: [string, string][] = [
   ['tabs', 'Tab sleep'],
   ['newtab', 'New tab'],
   ['edition', 'New tab edition'],
-  ['backup', 'Backup'],
+  ['backup', 'Setups'],
   ['privacy', 'Privacy'],
 ];
 
@@ -574,38 +575,202 @@ function editionSection(): HTMLElement {
   );
 }
 
-function backupSection(): HTMLElement {
-  const file = h('input', { type: 'file', accept: 'application/json', hidden: true });
-  file.addEventListener('change', async () => {
-    const f = file.files?.[0];
-    if (!f) return;
-    try {
-      const next = mergeSettings(defaultSettings(), migrate(JSON.parse(await f.text())));
-      await saveSettings(next);
-      toast('Settings imported');
-    } catch {
-      toast('That file isn’t a sidegig backup');
-    }
-  });
-  return section(
-    'backup',
-    'Backup',
-    'Export your settings to a file (tokens are never included) or bring them to another browser.',
+const SETUPS_KEY = 'setups';
+const browserLabel = () => {
+  const ua = (navigator as any).userAgentData?.brands?.map((b: { brand: string }) => b.brand).join(' ') ?? navigator.userAgent;
+  return /Edg/.test(ua) ? 'Edge' : /Opera|OPR/.test(ua) ? 'Opera' : /Brave/.test(ua) ? 'Brave' : /Vivaldi/.test(ua) ? 'Vivaldi' : /Firefox/.test(navigator.userAgent) ? 'Firefox' : /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) ? 'Safari' : 'Chrome';
+};
+async function readLocalParts(): Promise<Record<string, unknown>> {
+  return (await ext.storage.local.get(allLocalKeys())) as Record<string, unknown>;
+}
+/** The browser's own name as sidegig detected it (Aside, Arc, Dia...), else a best guess. */
+async function detectedBrowser(): Promise<string> {
+  const r = await ext.storage.local.get('browserInfo');
+  const b = r.browserInfo as { browser?: string } | undefined;
+  return b?.browser || browserLabel();
+}
+async function currentSetup(name: string, parts: SetupPart[]): Promise<SetupBundle> {
+  const from = await detectedBrowser();
+  return makeSetup(name || `${from} setup`, s, await readLocalParts(), parts, from);
+}
+function download(bundle: SetupBundle) {
+  const a = h('a', { href: URL.createObjectURL(setupFile(bundle)), download: fileName(bundle) });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function copyCode(bundle: SetupBundle) {
+  try {
+    await navigator.clipboard.writeText(await toCode(bundle));
+    toast('Setup code copied. Paste it into sidegig in your other browser.');
+  } catch {
+    toast('Couldn’t copy. Use Export file instead.');
+  }
+}
+
+/** Pick parts and apply a setup (from a file, a code or your saved list). */
+function applyDialog(bundle: SetupBundle, onDone: () => void): HTMLElement {
+  const picks = new Set<SetupPart>(bundle.parts);
+  const box = h('div', { class: 'setup-apply card' });
+  const go = async () => {
+    const chosen = [...picks];
+    if (!chosen.length) return toast('Pick at least one part to apply');
+    const { settings, local } = applySetup(s, bundle, chosen);
+    await saveSettings(settings);
+    if (Object.keys(local).length) await ext.storage.local.set(local);
+    toast(`Applied “${bundle.name}”`);
+    onDone();
+  };
+  const saveIt = async () => {
+    const list = await getSaved();
+    list.unshift({ id: uid('st_'), name: bundle.name, saved: Date.now(), bundle });
+    await ext.storage.local.set({ [SETUPS_KEY]: list.slice(0, 20) });
+    toast(`Saved “${bundle.name}” to your setups`);
+    onDone();
+  };
+  box.append(
+    h('div', { class: 'card-title' }, bundle.name),
+    h('div', { class: 'card-detail' }, [describe(bundle) || 'Settings', bundle.from ? `made in ${bundle.from}` : '', new Date(bundle.created).toLocaleDateString()].filter(Boolean).join(' · ')),
     h(
       'div',
-      { style: { display: 'flex', gap: '8px' } },
-      h('button', {
-        class: 'btn',
+      { class: 'setup-parts', role: 'group', 'aria-label': 'Parts to apply' },
+      PARTS.filter((p) => bundle.parts.includes(p.id)).map((p) => {
+        const cb = h('input', { type: 'checkbox', checked: true });
+        cb.addEventListener('change', () => (cb.checked ? picks.add(p.id) : picks.delete(p.id)));
+        return h('label', { class: 'setup-part' }, cb, h('span', {}, h('b', {}, p.name), h('small', {}, p.note)));
+      }),
+    ),
+    h(
+      'div',
+      { class: 'setup-actions' },
+      h('button', { class: 'btn primary', type: 'button', onclick: go }, 'Apply to this browser'),
+      h('button', { class: 'btn', type: 'button', onclick: saveIt }, 'Save to my setups'),
+      h('button', { class: 'btn ghost', type: 'button', onclick: onDone }, 'Cancel'),
+    ),
+  );
+  return box;
+}
+
+async function getSaved(): Promise<SavedSetup[]> {
+  const r = await ext.storage.local.get(SETUPS_KEY);
+  return Array.isArray(r[SETUPS_KEY]) ? (r[SETUPS_KEY] as SavedSetup[]) : [];
+}
+
+async function setupsSection(): Promise<HTMLElement> {
+  const saved = await getSaved();
+  const stage = h('div', { class: 'setup-stage' });
+  const showApply = (b: SetupBundle) => {
+    stage.replaceChildren(applyDialog(b, () => stage.replaceChildren()));
+    stage.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  const rerender = () => void render();
+
+  // Save what you have now.
+  const nameIn = h('input', { class: 'text-input', type: 'text', placeholder: 'Name, like Work or Home', maxlength: 60, 'aria-label': 'Setup name' });
+  const withPics = h('input', { type: 'checkbox' });
+  const saveNow = async () => {
+    const parts: SetupPart[] = ['apps', 'looks', 'reading', 'todos', ...(withPics.checked ? (['pictures'] as SetupPart[]) : [])];
+    const b = await currentSetup(nameIn.value || `${browserLabel()} setup`, parts);
+    const list = await getSaved();
+    list.unshift({ id: uid('st_'), name: b.name, saved: Date.now(), bundle: b });
+    await ext.storage.local.set({ [SETUPS_KEY]: list.slice(0, 20) });
+    toast(`Saved “${b.name}”`);
+    rerender();
+  };
+
+  // Bring one in.
+  const file = h('input', { type: 'file', accept: 'application/json,.json', hidden: true });
+  file.addEventListener('change', async () => {
+    const f = file.files?.[0];
+    file.value = '';
+    if (!f) return;
+    try {
+      showApply(await parseSetup(await f.text(), f.name.replace(/\.json$/i, '')));
+    } catch (e) {
+      toast((e as Error).message || 'That file isn’t a sidegig setup');
+    }
+  });
+  const codeIn = h('textarea', { class: 'text-input setup-code', rows: 3, placeholder: 'Paste a setup code (starts with sidegig1:)', 'aria-label': 'Setup code' });
+  const pasteForm = h(
+    'div',
+    { class: 'setup-paste', hidden: true },
+    codeIn,
+    h(
+      'button',
+      {
+        class: 'btn primary',
         type: 'button',
-        onclick: () => {
-          const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
-          const a = h('a', { href: URL.createObjectURL(blob), download: 'sidegig-settings.json' });
-          a.click();
+        onclick: async () => {
+          try {
+            showApply(await parseSetup(codeIn.value));
+            codeIn.value = '';
+            pasteForm.hidden = true;
+          } catch (e) {
+            toast((e as Error).message);
+          }
         },
-      }, 'Export'),
-      h('button', { class: 'btn', type: 'button', onclick: () => file.click() }, 'Import'),
-      h('button', { class: 'btn ghost', type: 'button', onclick: () => confirm('Reset all sidegig settings?') && void saveSettings(defaultSettings()) }, 'Reset'),
-      file,
+      },
+      'Continue',
+    ),
+  );
+
+  const list = saved.length
+    ? h(
+        'div',
+        { class: 'setup-list' },
+        saved.map((x) =>
+          h(
+            'div',
+            { class: 'setup-row' },
+            h('div', { class: 'setup-row-text' }, h('b', {}, x.name), h('small', {}, [describe(x.bundle), x.bundle.from ? `from ${x.bundle.from}` : '', new Date(x.saved).toLocaleDateString()].filter(Boolean).join(' · '))),
+            h('button', { class: 'btn primary', type: 'button', onclick: () => showApply(x.bundle) }, 'Apply'),
+            h('button', { class: 'btn', type: 'button', onclick: () => download(x.bundle) }, 'Export'),
+            h('button', { class: 'btn', type: 'button', onclick: () => void copyCode(x.bundle) }, 'Copy code'),
+            iconButton('trash', `Delete ${x.name}`, async () => {
+              if (!confirm(`Delete the setup “${x.name}”?`)) return;
+              await ext.storage.local.set({ [SETUPS_KEY]: (await getSaved()).filter((y) => y.id !== x.id) });
+              rerender();
+            }),
+          ),
+        ),
+      )
+    : h('p', { class: 'muted' }, 'No saved setups yet.');
+
+  return section(
+    'backup',
+    'Setups',
+    'Save your sidegig as a setup, then carry it to Chrome, Edge, Arc, Brave, Opera, Dia or any browser with sidegig: export a file, or copy a short code and paste it there. When you apply one you pick the parts. Tokens and passwords are never included.',
+    h(
+      'div',
+      { class: 'setup-block' },
+      h('div', { class: 'setup-h' }, 'Save this browser’s setup'),
+      h('div', { class: 'setup-save' }, nameIn, h('button', { class: 'btn primary', type: 'button', onclick: saveNow }, 'Save')),
+      h('label', { class: 'setup-check' }, withPics, h('span', {}, 'Include your uploaded pictures (makes files larger; codes never include them)')),
+      h(
+        'div',
+        { class: 'setup-actions' },
+        h('button', { class: 'btn', type: 'button', onclick: async () => download(await currentSetup(nameIn.value || `${browserLabel()} setup`, ['apps', 'looks', 'reading', 'todos', ...(withPics.checked ? (['pictures'] as SetupPart[]) : [])])) }, 'Export file'),
+        h('button', { class: 'btn', type: 'button', onclick: async () => void copyCode(await currentSetup(nameIn.value || `${browserLabel()} setup`, ['apps', 'looks', 'reading', 'todos'])) }, 'Copy setup code'),
+      ),
+    ),
+    h(
+      'div',
+      { class: 'setup-block' },
+      h('div', { class: 'setup-h' }, 'Bring a setup here'),
+      h(
+        'div',
+        { class: 'setup-actions' },
+        h('button', { class: 'btn', type: 'button', onclick: () => file.click() }, 'Import file…'),
+        h('button', { class: 'btn', type: 'button', onclick: () => ((pasteForm.hidden = !pasteForm.hidden), pasteForm.hidden || codeIn.focus()) }, 'Paste a code'),
+        file,
+      ),
+      pasteForm,
+      stage,
+    ),
+    h('div', { class: 'setup-block' }, h('div', { class: 'setup-h' }, 'Your setups'), list),
+    h(
+      'div',
+      { class: 'setup-block' },
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => confirm('Reset all sidegig settings? Your saved setups stay.') && void saveSettings(defaultSettings()) }, 'Reset settings'),
     ),
   );
 }
@@ -636,7 +801,7 @@ async function render() {
     tabsSection(),
     newtabSection(),
     editionSection(),
-    backupSection(),
+    await setupsSection(),
     section(
       'privacy',
       'Privacy',
