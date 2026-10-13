@@ -1,5 +1,6 @@
 import { ext } from './api.ts';
 import { defaultSettings, SETTINGS_VERSION } from './defaults.ts';
+import { NO_FRAME } from './catalog.ts';
 import type { Settings, Secrets } from './types.ts';
 
 type Plain = Record<string, unknown>;
@@ -39,6 +40,12 @@ export function migrate(stored: unknown): unknown {
   }
   // v4 -> v5: the "ntp–1" tag was decoration nobody could read; it's off unless you write your own.
   if (v < 5 && isObj(next.newtab) && next.newtab.tag === 'ntp–1') next.newtab = { ...next.newtab, tag: '' };
+  // v5 -> v6: Gmail, X and friends refuse to run inside a page; they open in a docked side window.
+  if (v < 6 && Array.isArray(next.apps)) {
+    next.apps = next.apps.map((a: unknown) =>
+      isObj(a) && typeof a.catalogId === 'string' && NO_FRAME.has(a.catalogId) && (a.openIn === 'panel' || a.openIn === 'drawer') ? { ...a, openIn: 'window' } : a,
+    );
+  }
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;

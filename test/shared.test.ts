@@ -121,3 +121,16 @@ test('v5: the new tab has your own name and no decorative tag', () => {
   const mine = mergeSettings(defaultSettings(), migrate({ version: 4, newtab: { tag: 'home' } }));
   assert.equal(mine.newtab.tag, 'home');
 });
+
+test('v6: Gmail and X open in a docked side window; other apps stay put', () => {
+  const m = mergeSettings(
+    defaultSettings(),
+    migrate({ version: 5, apps: [{ id: 'gmail', catalogId: 'gmail', openIn: 'panel' }, { id: 'x', catalogId: 'x', openIn: 'drawer' }, { id: 'claude', catalogId: 'claude', openIn: 'panel' }, { id: 'mine', openIn: 'panel' }] }),
+  );
+  assert.deepEqual(
+    m.apps.map((a) => `${a.id}:${a.openIn}`),
+    ['gmail:window', 'x:window', 'claude:panel', 'mine:panel'],
+  );
+  assert.equal(appFromCatalog('gmail').openIn, 'window');
+  assert.equal(appFromCatalog('claude').openIn, 'panel');
+});

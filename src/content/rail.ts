@@ -25,7 +25,7 @@ type DrawerView = View | 'app' | 'add';
 const send = (msg: ToBackground) => ext.runtime.sendMessage(msg).catch(() => undefined);
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const keys = (k: string) => (isMac ? `\u2325\u21e7${k}` : `Alt+Shift+${k}`);
-const railWidth = (s: Settings) => (s.rail.size === 'compact' ? 44 : 52);
+const railWidth = (s: Settings) => (s.rail.size === 'compact' ? 48 : 56);
 
 /** Should the rail dock (make room) on this site, per settings? */
 function dockedHere(s: Settings): boolean {
@@ -235,7 +235,7 @@ class Rail {
       img.alt = '';
       img.src = src;
       img.dataset.letter = letter;
-      if (brand) img.className = DARK_BRANDS.has(cat) ? 'brand brand-dark' : 'brand';
+      if (brand) img.className = DARK_BRANDS.has(cat) ? 'brandmark brandmark-dark' : 'brandmark';
       return [img, badge];
     }
     const mono = document.createElement('span');

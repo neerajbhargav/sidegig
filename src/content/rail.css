@@ -6,11 +6,11 @@
   pointer-events: none;
   font: 13px/1.4 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Google Sans Flex", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  --rail-w: 52px;
+  --rail-w: 56px;
   --gap: 8px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-:host([data-size="compact"]) { --rail-w: 44px; }
+:host([data-size="compact"]) { --rail-w: 48px; }
 * { box-sizing: border-box; }
 
 .shell {
@@ -145,7 +145,7 @@ button.item.add:hover { color: var(--m-fg); }
 .flyout.show { opacity: 1; transform: translateY(-50%) scale(1); pointer-events: auto; }
 .fly-label { font-size: 11.5px; font-weight: 600; color: var(--m-fg-muted); padding: 0 4px 6px; }
 .fly-row { display: flex; gap: 2px; }
-.flyout button.item { width: 38px; height: 38px; }
+.flyout button.item { width: 42px; height: 42px; }
 
 /* Docked: flush to the edge, full height, part of the page's frame like Opera's sidebar. */
 :host([data-mode="docked"]) .shell { top: 0; bottom: 0; gap: 0; opacity: 1; transform: none; transition: none; }
@@ -161,6 +161,6 @@ button.item.add:hover { color: var(--m-fg); }
 :host([data-mode="docked"]) .hint { display: none; }
 
 /* Black brand logos (ChatGPT, X, GitHub, Notion) turn white on dark rails. */
-:host([data-scheme="dark"]) img.brand-dark { filter: invert(1); }
-@media (prefers-color-scheme: dark) { :host([data-scheme="system"]) img.brand-dark { filter: invert(1); } }
-img.brand { padding: 1px; box-sizing: border-box; }
+:host([data-scheme="dark"]) img.brandmark-dark { filter: invert(1); }
+@media (prefers-color-scheme: dark) { :host([data-scheme="system"]) img.brandmark-dark { filter: invert(1); } }
+img.brandmark { padding: 1px; box-sizing: border-box; }

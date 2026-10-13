@@ -51,32 +51,74 @@ export function openApp(req: OpenRequest, windowId: number | undefined): void {
   // 'drawer' is handled by the rail inside the page.
 }
 
-/** A slim popup window docked to the side of the current window. */
+interface Dock {
+  main: number;
+  bounds: { left: number; top: number; width: number; height: number };
+  state: string;
+  key: string;
+}
+
+/**
+ * A slim side window docked next to the browser, like Opera's sidebar: the
+ * browser window shrinks to make room (so nothing is covered) and gets its
+ * size back when the side window closes. One side window per browser window;
+ * opening another app reuses it.
+ */
 export async function openMiniWindow(req: OpenRequest, windowId?: number): Promise<void> {
   const key = req.appId ?? hostOf(req.url);
-  const popups = await getLocal<Record<string, number>>('popups', {});
-  const existing = popups[key];
-  if (existing !== undefined) {
+  const docks = await getLocal<Record<string, Dock>>('docks', {});
+  let main: chrome.windows.Window;
+  try {
+    main = windowId !== undefined ? await ext.windows.get(windowId) : await ext.windows.getLastFocused();
+  } catch {
+    main = { left: 0, top: 0, width: 1280, height: 800, state: 'normal' } as chrome.windows.Window;
+  }
+  // Already docked to this window: switch it to this app.
+  const existing = Object.entries(docks).find(([, d]) => d.main === main.id);
+  if (existing) {
+    const id = Number(existing[0]);
     try {
-      await ext.windows.update(existing, { focused: true });
+      const [tab] = await ext.tabs.query({ windowId: id });
+      if (tab?.id !== undefined && existing[1].key !== key) await ext.tabs.update(tab.id, { url: req.url });
+      await ext.windows.update(id, { focused: true });
+      docks[id] = { ...existing[1], key };
+      await setLocal('docks', docks);
+      return;
+    } catch {
+      delete docks[id];
+    }
+  }
+  // A side window opened from elsewhere (no browser window to dock to).
+  const popups = await getLocal<Record<string, number>>('popups', {});
+  if (main.id === undefined && popups[key] !== undefined) {
+    try {
+      await ext.windows.update(popups[key], { focused: true });
       return;
     } catch {
       delete popups[key];
     }
   }
-  let bounds = { left: 0, top: 0, width: 1280, height: 800 };
-  try {
-    const w = windowId !== undefined ? await ext.windows.get(windowId) : await ext.windows.getLastFocused();
-    bounds = { left: w.left ?? 0, top: w.top ?? 0, width: w.width ?? 1280, height: w.height ?? 800 };
-  } catch {
-    /* use defaults */
-  }
-  const width = Math.round(Math.min(460, Math.max(360, bounds.width * 0.3)));
+  const bounds = { left: main.left ?? 0, top: main.top ?? 0, width: main.width ?? 1280, height: main.height ?? 800 };
+  const width = Math.round(Math.min(480, Math.max(380, bounds.width * 0.28)));
   const left = req.side === 'left' ? bounds.left : bounds.left + bounds.width - width;
+  let dock: Dock | null = null;
+  // Make room unless the browser is full screen (then the side window floats over it).
+  if (main.id !== undefined && main.state !== 'fullscreen' && bounds.width - width >= 640) {
+    try {
+      if (main.state === 'maximized') await ext.windows.update(main.id, { state: 'normal' });
+      await ext.windows.update(main.id, { left: req.side === 'left' ? bounds.left + width : bounds.left, top: bounds.top, width: bounds.width - width, height: bounds.height });
+      dock = { main: main.id, bounds, state: main.state ?? 'normal', key };
+    } catch {
+      dock = null;
+    }
+  }
   const win = await ext.windows.create({ url: req.url, type: 'popup', width, height: bounds.height, left, top: bounds.top, focused: true });
-  if (win?.id !== undefined) {
-    popups[key] = win.id;
-    await setLocal('popups', popups);
+  if (win?.id === undefined) return;
+  popups[key] = win.id;
+  await setLocal('popups', popups);
+  if (dock) {
+    docks[win.id] = dock;
+    await setLocal('docks', docks);
   }
 }
 
@@ -97,4 +139,16 @@ export async function forgetPopup(windowId: number): Promise<void> {
   const popups = await getLocal<Record<string, number>>('popups', {});
   const next = Object.fromEntries(Object.entries(popups).filter(([, id]) => id !== windowId));
   if (Object.keys(next).length !== Object.keys(popups).length) await setLocal('popups', next);
+  // A docked side window closed: give the browser window its room back.
+  const docks = await getLocal<Record<string, Dock>>('docks', {});
+  const d = docks[windowId];
+  if (!d) return;
+  delete docks[windowId];
+  await setLocal('docks', docks);
+  try {
+    await ext.windows.update(d.main, { ...d.bounds });
+    if (d.state === 'maximized') await ext.windows.update(d.main, { state: 'maximized' });
+  } catch {
+    /* the browser window is gone too */
+  }
 }
