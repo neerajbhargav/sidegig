@@ -16,6 +16,20 @@ export function intrudes(r: Box, vw: number, w: number, side: DockSide): boolean
 }
 
 /**
+ * Wider than the space beside the rail but not under it: a full-width bar that
+ * follows the page's shift (left: auto) and now runs past the window edge.
+ */
+export function spills(r: Box, vw: number, w: number, side: DockSide): boolean {
+  if (r.width <= 0 || intrudes(r, vw, w, side)) return false;
+  return r.right > vw + EPS && r.left < vw - EPS;
+}
+
+/** Anything about this box that docking has to fix. */
+export function needsFix(r: Box, vw: number, w: number, side: DockSide): boolean {
+  return intrudes(r, vw, w, side) || spills(r, vw, w, side);
+}
+
+/**
  * First guess, made from the element's natural box.
  * Left rail: page content moves right by w, so fixed things move right by w
  * too, and anything that would then spill past the right edge gets narrowed.
@@ -23,6 +37,7 @@ export function intrudes(r: Box, vw: number, w: number, side: DockSide): boolean
  * and full-width things get narrowed instead.
  */
 export function firstGuess(r: Box, vw: number, w: number, side: DockSide): Fix {
+  if (spills(r, vw, w, side)) return { tx: 0, maxWidth: Math.max(0, vw - Math.max(0, r.left)) };
   if (side === 'left') {
     const spill = r.right + w > vw + EPS;
     return { tx: w, maxWidth: spill ? Math.max(0, vw - w - Math.max(0, r.left)) : null };

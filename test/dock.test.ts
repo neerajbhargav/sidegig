@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { intrudes, firstGuess, correct, type Box } from '../src/shared/dockmath.ts';
+import { intrudes, spills, needsFix, firstGuess, correct, type Box } from '../src/shared/dockmath.ts';
 import { migrate, mergeSettings } from '../src/shared/storage.ts';
 import { defaultSettings } from '../src/shared/defaults.ts';
 
@@ -64,4 +64,14 @@ test('settings: the old floating "pinned" rail migrates to docked', () => {
   assert.equal(m.rail.side, 'right');
   assert.equal(m.version, 2);
   assert.equal(defaultSettings().rail.mode, 'docked');
+});
+
+test('left rail: a full-width bar that follows the page shift is narrowed, not moved', () => {
+  // position: fixed; width: 100%; left: auto -> starts beside the rail, runs past the edge.
+  const r = box(W, VW + W);
+  assert.ok(!intrudes(r, VW, W, 'left'));
+  assert.ok(spills(r, VW, W, 'left'));
+  const out = dock(r, 'left', 'left');
+  assert.deepEqual([out.left, out.right], [W, VW]);
+  assert.ok(!needsFix(box(W, VW), VW, W, 'left'), 'once fitted, it stays put');
 });
