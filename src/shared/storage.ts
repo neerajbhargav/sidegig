@@ -31,6 +31,7 @@ export function migrate(stored: unknown): unknown {
   const next: Plain = { ...stored };
   // v1 -> v2: the floating "pinned" rail became the Opera-style docked rail.
   if (v < 2 && isObj(next.rail) && next.rail.mode === 'pinned') next.rail = { ...next.rail, mode: 'docked' };
+  // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;
 }

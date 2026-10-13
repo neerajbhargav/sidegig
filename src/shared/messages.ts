@@ -12,7 +12,9 @@ export type ToBackground =
   | { type: 'save-workspace'; name: string }
   | { type: 'restore-workspace'; id: string }
   | { type: 'sleep-tabs' }
-  | { type: 'refresh-status' };
+  | { type: 'refresh-status' }
+  | { type: 'edition-build' }
+  | { type: 'profile-import'; text: string; host: string };
 
 /** Messages sent from the background to a tab's rail. */
 export type ToContent =

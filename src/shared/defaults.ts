@@ -1,7 +1,7 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById } from './catalog.ts';
 
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
@@ -43,5 +43,12 @@ export function defaultSettings(): Settings {
     status: { github: false, vercel: false, gmail: false, intervalMin: 5 },
     rules: [],
     sleep: { enabled: false, afterMin: 60 },
+    edition: {
+      enabled: true,
+      size: 12,
+      refreshHours: 12,
+      kinds: { read: true, watch: true, podcast: true, book: true, paper: false, discuss: true, music: true },
+      onDeviceAi: true,
+    },
   };
 }

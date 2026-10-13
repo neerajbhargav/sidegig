@@ -1,10 +1,11 @@
-// New tab page: a big search box, your apps and your stacks. Nothing else.
+// New tab page: a big search box, your apps, today's edition and your stacks.
 import { ext } from '../../shared/api.ts';
 import { getLocal, updateSettings } from '../../shared/storage.ts';
 import { h, ico, favicon } from '../dom.ts';
 import { type Ctx, openUrl } from '../ctx.ts';
 import { createSearch } from './search.ts';
 import { appTiles, spacesFor, stackEl } from './home.ts';
+import { editionSection } from './edition.ts';
 
 export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const root = h('div', { class: 'nt' });
@@ -41,7 +42,11 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   void ui;
 
   const badges = await getLocal<Record<string, number>>('badges', {});
-  content.append(appTiles(ctx, badges));
+  content.append(h('div', { class: 'nt-apps' }, appTiles(ctx, badges)));
+  if (ctx.settings.edition.enabled) {
+    root.classList.add('with-ed');
+    content.append(await editionSection(ctx));
+  }
   const spaces = await spacesFor(ctx);
   const active = spaces.find((s) => s.id === ctx.settings.stacks.activeSpace) ?? spaces[0];
   if (active) {
