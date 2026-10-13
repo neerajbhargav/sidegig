@@ -2,6 +2,7 @@
 // local storage, refresh on a schedule. Works from the new tab and from the
 // background worker. Requests are signed out and only carry the search words.
 import { getLocal, setLocal } from './storage.ts';
+import { ext } from './api.ts';
 import { PACKS, bingUrl, fitScore, mixPool, nasaUrl, parseBing, parseNasa, parseWallhaven, rankScore, wallhavenUrl, type Collection, type WallItem } from './walls.ts';
 
 export interface Pool {
@@ -33,7 +34,69 @@ async function getJson(url: string, ms = 12_000): Promise<unknown> {
 }
 
 export async function readPool(id: string): Promise<Pool | null> {
+  if (id.startsWith('album:')) return albumPool(id);
   return getLocal<Pool | null>(KEY(id), null);
+}
+
+// ------------------------------------------------------------ albums
+// Collections made from your own pictures. The index is small; each picture is
+// stored under its own key so a new tab only reads the one it shows.
+
+export interface AlbumImage {
+  id: string;
+  w: number;
+  h: number;
+  name?: string;
+}
+export interface Album {
+  id: string;
+  name: string;
+  created: number;
+  items: AlbumImage[];
+}
+export const IMG_KEY = (id: string) => `ntImg:${id}`;
+
+export async function listAlbums(): Promise<Album[]> {
+  return getLocal<Album[]>('ntAlbums', []);
+}
+
+export async function saveAlbum(name: string, images: { url: string; w: number; h: number; name?: string }[]): Promise<Album> {
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mine';
+  const albums = await listAlbums();
+  let id = `album:${slug}`;
+  for (let n = 2; albums.some((a) => a.id === id); n++) id = `album:${slug}-${n}`;
+  const items: AlbumImage[] = [];
+  const writes: Record<string, string> = {};
+  images.forEach((im, i) => {
+    const imgId = `${id.slice(6)}-${Date.now().toString(36)}-${i}`;
+    writes[IMG_KEY(imgId)] = im.url;
+    items.push({ id: imgId, w: im.w, h: im.h, name: im.name });
+  });
+  const album: Album = { id, name: name.trim().slice(0, 40) || 'My pictures', created: Date.now(), items };
+  await ext.storage.local.set({ ...writes, ntAlbums: [...albums, album] });
+  return album;
+}
+
+export async function removeAlbum(id: string): Promise<void> {
+  const albums = await listAlbums();
+  const a = albums.find((x) => x.id === id);
+  if (!a) return;
+  await ext.storage.local.remove(a.items.map((im) => IMG_KEY(im.id)));
+  await setLocal('ntAlbums', albums.filter((x) => x.id !== id));
+}
+
+export async function albumImage(imgId: string): Promise<string> {
+  return getLocal<string>(IMG_KEY(imgId), '');
+}
+
+async function albumPool(id: string): Promise<Pool | null> {
+  const a = (await listAlbums()).find((x) => x.id === id);
+  if (!a?.items.length) return null;
+  return {
+    at: a.created,
+    page: 1,
+    items: a.items.map((im) => ({ id: `al:${im.id}`, src: `local:${im.id}`, thumb: `local:${im.id}`, w: im.w, h: im.h, link: '', credit: 'your pictures', term: a.name, pop: 1, score: 1 })),
+  };
 }
 
 export async function hiddenWalls(): Promise<string[]> {
@@ -84,6 +147,8 @@ async function measureFit(items: WallItem[]): Promise<WallItem[]> {
 
 /** Fetch fresh results for a collection. Keeps the old pool if every source fails. */
 export function refreshPool(c: Collection): Promise<Pool> {
+  // Your own pictures: nothing to fetch.
+  if (c.album || c.id.startsWith('album:')) return albumPool(c.id).then((p) => p ?? Promise.reject(new Error('Empty album')));
   const running = inflight.get(c.id);
   if (running) return running;
   const job = (async () => {
@@ -118,6 +183,7 @@ export function refreshPool(c: Collection): Promise<Pool> {
 
 /** The cached pool, refreshed in the background when it's stale (or fetched now if there's none). */
 export async function getPool(c: Collection): Promise<Pool | null> {
+  if (c.album || c.id.startsWith('album:')) return albumPool(c.id);
   const pool = await readPool(c.id);
   if (!pool?.items.length) return refreshPool(c).catch(() => null);
   if (Date.now() - pool.at > REFRESH_MS) void refreshPool(c).catch(() => undefined);

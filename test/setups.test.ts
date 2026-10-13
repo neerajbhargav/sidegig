@@ -79,3 +79,15 @@ test('an old setup is migrated when applied (Gmail moves to a side window)', () 
   assert.equal(settings.apps.find((a) => a.id === 'gmail')?.openIn, 'window');
   assert.equal(settings.apps.find((a) => a.id === 'claude')?.openIn, 'panel');
 });
+
+test('pictures include your albums and every album image, and codes leave them out', async () => {
+  const withAlbum = { ...local, ntAlbums: [{ id: 'album:ns', name: 'NS', created: 1, items: [{ id: 'ns-1', w: 2560, h: 1440 }] }], 'ntImg:ns-1': 'data:image/jpeg;base64,BBBB', unrelated: 1 };
+  const b = makeSetup('NS', mine(), withAlbum, ['looks', 'pictures']);
+  assert.ok(b.local.ntAlbums && b.local['ntImg:ns-1'] && b.local.ntUploads);
+  assert.equal(b.local.unrelated, undefined);
+  const { local: writes } = applySetup(defaultSettings(), b, ['pictures']);
+  assert.equal(writes['ntImg:ns-1'], 'data:image/jpeg;base64,BBBB');
+  const back = await parseSetup(await toCode(b));
+  assert.equal(back.local['ntImg:ns-1'], undefined);
+  assert.equal(back.local.ntAlbums, undefined);
+});
