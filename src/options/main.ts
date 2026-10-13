@@ -9,7 +9,9 @@ import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
 import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
 import { send } from '../ui/ctx.ts';
 import { ENGINES } from '../shared/ntdata.ts';
-import { findPlace, prepareWallpaper } from '../ui/views/ntwidgets.ts';
+import { findPlace } from '../ui/views/ntwidgets.ts';
+import { addUpload, prepareImage } from '../ui/views/ntwall.ts';
+import { THEMES } from '../ui/views/ntcustom.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -357,26 +359,49 @@ function textField(value: string, placeholder: string, onSave: (v: string) => vo
   return i;
 }
 
-function wallpaperControl(): HTMLElement {
-  const file = h('input', { type: 'file', accept: 'image/*', hidden: true });
+function backgroundControl(): HTMLElement {
+  const b = s.newtab.background;
+  const file = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true });
   file.addEventListener('change', async () => {
-    const f = file.files?.[0];
-    if (!f) return;
-    try {
-      await ext.storage.local.set({ ntWallpaper: await prepareWallpaper(f) });
-      await commit((x) => void (x.newtab.wallpaper = 'custom'));
-      toast('Wallpaper set');
-    } catch {
-      toast('Couldn’t use that picture');
+    let last = '';
+    for (const f of [...(file.files ?? [])]) {
+      try {
+        last = (await addUpload(await prepareImage(f))).id;
+      } catch {
+        toast('Couldn’t use that picture');
+      }
+    }
+    if (last) {
+      await commit((x) => void (x.newtab.background = { ...x.newtab.background, kind: 'upload', ref: last }));
+      toast('Background set');
     }
   });
+  const kinds: [string, string][] = [
+    ['none', 'None'],
+    ['daily', 'Daily landscape'],
+    ['monuments', 'Monuments'],
+    ['upload', 'Your pictures'],
+    ['gradient', 'Gradient'],
+    ['pattern', 'Pattern'],
+  ];
   return h(
     'div',
-    { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
-    seg(s.newtab.wallpaper, [['none', 'None'], ['daily', 'Daily photo'], ['custom', 'Your own']], (v) => {
-      if (v === 'custom') return file.click();
-      void commit((x) => void (x.newtab.wallpaper = v));
-    }),
+    { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
+    h(
+      'select',
+      {
+        class: 'text-input',
+        onchange: (e: Event) => {
+          const kind = (e.target as HTMLSelectElement).value as typeof b.kind;
+          const ref = kind === 'gradient' ? 'dawn' : kind === 'pattern' ? 'grille' : '';
+          void commit((x) => void (x.newtab.background = { ...x.newtab.background, kind, ref }));
+        },
+      },
+      kinds.map(([v, label]) => h('option', { value: v, selected: v === b.kind }, label)),
+      ['photo', 'url', 'color'].includes(b.kind) ? h('option', { value: b.kind, selected: true }, 'Picked on the new tab') : null,
+    ),
+    h('button', { type: 'button', class: 'btn', onclick: () => file.click() }, 'Upload…'),
+    seg(b.treatment, [['auto', 'Auto'], ['photo', 'Photo'], ['print', 'Print']], (v) => commit((x) => void (x.newtab.background.treatment = v))),
     file,
   );
 }
@@ -437,17 +462,23 @@ function newtabSection(): HTMLElement {
       { class: 'group' },
       opt('Use sidegig as the new tab page', null, toggle(n.enabled, (v) => void setOff(v).then(() => commit((x) => void (x.newtab.enabled = v))), 'Use sidegig as the new tab page')),
       opt(
-        'Look',
-        '“Match browser” follows your browser’s own style (Chrome, Edge, Arc, Dia, Aside, Opera, Brave…). The studio looks are sidegig’s own: industrial, a little retro.',
-        seg(n.look, [['auto', 'Match browser'], ['paper', 'Paper'], ['night', 'Night'], ['ultramarine', 'Ultramarine']], (v) =>
-          commit((x) => {
-            x.newtab.look = v;
-            try {
-              localStorage.setItem('sidegig.ntLook', v);
-            } catch {
-              /* fine */
-            }
-          }),
+        'Theme',
+        '“Match browser” follows your browser’s own style (Chrome, Edge, Arc, Dia, Aside, Opera, Brave…). The rest are sidegig’s studio themes. Every choice, with previews, is in Customize on the new tab.',
+        h(
+          'select',
+          {
+            class: 'text-input',
+            onchange: (e: Event) => {
+              const v = (e.target as HTMLSelectElement).value as typeof n.look;
+              try {
+                localStorage.setItem('sidegig.ntLook', v);
+              } catch {
+                /* fine */
+              }
+              void commit((x) => void (x.newtab.look = v));
+            },
+          },
+          THEMES.map((t) => h('option', { value: t.id, selected: t.id === n.look }, t.name)),
         ),
       ),
       opt('Home | AI switch', 'Your browser’s own AI and your chats with every assistant, one tab away (press Tab in the empty search box).', toggle(n.aiTab, (v) => commit((x) => void (x.newtab.aiTab = v)), 'Home and AI switch')),
@@ -476,7 +507,8 @@ function newtabSection(): HTMLElement {
           ),
         ),
       ),
-      opt('Wallpaper', 'A daily photo comes from Lorem Picsum. Your own picture stays on this device.', wallpaperControl()),
+      opt('Background', 'In studio themes pictures print as a two-tone risograph in the theme’s inks (Auto), or choose Photo or Print. Landscapes come from Lorem Picsum; Monuments are public-domain sculpture from the Art Institute of Chicago. Your pictures stay on this device. More choices, a veil and blur are in Customize on the new tab.', backgroundControl()),
+      opt('Interface sounds', 'Quiet, synthesized, never the only signal. Positive actions rise, negative ones fall. There’s also a mute button on the new tab.', toggle(n.sounds, (v) => commit((x) => void (x.newtab.sounds = v)), 'Interface sounds')),
       opt('Weather', 'From Open-Meteo: free, no account. Only the place you pick is sent.', weatherControl()),
       opt('To-do list', 'Finished tasks clear each morning; pinned tasks come back every day.', toggle(n.todo, (v) => commit((x) => void (x.newtab.todo = v)), 'To-do list')),
       opt('Calm pictures', 'Thumbnails stay grey until you point at them, so they don’t compete for attention.', toggle(n.calmImages, (v) => commit((x) => void (x.newtab.calmImages = v)), 'Calm pictures')),

@@ -44,6 +44,8 @@ export function manifestFor(target) {
     'alarms',
     'scripting',
     'declarativeNetRequestWithHostAccess',
+    // Your own backgrounds and the printed wallpaper live on this device.
+    'unlimitedStorage',
   ];
   if (chromium) permissions.push('sidePanel', 'favicon', 'tabGroups', 'search');
   if (target === 'firefox') permissions.push('search');

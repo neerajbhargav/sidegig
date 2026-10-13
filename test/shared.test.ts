@@ -101,3 +101,11 @@ test('catalog is well formed', () => {
   assert.ok(d.apps.length >= 4);
   assert.ok(d.apps.every((a) => ids.has(a.id)));
 });
+
+test('settings v4: the old wallpaper choice becomes a background', () => {
+  const m = mergeSettings(defaultSettings(), migrate({ version: 3, newtab: { wallpaper: 'monuments', look: 'paper' } }));
+  assert.equal(m.newtab.background.kind, 'monuments');
+  assert.equal(m.newtab.look, 'paper');
+  const u = mergeSettings(defaultSettings(), migrate({ version: 3, newtab: { wallpaper: 'custom' } }));
+  assert.deepEqual([u.newtab.background.kind, u.newtab.background.ref], ['upload', 'legacy']);
+});

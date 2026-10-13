@@ -10,6 +10,7 @@ import type { Edition } from '../../shared/edition/types.ts';
 import { PROVIDERS, providerOrder, chatsFromHistory, editionPrompt, type AiProvider, type Chat } from '../../shared/browserai.ts';
 import { detectBrowser } from '../browser.ts';
 import { voiceButton } from './ntwidgets.ts';
+import { play } from '../sound.ts';
 import { h, favicon, toast, ago, isMac, hostOf } from '../dom.ts';
 import { type Ctx, openApp } from '../ctx.ts';
 
@@ -139,7 +140,10 @@ export async function aiView(ctx: Ctx, onHome: () => void): Promise<HTMLElement>
     const tabsText = [...picked].map((n) => `- ${openTabs[n].title}: ${openTabs[n].url}`).join('\n');
     return tabsText ? `${box.value.trim()}\n\nContext, from my open tabs:\n${tabsText}` : box.value;
   };
-  const fire = (side: boolean) => void ask(ctx, PROVIDERS[chosen], withContext(), side);
+  const fire = (side: boolean) => {
+    play('send');
+    void ask(ctx, PROVIDERS[chosen], withContext(), side);
+  };
   send.addEventListener('click', (e) => fire(e.metaKey || e.ctrlKey));
   paintKeys();
 

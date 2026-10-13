@@ -31,6 +31,12 @@ export function migrate(stored: unknown): unknown {
   const next: Plain = { ...stored };
   // v1 -> v2: the floating "pinned" rail became the Opera-style docked rail.
   if (v < 2 && isObj(next.rail) && next.rail.mode === 'pinned') next.rail = { ...next.rail, mode: 'docked' };
+  // v3 -> v4: the single wallpaper choice became a background (kind, treatment, dim, blur).
+  if (v < 4 && isObj(next.newtab) && typeof next.newtab.wallpaper === 'string') {
+    const w = next.newtab.wallpaper;
+    const kind = w === 'custom' ? 'upload' : w === 'daily' || w === 'monuments' ? w : 'none';
+    next.newtab = { ...next.newtab, background: { kind, ref: kind === 'upload' ? 'legacy' : '', treatment: 'auto', dim: 35, blur: 0 } };
+  }
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;
