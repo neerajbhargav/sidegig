@@ -37,6 +37,8 @@ export function migrate(stored: unknown): unknown {
     const kind = w === 'custom' ? 'upload' : w === 'daily' || w === 'monuments' ? w : 'none';
     next.newtab = { ...next.newtab, background: { kind, ref: kind === 'upload' ? 'legacy' : '', treatment: 'auto', dim: 35, blur: 0 } };
   }
+  // v4 -> v5: the "ntp–1" tag was decoration nobody could read; it's off unless you write your own.
+  if (v < 5 && isObj(next.newtab) && next.newtab.tag === 'ntp–1') next.newtab = { ...next.newtab, tag: '' };
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;

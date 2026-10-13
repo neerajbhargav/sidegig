@@ -284,7 +284,7 @@ function setupCard(ctx: Ctx, rerender: () => void): HTMLElement {
     h(
       'p',
       {},
-      'Ask the AI you already use what you’re into. It writes a short list of your interests, sidegig reads it back, and every new tab becomes a small edition of articles, videos, podcasts, books and discussions picked for you. No feed, no ads, no tracking, and it ends.',
+      'Ask the AI you already use what you’re into. It writes a short list of your interests, this page reads it back, and every new tab becomes a small edition of articles, videos, podcasts, books and discussions picked for you. No feed, no ads, no tracking, and it ends.',
     ),
     h(
       'div',
@@ -548,7 +548,7 @@ async function interestsView(ctx: Ctx, p: Profile, rebuildSoon: () => void): Pro
     h(
       'p',
       { class: 'ed-fine' },
-      'How picks work: sidegig searches Hacker News, Substack, Google News, YouTube, Apple Podcasts, Open Library, arXiv and Reddit for your interests (signed out), then ranks by how well each result fits, how fresh it is and how much people valued it. Nothing is ranked by what keeps you scrolling, and each edition ends. Your interests and saves stay on this device.',
+      'How picks work: the edition searches Hacker News, Substack, Google News, YouTube, Apple Podcasts, Open Library, arXiv and Reddit for your interests (signed out), then ranks by how well each result fits, how fresh it is and how much people valued it. Nothing is ranked by what keeps you scrolling, and each edition ends. Your interests and saves stay on this device.',
     ),
   );
   return wrap;

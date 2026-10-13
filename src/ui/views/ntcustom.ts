@@ -381,12 +381,46 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
   return wrap;
 }
 
+/** The page's own name and tag, in place of "sidegig". */
+function nameSection(ctx: Ctx): HTMLElement {
+  const n = ctx.settings.newtab;
+  const title = h('input', { class: 'text-input', type: 'text', value: n.title, placeholder: 'sidegig', maxlength: 32, 'aria-label': 'Name on the page' });
+  const tag = h('input', { class: 'text-input cz-tag-in', type: 'text', value: n.tag, placeholder: 'Tag', maxlength: 16, 'aria-label': 'Tag next to the name' });
+  const save = () => {
+    const t = title.value.replace(/\s+/g, ' ').trim();
+    const g = tag.value.trim();
+    if (t === n.title && g === n.tag) return;
+    play('confirm');
+    set((s) => {
+      s.newtab.title = t === 'sidegig' ? '' : t;
+      s.newtab.tag = g;
+    });
+  };
+  // Live preview in the corner while you type.
+  title.addEventListener('input', () => {
+    const w = document.querySelector<HTMLElement>('.nt-brand .nt-word');
+    if (w) w.textContent = title.value.trim() || 'sidegig';
+  });
+  for (const el of [title, tag]) {
+    el.addEventListener('change', save);
+    el.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), save()));
+  }
+  return h(
+    'section',
+    { class: 'cz-sec' },
+    h('div', { class: 'cz-sec-h' }, 'Name on the page'),
+    h('div', { class: 'cz-name-row' }, title, tag),
+    h('p', { class: 'cz-hint' }, 'Shown in the top corner and the footer. Leave it empty for sidegig, clear the tag to hide it.'),
+  );
+}
+
 function themeTab(ctx: Ctx): HTMLElement {
   const n = ctx.settings.newtab;
   return h(
     'div',
     { class: 'cz-themes-wrap' },
     h('div', { class: 'cz-themes' }, THEMES.map((t) => themeCard(ctx, t))),
+    nameSection(ctx),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Custom theme'), customEditor(ctx)),
     h(
       'section',

@@ -63,6 +63,8 @@ export function appFavicon(app: { id: string; catalogId?: string; url: string; n
     img.addEventListener('error', () => img.replaceWith(favicon(app.url, app.name, cls)), { once: true });
     return img;
   }
+  // No icon known and no bundled one: a tinted letter beats a blank globe.
+  if (favMissing.has(app.id)) return h('span', { class: `${cls} mono`, style: { '--h': String(hueOf(app.url)) } as any }, (app.name.trim()[0] ?? '?').toUpperCase());
   return favicon(app.url, app.name, cls);
 }
 
