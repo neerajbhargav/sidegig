@@ -419,6 +419,7 @@ function backgroundControl(): HTMLElement {
           ['led', 'LED'],
           ['mosaic', 'Mosaic'],
           ['print', 'Print'],
+          ['ascii', 'ASCII'],
         ] as const
       ).map(([v, label]) => h('option', { value: v, selected: v === b.treatment }, label)),
     ),

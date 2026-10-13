@@ -96,6 +96,39 @@ export async function led(img: ImageBitmap, w: number, h: number, pitch = 9): Pr
   return out(c, 'image/jpeg', 0.9);
 }
 
+/**
+ * ASCII: the picture drawn in characters, darker to denser, in the theme's ink
+ * on the page colour, with the brightest cells in the accent.
+ */
+export async function ascii(img: ImageBitmap, w: number, h: number, bg: number[], ink: number[], accent: number[], cell = 11): Promise<string> {
+  const ramp = ' .·:-=+*%#@';
+  const cw = cell * 0.62;
+  const cols = Math.ceil(w / cw);
+  const rows = Math.ceil(h / cell);
+  const px = sample(img, cols, rows, true);
+  const c = new OffscreenCanvas(w, h);
+  const x = c.getContext('2d')!;
+  // Dark pages: letters glow on the page colour. Light pages: ink letters on paper.
+  const darkPage = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2] < 128;
+  x.fillStyle = `rgb(${bg.join(',')})`;
+  x.fillRect(0, 0, w, h);
+  x.font = `500 ${Math.round(cell * 0.95)}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
+  x.textBaseline = 'top';
+  const mix = (a: number[], b: number[], t: number) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
+  for (let r = 0; r < rows; r++) {
+    for (let k = 0; k < cols; k++) {
+      const i = (r * cols + k) * 4;
+      let l = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
+      if (!darkPage) l = 1 - l;
+      const ch = ramp[Math.min(ramp.length - 1, Math.floor(l * ramp.length))];
+      if (ch === ' ') continue;
+      x.fillStyle = l > 0.86 ? mix(bg, accent, 0.95) : mix(bg, ink, 0.35 + l * 0.6);
+      x.fillText(ch, k * cw, r * cell);
+    }
+  }
+  return out(c, 'image/png');
+}
+
 /** Mosaic: the picture as big square tiles with hairline grid lines in the page colour. */
 export async function mosaic(img: ImageBitmap, w: number, h: number, grid: string, tile = 28): Promise<string> {
   const cols = Math.ceil(w / tile);

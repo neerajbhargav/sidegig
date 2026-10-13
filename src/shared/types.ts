@@ -11,13 +11,17 @@ export type BadgeKind = 'parens' | 'gmail' | 'none';
 export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom' | 'picture';
 export type BgKind = 'none' | 'daily' | 'monuments' | 'photo' | 'gradient' | 'pattern' | 'upload' | 'url' | 'color' | 'collection';
 /** How a picture is shown: as is, or one of the studio treatments. */
-export type BgEffect = 'auto' | 'photo' | 'print' | 'film' | 'dream' | 'led' | 'mosaic';
+export type BgEffect = 'auto' | 'photo' | 'print' | 'film' | 'dream' | 'led' | 'mosaic' | 'ascii';
+/** Risograph inks for the Print effect: the theme's two, or a named set (dark to light, the last is the paper). */
+export type RisoInks = 'theme' | 'indigo' | 'lavender' | 'nova' | 'cobalt';
 export interface NtBackground {
   kind: BgKind;
   /** Which one: a gallery id ("p:54", "m:3"), gradient or pattern id, upload id, URL or colour. */
   ref: string;
   /** auto = printed or filmed in studio themes, a photo in Match browser. */
   treatment: BgEffect;
+  /** Print effect: which inks. */
+  inks: RisoInks;
   /** Collections: a new picture every new tab, every hour or every day. */
   rotate?: 'tab' | 'hour' | 'day';
   /** 0–90: how much the page colour veils the picture. */
@@ -126,6 +130,14 @@ export interface Settings {
     sounds: boolean;
     weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };
     todo: boolean;
+    /** Which parts of the page show (each one can be turned off). */
+    widgets: { greeting: boolean; brief: boolean; weather: boolean; calendar: boolean; pomodoro: boolean; notes: boolean; apps: boolean; bookmarks: boolean; feed: boolean };
+    /** Cards over the wallpaper: frosted glass, clear, or solid. */
+    panels: 'frosted' | 'clear' | 'solid';
+    /** The calendar app clicks open, plus private calendar addresses to show events from. */
+    calendar: { app: 'google' | 'outlook' | 'office' | 'notion' | 'apple' | 'proton'; feeds: string[] };
+    /** Pomodoro lengths in minutes; a long break after `every` focus rounds. */
+    pomodoro: { focus: number; short: number; long: number; every: number };
   };
   /** The new tab edition: a short, finite issue picked from your interests. */
   edition: {

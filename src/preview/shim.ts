@@ -119,11 +119,29 @@ const mock: any = {
     },
     async create(p: any) {
       log.push({ type: 'bookmarks.create', ...p });
-      return p;
+      const parent = byId.get(p.parentId ?? '1');
+      const node: any = { id: `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, title: p.title ?? '', url: p.url, children: p.url ? undefined : [] };
+      parent.children = parent.children ?? [];
+      parent.children.push(node);
+      index(node, parent.id);
+      setTimeout(() => mock.bookmarks.onCreated.fire(node.id, strip(node)), 0);
+      return strip(node);
+    },
+    async remove(id: string) {
+      const n = byId.get(id);
+      const parent = n && byId.get(n.parentId);
+      if (parent) parent.children = parent.children.filter((c: any) => c.id !== id);
+      byId.delete(id);
+      log.push({ type: 'bookmarks.remove', id });
+      setTimeout(() => mock.bookmarks.onRemoved.fire(id, {}), 0);
+    },
+    async removeTree(id: string) {
+      return mock.bookmarks.remove(id);
     },
     onCreated: ev(),
     onRemoved: ev(),
     onChanged: ev(),
+    onMoved: ev(),
   },
   tabGroups: {
     async query() {

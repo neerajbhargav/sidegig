@@ -1,7 +1,7 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById, NO_FRAME } from './catalog.ts';
 
-export const SETTINGS_VERSION = 6;
+export const SETTINGS_VERSION = 7;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
@@ -56,12 +56,16 @@ export function defaultSettings(): Settings {
       message: '',
       engine: 'default',
       accent: '',
-      background: { kind: 'none', ref: '', treatment: 'auto', dim: 35, blur: 0, rotate: 'tab' },
+      background: { kind: 'none', ref: '', treatment: 'auto', inks: 'theme', dim: 35, blur: 0, rotate: 'tab' },
       collections: [],
       custom: { bg: '#f1ede4', ink: '#1d1b16', accent: '#ff4f00' },
       sounds: false,
       weather: { enabled: false, place: '', lat: 0, lon: 0, units: 'f' },
       todo: true,
+      widgets: { greeting: true, brief: false, weather: true, calendar: true, pomodoro: true, notes: true, apps: true, bookmarks: true, feed: true },
+      panels: 'frosted',
+      calendar: { app: 'google', feeds: [] },
+      pomodoro: { focus: 25, short: 5, long: 15, every: 4 },
     },
     edition: {
       enabled: true,

@@ -7,12 +7,12 @@
 // text readable.
 import { uid } from '../../shared/api.ts';
 import { getLocal, setLocal } from '../../shared/storage.ts';
-import type { BgEffect, NtBackground } from '../../shared/types.ts';
+import type { BgEffect, NtBackground, RisoInks } from '../../shared/types.ts';
 import { pickIndex, type Palette, type RotState } from '../../shared/walls.ts';
 import { albumImage, findCollection, getPool, hiddenWalls } from '../../shared/collect.ts';
 import { h } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
-import { led, loadBitmap, mosaic, paletteOf } from './ntfx.ts';
+import { ascii, led, loadBitmap, mosaic, paletteOf } from './ntfx.ts';
 import { fitOnSignal } from './newtab.ts';
 
 /** Picsum ids picked for open sky and room for text: sea, fog, hills, piers, desert. */
@@ -38,14 +38,28 @@ export const MONUMENTS: [string, string][] = [
 ];
 
 /** Soft mesh gradients (after the calm, airy Super Visuals backgrounds). */
-export const GRADIENTS: { id: string; name: string; css: string }[] = [
+export const GRADIENTS: { id: string; name: string; css: string; grain?: boolean }[] = [
   { id: 'dawn', name: 'Dawn', css: 'radial-gradient(at 18% 12%, #ffd8c4 0, transparent 52%), radial-gradient(at 82% 4%, #c9d6ff 0, transparent 50%), radial-gradient(at 50% 100%, #fff0d4 0, transparent 60%), #f7f2ec' },
   { id: 'haze', name: 'Haze', css: 'radial-gradient(at 25% 20%, #e3dcff 0, transparent 55%), radial-gradient(at 80% 30%, #d6ecff 0, transparent 50%), radial-gradient(at 60% 95%, #f4e6ff 0, transparent 55%), #f3f2f8' },
   { id: 'dune', name: 'Dune', css: 'radial-gradient(at 30% 85%, #d9774a 0, transparent 45%), radial-gradient(at 75% 70%, #e8a47c 0, transparent 50%), radial-gradient(at 50% 10%, #f6e6d4 0, transparent 60%), #efd9c4' },
   { id: 'lagoon', name: 'Lagoon', css: 'radial-gradient(at 20% 30%, #2f8f83 0, transparent 50%), radial-gradient(at 80% 20%, #9fd3a8 0, transparent 55%), radial-gradient(at 55% 95%, #1f6b6a 0, transparent 55%), #5aa59a' },
   { id: 'aurora', name: 'Aurora', css: 'radial-gradient(at 20% 10%, #2b6b58 0, transparent 50%), radial-gradient(at 85% 25%, #4a2f7a 0, transparent 55%), radial-gradient(at 50% 100%, #0f2d3a 0, transparent 60%), #0b1014' },
   { id: 'cobalt', name: 'Cobalt', css: 'radial-gradient(at 70% 20%, #4d5dff 0, transparent 45%), radial-gradient(at 20% 80%, #0a12a8 0, transparent 55%), #0a12e6' },
+  // Grain gradients: soft colour fields with film grain on top (no picture, no network).
+  { id: 'accent', name: 'Your accent', grain: true, css: 'radial-gradient(110% 90% at 0% 0%, color-mix(in oklab, var(--c-signal) 45%, #fff) 0, transparent 50%), radial-gradient(90% 80% at 100% 100%, color-mix(in oklab, var(--c-signal) 40%, #000) 0, transparent 70%), var(--c-signal)' },
+  { id: 'ember', name: 'Ember', grain: true, css: 'radial-gradient(70% 60% at 0% 0%, #cfe3ff 0, transparent 60%), radial-gradient(90% 90% at 10% 45%, #ff5a1f 0, transparent 70%), linear-gradient(140deg, #e8551c 0%, #7a2a10 48%, #120c0a 100%)' },
+  { id: 'tide', name: 'Tide', grain: true, css: 'radial-gradient(80% 70% at 15% 10%, #9fd8ff 0, transparent 55%), linear-gradient(165deg, #2b93d6 0%, #1c6fa9 55%, #0c3657 100%)' },
+  { id: 'bloom', name: 'Bloom', grain: true, css: 'radial-gradient(70% 60% at 50% 105%, #ff7a3d 0, transparent 65%), radial-gradient(80% 70% at 50% -5%, #f3c4d4 0, transparent 70%), #f4ece4' },
+  { id: 'crimson', name: 'Crimson', grain: true, css: 'radial-gradient(60% 70% at 12% 25%, #ef7a55 0, transparent 60%), radial-gradient(70% 80% at 90% 85%, #6e0a18 0, transparent 70%), #c3192d' },
 ];
+
+/** Named risograph ink sets, dark to light; the last one is the paper. */
+export const RISO: Record<Exclude<RisoInks, 'theme'>, { name: string; inks: string[] }> = {
+  indigo: { name: 'Indigo', inks: ['#1f2a7a', '#efefea'] },
+  lavender: { name: 'Lavender', inks: ['#23276b', '#7f88e0', '#e9eaff'] },
+  nova: { name: 'Nova', inks: ['#0f2b25', '#9b3cf0', '#ff4a1c', '#efe6d6'] },
+  cobalt: { name: 'Cobalt', inks: ['#0a1599', '#5f73ff', '#f2f0e8'] },
+};
 
 /** Industrial patterns drawn in the theme's own ink. */
 export const PATTERNS: { id: string; name: string }[] = [
@@ -203,12 +217,41 @@ async function picture(ctx: Ctx, bg: NtBackground): Promise<Picture | null> {
 const hex = (c: string): [number, number, number] => {
   const m = c.trim().match(/^#?([0-9a-f]{6})$/i);
   if (m) return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
+  // color(), oklab(), lab()...: let a canvas turn it into plain RGB.
+  if (!/^rgba?\(/i.test(c.trim())) {
+    try {
+      const cv = new OffscreenCanvas(1, 1);
+      const x = cv.getContext('2d', { willReadFrequently: true })!;
+      x.fillStyle = c;
+      x.fillRect(0, 0, 1, 1);
+      const d = x.getImageData(0, 0, 1, 1).data;
+      return [d[0], d[1], d[2]];
+    } catch {
+      /* fall through */
+    }
+  }
   const r = c.match(/\d+(\.\d+)?/g)?.map(Number) ?? [0, 0, 0];
   return [Math.round(r[0] ?? 0), Math.round(r[1] ?? 0), Math.round(r[2] ?? 0)];
 };
 const lum = ([r, g, b]: number[]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
 /** The theme's two inks: shadows print in the dark one, light in the other. Paper gets indigo, like a riso drum. */
+/** The accent as rgb numbers (it may be a color-mix() or a variable). */
+function signalRgb(): number[] {
+  const probe = document.createElement('i');
+  probe.style.cssText = 'position:absolute;width:0;height:0;color:var(--c-signal)';
+  document.body.append(probe);
+  const c = hex(getComputedStyle(probe).color);
+  probe.remove();
+  return c;
+}
+
+/** The inks for this background: a named set, or the theme's own two. */
+function inkSet(bg: NtBackground): number[][] {
+  if (bg.inks && bg.inks !== 'theme' && RISO[bg.inks]) return RISO[bg.inks].inks.map((c) => hex(c));
+  return inks();
+}
+
 function inks(): [[number, number, number], [number, number, number]] {
   const root = document.documentElement;
   if (root.dataset.look === 'paper') return [hex('#1f2a7a'), hex('#efefea')];
@@ -228,7 +271,7 @@ function inks(): [[number, number, number], [number, number, number]] {
  * cell is ink or paper against interleaved-gradient noise plus a little wobble,
  * which reads like risograph grain rather than a mechanical screen.
  */
-export async function risograph(blob: Blob, w: number, h: number, dark: number[], light: number[]): Promise<string> {
+export async function risograph(blob: Blob, w: number, h: number, ...set: number[][]): Promise<string> {
   const img = await createImageBitmap(blob);
   const c = document.createElement('canvas');
   c.width = w;
@@ -261,7 +304,11 @@ export async function risograph(blob: Blob, w: number, h: number, dark: number[]
       let v = Math.min(1, Math.max(0, (L[i] - lo) / span));
       v = v * v * (3 - 2 * v);
       const t = (52.9829189 * ((0.06711056 * xx + 0.00583715 * y) % 1)) % 1;
-      const col = v + (Math.random() * 0.2 - 0.1) > t ? light : dark;
+      // Two inks: ink or paper. More inks: tone picks a band, the noise dithers between neighbours.
+      const k = set.length - 1;
+      const pos = v * k;
+      const band = Math.min(k - 1, Math.floor(pos));
+      const col = pos - band + (Math.random() * 0.2 - 0.1) > t ? set[band + 1] : set[band];
       p[i * 4] = col[0];
       p[i * 4 + 1] = col[1];
       p[i * 4 + 2] = col[2];
@@ -309,6 +356,22 @@ async function cachedFx(key: string, make: () => Promise<string>): Promise<strin
   return url;
 }
 
+/** The first picture of a page resolves out of a dot grid (once; not on re-renders). */
+let revealed = false;
+function revealOnLoad(img: HTMLImageElement, wrap: HTMLElement) {
+  img.addEventListener(
+    'load',
+    () => {
+      if (revealed) return;
+      revealed = true;
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      wrap.classList.add('wall-in');
+      setTimeout(() => wrap.classList.remove('wall-in'), 900);
+    },
+    { once: true },
+  );
+}
+
 export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
   const bg = ctx.settings.newtab.background;
   if (bg.kind === 'none') return null;
@@ -317,7 +380,12 @@ export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
   wrap.style.setProperty('--wall-blur', `${Math.max(0, Math.min(24, bg.blur))}px`);
 
   if (bg.kind === 'gradient') {
-    wrap.append(h('div', { class: 'wall-fill', style: { background: (GRADIENTS.find((g) => g.id === bg.ref) ?? GRADIENTS[0]).css } }));
+    const g = GRADIENTS.find((x) => x.id === bg.ref) ?? GRADIENTS[0];
+    wrap.append(h('div', { class: 'wall-fill', style: { background: g.css } }));
+    if (g.grain) {
+      wrap.dataset.grain = 'true';
+      wrap.append(h('div', { class: 'wall-noise' }));
+    }
     return wrap;
   }
   if (bg.kind === 'pattern') {
@@ -357,6 +425,7 @@ export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
     }
     const img = h('img', { src: pic.url, alt: '', decoding: 'async', referrerpolicy: 'no-referrer', class: 'wall-photo' });
     img.addEventListener('error', () => wrap.remove(), { once: true });
+    revealOnLoad(img, wrap);
     wrap.append(img);
     if (fx === 'film') wrap.append(h('div', { class: 'wall-grain' }));
     if (fx === 'dream') wrap.append(h('div', { class: 'wall-dots' }));
@@ -369,16 +438,20 @@ export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
   const w = Math.round(innerWidth / (half ? 2 : 1));
   const hgt = Math.round(innerHeight / (half ? 2 : 1));
   const [dark, light] = inks();
-  const key = `fx2:${fx}:${pic.id}:${pic.url.length > 300 ? pic.url.length : pic.url}:${fx === 'print' ? `${dark}:${light}` : fx === 'mosaic' ? light : ''}:${w}x${hgt}`;
+  const set = inkSet(bg);
+  const accent = signalRgb();
+  const key = `fx2:${fx}:${pic.id}:${pic.url.length > 300 ? pic.url.length : pic.url}:${fx === 'print' ? set.join(':') : fx === 'mosaic' ? light : fx === 'ascii' ? `${dark}:${light}:${accent}` : ''}:${w}x${hgt}`;
   const img = h('img', { alt: '', decoding: 'async', class: fx === 'print' ? 'riso' : `fx-${fx}` });
+  revealOnLoad(img, wrap);
   wrap.append(img);
   void (async () => {
     try {
       let bmp: ImageBitmap | null = null;
       const load = async () => (bmp ??= await loadBitmap(pic.url));
       img.src = await cachedFx(key, async () => {
-        if (fx === 'print') return risograph(await (await fetch(pic.url, { credentials: 'omit' })).blob(), w, hgt, dark, light);
+        if (fx === 'print') return risograph(await (await fetch(pic.url, { credentials: 'omit' })).blob(), w, hgt, ...set);
         if (fx === 'led') return led(await load(), w, hgt);
+        if (fx === 'ascii') return ascii(await load(), w, hgt, dark, light, accent);
         return mosaic(await load(), w, hgt, `rgb(${light.join(',')})`);
       });
       if (wantPalette) {

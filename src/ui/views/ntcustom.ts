@@ -6,9 +6,11 @@ import { readPool, refreshPool, listAlbums, albumImage, saveAlbum, removeAlbum }
 import type { NtBackground, NtLook, Settings } from '../../shared/types.ts';
 import { h, ico, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
-import { seg } from './quick.ts';
+import { seg, toggle } from './quick.ts';
+import { findPlace } from './ntwidgets.ts';
+import { CAL_APPS, type CalApp } from '../../shared/ntcal.ts';
 import { play } from '../sound.ts';
-import { GRADIENTS, PATTERNS, LANDSCAPES, MONUMENTS, landscapeUrl, monumentUrl, listUploads, addUpload, removeUpload, prepareImage } from './ntwall.ts';
+import { GRADIENTS, PATTERNS, LANDSCAPES, MONUMENTS, RISO, effectFor, landscapeUrl, monumentUrl, listUploads, addUpload, removeUpload, prepareImage } from './ntwall.ts';
 
 export const THEMES: { id: NtLook; name: string; note: string; swatch: [string, string, string]; studio: boolean }[] = [
   { id: 'auto', name: 'Match browser', note: 'follows your browser', swatch: ['#ffffff', '#1f1f1f', '#0b57d0'], studio: false },
@@ -164,8 +166,26 @@ const FX: [NtBackground['treatment'], string, string][] = [
   ['dream', 'Dream', 'Soft focus and a fine dot grid'],
   ['led', 'LED', 'A glowing dot-matrix wall'],
   ['mosaic', 'Mosaic', 'Big pixel tiles'],
-  ['print', 'Print', 'Two-tone risograph in the theme’s inks'],
+  ['print', 'Print', 'Risograph in the theme’s inks or a named set'],
+  ['ascii', 'ASCII', 'The picture drawn in letters'],
 ];
+
+/** Print inks: the theme's two, or a named set (Indigo, Lavender, Nova, Cobalt). */
+function inkPicker(current: NtBackground['inks']): HTMLElement {
+  const opts: [NtBackground['inks'], string, string[]][] = [['theme', 'Theme', ['var(--c-ink)', 'var(--c-bg)']], ...Object.entries(RISO).map(([id, r]) => [id as NtBackground['inks'], r.name, r.inks] as [NtBackground['inks'], string, string[]])];
+  return h(
+    'div',
+    { class: 'cz-inks', role: 'radiogroup', 'aria-label': 'Inks' },
+    opts.map(([id, name, cols]) =>
+      h(
+        'button',
+        { type: 'button', role: 'radio', class: 'cz-ink', 'aria-checked': String(current === id), onclick: () => (play('key'), setBg({ inks: id, treatment: 'print' })) },
+        h('span', { class: 'cz-ink-sw', 'aria-hidden': 'true' }, cols.map((c) => h('i', { style: { background: c } }))),
+        name,
+      ),
+    ),
+  );
+}
 
 function fxPicker(current: NtBackground['treatment']): HTMLElement {
   return h(
@@ -352,7 +372,7 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
     h(
       'div',
       { class: 'cz-controls' },
-      h('div', { class: 'cz-row cz-row-top' }, h('span', {}, 'Effect'), fxPicker(bg.treatment)),
+      h('div', { class: 'cz-row cz-row-top' }, h('span', {}, 'Effect'), h('div', {}, fxPicker(bg.treatment), effectFor(bg) === 'print' ? inkPicker(bg.inks) : null)),
       bg.kind === 'collection'
         ? h('div', { class: 'cz-row' }, h('span', {}, 'New picture'), seg(bg.rotate ?? 'tab', [['tab', 'Every tab'], ['hour', 'Hourly'], ['day', 'Daily']], (v) => setBg({ rotate: v })))
         : null,
@@ -499,6 +519,119 @@ function themeTab(ctx: Ctx): HTMLElement {
   );
 }
 
+// ---------------------------------------------------------------- widgets
+
+type WidgetKey = keyof Settings['newtab']['widgets'];
+const SHOW: [string, string, (s: Settings) => boolean, (s: Settings, v: boolean) => void][] = [
+  ['Greeting', 'Over the search box', (s) => s.newtab.widgets.greeting, (s, v) => void (s.newtab.widgets.greeting = v)],
+  ['Clock and date', 'Top left', (s) => s.newtab.clock, (s, v) => void (s.newtab.clock = v)],
+  ...(
+    [
+      ['weather', 'Weather', 'Now and the next four days'],
+      ['calendar', 'Calendar', 'This month; opens your calendar app'],
+      ['pomodoro', 'Pomodoro', 'Focus and break timer'],
+    ] as [WidgetKey, string, string][]
+  ).map(([k, t, m]) => [t, m, (s: Settings) => s.newtab.widgets[k], (s: Settings, v: boolean) => void (s.newtab.widgets[k] = v)] as [string, string, (s: Settings) => boolean, (s: Settings, v: boolean) => void]),
+  ['To-do', 'Done tasks clear each morning', (s) => s.newtab.todo, (s, v) => void (s.newtab.todo = v)],
+  ['Notes', 'Sticky notes, kept on this device', (s) => s.newtab.widgets.notes, (s, v) => void (s.newtab.widgets.notes = v)],
+  ['Bookmarks', 'Under the search box, with folders', (s) => s.newtab.widgets.bookmarks, (s, v) => void (s.newtab.widgets.bookmarks = v)],
+  ['For you', 'Your edition under the bookmarks', (s) => s.newtab.widgets.feed, (s, v) => void (s.newtab.widgets.feed = v)],
+  ['Search and AI switch', 'Ask any assistant from the same box', (s) => s.newtab.aiTab, (s, v) => void (s.newtab.aiTab = v)],
+];
+
+const row = (title: string, meta: string | null, control: Node) => h('div', { class: 'cz-opt' }, h('div', { class: 'cz-opt-t' }, h('b', {}, title), meta ? h('span', {}, meta) : null), control);
+
+function weatherPlace(ctx: Ctx): HTMLElement {
+  const wx = ctx.settings.newtab.weather;
+  const input = h('input', { class: 'text-input', type: 'text', value: wx.place, placeholder: 'Your city', 'aria-label': 'Weather city' });
+  const picks = h('div', { class: 'cz-picks' });
+  const find = async () => {
+    const q = input.value.trim();
+    if (!q) return;
+    const places = await findPlace(q).catch(() => []);
+    picks.replaceChildren(
+      ...(places.length
+        ? places.slice(0, 5).map((p) => h('button', { type: 'button', class: 'nt-chip', onclick: () => (play('confirm'), set((s) => void (s.newtab.weather = { ...s.newtab.weather, enabled: true, place: p.name, lat: p.lat, lon: p.lon }))) }, p.name))
+        : [h('span', { class: 'cz-hint' }, 'No place by that name')]),
+    );
+  };
+  input.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), void find()));
+  return h(
+    'div',
+    { class: 'cz-stack' },
+    h('div', { class: 'cz-name-row' }, input, h('button', { type: 'button', class: 'btn', onclick: () => void find() }, 'Find'), seg(wx.units, [['f', '°F'], ['c', '°C']], (u) => set((s) => void (s.newtab.weather.units = u)))),
+    picks,
+  );
+}
+
+function calendarSettings(ctx: Ctx): HTMLElement {
+  const cal = ctx.settings.newtab.calendar;
+  const apps = Object.entries(CAL_APPS) as [CalApp, (typeof CAL_APPS)[CalApp]][];
+  const feeds = h(
+    'div',
+    { class: 'cz-feeds' },
+    cal.feeds.map((f, i) =>
+      h(
+        'div',
+        { class: 'cz-feed' },
+        h('i', { class: 'cz-feed-dot', style: { background: `var(--feed-${i % 4})` } }),
+        h('span', { title: f }, f.replace(/^\w+:\/\//, '').replace(/^([^/]+).*$/, '$1')),
+        h('button', { type: 'button', class: 'nt-gear', 'aria-label': 'Remove this calendar', title: 'Remove', onclick: () => set((s) => void (s.newtab.calendar.feeds = s.newtab.calendar.feeds.filter((_, j) => j !== i))) }, ico('close', 16)),
+      ),
+    ),
+  );
+  const add = h('input', { class: 'text-input', type: 'url', placeholder: 'https://… or webcal://… (.ics)', 'aria-label': 'Calendar address' });
+  const addIt = () => {
+    const v = add.value.trim();
+    if (!/^(https|webcals?):\/\/\S+$/i.test(v)) return toast('Paste the calendar’s private address (it starts with https:// or webcal://)');
+    if (cal.feeds.length >= 6) return toast('Six calendars is the limit here');
+    play('confirm');
+    set((s) => void (s.newtab.calendar.feeds = [...s.newtab.calendar.feeds, v]));
+  };
+  add.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), addIt()));
+  return h(
+    'div',
+    { class: 'cz-stack' },
+    h('div', { class: 'cz-sub' }, 'Clicks open'),
+    h('div', { class: 'cz-chips' }, apps.map(([id, a]) => h('button', { type: 'button', class: 'nt-chip', 'aria-pressed': String(cal.app === id), onclick: () => set((s) => void (s.newtab.calendar.app = id)) }, a.name))),
+    h('div', { class: 'cz-sub' }, 'Show events from'),
+    feeds,
+    h('div', { class: 'cz-name-row' }, add, h('button', { type: 'button', class: 'btn', onclick: addIt }, 'Add')),
+    h(
+      'p',
+      { class: 'cz-hint' },
+      'Use the private iCal address. Google: Settings, your calendar, “Secret address in iCal format”. Outlook: Settings, Shared calendars, Publish, ICS. iCloud: share as Public Calendar. Proton: Share, link. Events are read on this device and refreshed every 30 minutes.',
+    ),
+  );
+}
+
+function pomodoroSettings(ctx: Ctx): HTMLElement {
+  const p = ctx.settings.newtab.pomodoro;
+  const num = (label: string, key: keyof typeof p, min: number, max: number) => {
+    const input = h('input', { class: 'text-input cz-num', type: 'number', min, max, value: String(p[key]), 'aria-label': label });
+    input.addEventListener('change', () => {
+      const v = Math.round(Number(input.value));
+      if (!Number.isFinite(v)) return;
+      set((s) => void (s.newtab.pomodoro[key] = Math.max(min, Math.min(max, v))));
+    });
+    return h('label', { class: 'cz-numrow' }, h('span', {}, label), input);
+  };
+  return h('div', { class: 'cz-nums' }, num('Focus, min', 'focus', 1, 120), num('Short break', 'short', 1, 30), num('Long break', 'long', 1, 60), num('Long break every', 'every', 2, 8));
+}
+
+function widgetsTab(ctx: Ctx): HTMLElement {
+  const st = ctx.settings;
+  return h(
+    'div',
+    { class: 'cz-themes-wrap' },
+    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Cards'), seg(st.newtab.panels, [['frosted', 'Frosted'], ['clear', 'Clear'], ['solid', 'Solid']], (v) => set((s) => void (s.newtab.panels = v))), h('p', { class: 'cz-hint' }, 'Frosted and clear let the wallpaper show through.')),
+    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Show'), h('div', { class: 'cz-opts' }, SHOW.map(([t, m, get, put]) => row(t, m, toggle(get(st), (v) => (play(v ? 'on' : 'off'), set((s) => put(s, v))), t))))),
+    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Weather'), weatherPlace(ctx)),
+    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Calendar'), calendarSettings(ctx)),
+    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Pomodoro'), pomodoroSettings(ctx)),
+  );
+}
+
 /** The panel, plus the button that opens it. Stays open across the page re-rendering after each change. */
 export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement } {
   const body = h('div', { class: 'cz-body' });
@@ -509,7 +642,7 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
     tab = t;
     remember(t);
     tabs.replaceChildren(
-      ...([['theme', 'Theme'], ['background', 'Background']] as const).map(([id, label]) =>
+      ...([['theme', 'Theme'], ['background', 'Background'], ['widgets', 'Widgets']] as const).map(([id, label]) =>
         h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === t), onclick: () => void show(id) }, label),
       ),
     );
@@ -519,7 +652,7 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
     } catch {
       /* storage blocked: memory only */
     }
-    body.replaceChildren(t === 'theme' ? themeTab(ctx) : await backgroundTab(ctx));
+    body.replaceChildren(t === 'theme' ? themeTab(ctx) : t === 'widgets' ? widgetsTab(ctx) : await backgroundTab(ctx));
     body.scrollTop = scroll;
   };
   body.addEventListener('scroll', () => {
@@ -546,9 +679,9 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
   const [bg, ink, accent] = ctx.settings.newtab.look === 'custom' ? [ctx.settings.newtab.custom.bg, ctx.settings.newtab.custom.ink, ctx.settings.newtab.custom.accent] : (THEMES.find((t) => t.id === ctx.settings.newtab.look) ?? THEMES[0]).swatch;
   const button = h(
     'button',
-    { type: 'button', class: 'nt-cz-btn', title: 'Customize: theme and background', 'aria-haspopup': 'dialog', onclick: () => (panel.hidden ? open() : close()) },
-    h('span', { class: 'cz-dot', style: { background: `linear-gradient(135deg, ${bg} 50%, ${ink} 50%)`, boxShadow: `0 0 0 2px ${accent}` } }),
-    h('span', {}, 'Customize'),
+    { type: 'button', class: 'nt-gear nt-cz-btn', title: 'Customize: theme, background and widgets', 'aria-label': 'Customize', 'aria-haspopup': 'dialog', onclick: () => (panel.hidden ? open() : close()) },
+    ico('palette', 18),
+    h('i', { class: 'cz-dot', 'aria-hidden': 'true', style: { background: `linear-gradient(135deg, ${bg} 50%, ${ink} 50%)`, boxShadow: `0 0 0 1.5px ${accent}` } }),
   );
   if (recalled()) queueMicrotask(open);
   return { button, panel };

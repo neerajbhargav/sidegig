@@ -6,7 +6,6 @@ import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
 import { greetingFor, dailyReset, dayKey, sortTodos, weatherLabel, weatherUrl, parseWeather, type Todo, type WeatherNow } from '../../shared/ntdata.ts';
 import { h, ico, iconButton, favicon, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
-import { secHead } from './edition.ts';
 import { play } from '../sound.ts';
 
 // ---------------------------------------------------------------- greeting
@@ -109,22 +108,23 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
   }
   await setLocal('ntTodoDay', today);
 
-  const sec = h('section', { class: 'ed-sec nt-todo' });
   const list = h('div', { class: 'todo-list' });
-  const count = h('span');
+  const count = h('span', { class: 'nt-card-note' });
+  let just = '';
   const save = async (next: Todo[]) => {
     todos = next;
     await setLocal('ntTodos', todos);
     paint();
+    just = '';
   };
   const paint = () => {
     const open = todos.filter((t) => !t.done).length;
-    count.textContent = todos.length ? `${open} open` : 'clears done tasks each morning';
+    count.textContent = todos.length ? `${open} open` : '';
     list.replaceChildren(
       ...sortTodos(todos).map((t) =>
         h(
           'div',
-          { class: 'todo', dataset: { done: String(t.done), pinned: String(t.pinned) } },
+          { class: t.id === just ? 'todo just' : 'todo', dataset: { done: String(t.done), pinned: String(t.pinned) } },
           h(
             'button',
             {
@@ -135,6 +135,7 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
               'aria-label': t.done ? `Mark “${t.text}” not done` : `Mark “${t.text}” done`,
               onclick: () => {
                 play(t.done ? 'off' : 'on');
+                just = t.done ? '' : t.id;
                 void save(todos.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)));
               },
             },
@@ -150,7 +151,7 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
       ),
     );
   };
-  const input = h('input', { class: 'todo-input', placeholder: 'Add a task and press Enter', 'aria-label': 'Add a task' });
+  const input = h('input', { class: 'todo-input', placeholder: 'Add a task', 'aria-label': 'Add a task. Done tasks clear each morning; pinned ones come back.' });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && input.value.trim()) {
       play('confirm');
@@ -158,8 +159,9 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
       input.value = '';
     }
   });
-  sec.append(secHead('To-do', 'var(--c-green)', count), list, input);
+  const sec = h('section', { class: 'nt-card nt-todo', 'aria-label': 'To-do' }, h('header', { class: 'nt-card-h' }, h('h2', {}, 'To-do'), h('div', { class: 'nt-card-a' }, count)), list, input);
   paint();
+  just = '';
   return sec;
 }
 

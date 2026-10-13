@@ -73,6 +73,8 @@ export interface WeatherNow {
   units: 'f' | 'c';
   place: string;
   at: number;
+  /** The next few days. */
+  days?: { date: string; code: number; hi: number; lo: number }[];
 }
 
 export function weatherUrl(lat: number, lon: number, units: 'f' | 'c'): string {
@@ -80,10 +82,10 @@ export function weatherUrl(lat: number, lon: number, units: 'f' | 'c'): string {
     latitude: lat.toFixed(3),
     longitude: lon.toFixed(3),
     current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day',
-    daily: 'temperature_2m_max,temperature_2m_min',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min',
     temperature_unit: units === 'f' ? 'fahrenheit' : 'celsius',
     timezone: 'auto',
-    forecast_days: '1',
+    forecast_days: '5',
   });
   return `https://api.open-meteo.com/v1/forecast?${q}`;
 }
@@ -103,5 +105,37 @@ export function parseWeather(raw: unknown, units: 'f' | 'c', place: string, now 
     units,
     place,
     at: now,
+    days: Array.isArray(d.daily?.time)
+      ? d.daily.time.slice(1, 5).map((date: string, i: number) => ({
+          date,
+          code: Number(d.daily.weather_code?.[i + 1] ?? 0),
+          hi: Math.round(d.daily.temperature_2m_max?.[i + 1] ?? 0),
+          lo: Math.round(d.daily.temperature_2m_min?.[i + 1] ?? 0),
+        }))
+      : [],
   };
+}
+
+/**
+ * A wallpaper credit short enough for the top bar: the photographer's initials
+ * ("Photo: Austin Neill on Unsplash" -> "AN"), the source's initials for
+ * "Title · Source · licence" ("AIC"), or a one-word source ("NASA"). Your own
+ * pictures need no credit.
+ */
+export function shortCredit(credit: string): string {
+  const c = credit.replace(/\s+/g, ' ').trim();
+  if (!c || /^your pictures?$/i.test(c) || /·\s*your pictures$/i.test(c)) return '';
+  const initials = (s: string) =>
+    s
+      .split(' ')
+      .filter((w) => /^\p{Lu}/u.test(w))
+      .slice(0, 3)
+      .map((w) => w[0])
+      .join('');
+  const by = c.match(/^(?:(?:photo|picture|image)\s*(?:by|:)\s*)?(.+?)\s+(?:on|via)\s+\S/i);
+  if (by) return initials(by[1]) || by[1].slice(0, 3);
+  const parts = c.split(' · ');
+  const source = parts.length > 1 ? parts[parts.length > 2 ? 1 : parts.length - 1] : parts[0];
+  if (!source.includes(' ') && source.length <= 10) return source;
+  return initials(source) || source.slice(0, 3);
 }
