@@ -142,7 +142,9 @@ function lever() {
   return out.join('');
 }
 
-const below = [plate(), bell(), drum()].join('');
+const below = plate();
+const bellSvg = bell();
+const drumSvg = drum();
 const leverSvg = lever();
 const above = hub();
 const [lx, ly] = k.axisVector(P, [LEVER_TRAVEL, 0, 0]);
@@ -157,6 +159,8 @@ export const TIMER = {
   /** Screen shift of the lever from "stopped" (left) to "running" (right). */
   leverShift: [${Math.round(lx * 100) / 100}, ${Math.round(ly * 100) / 100}],
   below: ${JSON.stringify(below)},
+  bell: ${JSON.stringify(bellSvg)},
+  drum: ${JSON.stringify(drumSvg)},
   lever: ${JSON.stringify(leverSvg)},
   above: ${JSON.stringify(above)},
 } as const;
@@ -164,3 +168,4 @@ export const TIMER = {
 await mkdir(path.join(root, 'src/ui/figures'), { recursive: true });
 await writeFile(path.join(root, 'src/ui/figures/timer.ts'), ts);
 console.log('timer:', Math.round(ts.length / 1024), 'KB');
+await import('./build-figures-more.mjs');

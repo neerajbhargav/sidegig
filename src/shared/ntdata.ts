@@ -75,15 +75,18 @@ export interface WeatherNow {
   at: number;
   /** The next few days. */
   days?: { date: string; code: number; hi: number; lo: number }[];
+  /** Wind now: speed (mph or km/h, matching the units) and the compass direction it comes from. */
+  wind?: { speed: number; dir: number };
 }
 
 export function weatherUrl(lat: number, lon: number, units: 'f' | 'c'): string {
   const q = new URLSearchParams({
     latitude: lat.toFixed(3),
     longitude: lon.toFixed(3),
-    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day',
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_direction_10m',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min',
     temperature_unit: units === 'f' ? 'fahrenheit' : 'celsius',
+    wind_speed_unit: units === 'f' ? 'mph' : 'kmh',
     timezone: 'auto',
     forecast_days: '5',
   });
@@ -113,6 +116,7 @@ export function parseWeather(raw: unknown, units: 'f' | 'c', place: string, now 
           lo: Math.round(d.daily.temperature_2m_min?.[i + 1] ?? 0),
         }))
       : [],
+    ...(typeof c.wind_speed_10m === 'number' ? { wind: { speed: Math.round(c.wind_speed_10m), dir: Math.round(c.wind_direction_10m ?? 0) } } : {}),
   };
 }
 
