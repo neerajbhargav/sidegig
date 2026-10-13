@@ -40,9 +40,18 @@ export async function quickView(ctx: Ctx): Promise<HTMLElement> {
     h(
       'div',
       { class: 'group' },
-      opt('Show', null, seg(s.rail.mode, [['hover', 'On hover'], ['pinned', 'Always'], ['off', 'Off']], (v) => set((x) => void (x.rail.mode = v)))),
+      opt('Show', null, seg(s.rail.mode, [['docked', 'Docked'], ['hover', 'Hover'], ['off', 'Off']], (v) => set((x) => void (x.rail.mode = v)))),
       opt('Side', null, seg(s.rail.side, [['left', 'Left'], ['right', 'Right']], (v) => set((x) => void (x.rail.side = v)))),
       opt('Size', null, seg(s.rail.size, [['compact', 'Compact'], ['comfortable', 'Comfy']], (v) => set((x) => void (x.rail.size = v)))),
+      host && s.rail.mode === 'docked'
+        ? opt(
+            `Float on ${host}`,
+            'Slide over this site instead of making room',
+            toggle(hostExcluded(s.rail.floatOn, host), (v) =>
+              set((x) => void (x.rail.floatOn = v ? [...new Set([...x.rail.floatOn, host])] : x.rail.floatOn.filter((e) => e !== host))),
+            `Float on ${host}`),
+          )
+        : null,
       host
         ? opt(
             `Hide on ${host}`,

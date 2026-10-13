@@ -71,7 +71,7 @@ export function manifestFor(target) {
     options_ui: { page: 'options.html', open_in_tab: true },
     chrome_url_overrides: { newtab: 'newtab.html' },
     content_scripts: [
-      { matches: ['<all_urls>'], js: ['rail.js'], run_at: 'document_end', all_frames: false },
+      { matches: ['<all_urls>'], js: ['rail.js'], run_at: 'document_start', all_frames: false },
       { matches: bridgeMatches(), js: ['bridge.js'], run_at: 'document_idle', all_frames: true },
     ],
     web_accessible_resources: war,

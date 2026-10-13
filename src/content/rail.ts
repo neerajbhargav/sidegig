@@ -1,17 +1,20 @@
-// The rail: a slim strip that slides in when the pointer touches the edge of
-// the page. Drawn in a closed shadow root so page styles can't reach it, and
-// built lazily so pages pay almost nothing until the edge is touched.
+// The rail. Two ways to live on the page:
+//   docked (default): always visible on your chosen side, and the page makes
+//     room for it like Opera's sidebar, so nothing is covered (see dock.ts);
+//   hover: slides in over the page when the pointer touches the edge.
+// Drawn in a closed shadow root so page styles can't reach it.
 import css from './rail.css';
 import { ext, faviconFor, TARGET } from '../shared/api.ts';
 import { loadSettings, onSettingsChanged, getLocal, onLocalChanged, updateSettings } from '../shared/storage.ts';
 import { themeCss, modeForBackground } from '../shared/theme.ts';
-import { icon } from '../shared/icons.ts';
+import { iconNode } from '../shared/icons.ts';
 import { hostExcluded } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
 import { buildPrompt } from '../shared/prompt.ts';
 import { appFromCatalog } from '../shared/defaults.ts';
 import { catalogById, CATALOG } from '../shared/catalog.ts';
 import { hueOf } from '../ui/dom.ts';
+import { Dock } from './dock.ts';
 import type { AppEntry, Settings, StatusCard } from '../shared/types.ts';
 import type { ToBackground, ToContent, View } from '../shared/messages.ts';
 
@@ -20,6 +23,12 @@ type DrawerView = View | 'app' | 'add';
 const send = (msg: ToBackground) => ext.runtime.sendMessage(msg).catch(() => undefined);
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const keys = (k: string) => (isMac ? `\u2325\u21e7${k}` : `Alt+Shift+${k}`);
+const railWidth = (s: Settings) => (s.rail.size === 'compact' ? 44 : 52);
+
+/** Should the rail dock (make room) on this site, per settings? */
+function dockedHere(s: Settings): boolean {
+  return s.rail.mode === 'docked' && !hostExcluded(s.rail.excluded, location.hostname) && !hostExcluded(s.rail.floatOn, location.hostname);
+}
 
 export function extractPage() {
   const selection = (window.getSelection()?.toString() ?? '').trim();
@@ -55,7 +64,16 @@ class Rail {
   private statusNews = false;
   private mode: 'light' | 'dark' | 'system' = 'system';
 
-  constructor(private s: Settings) {
+  private tempHidden = false;
+  /** The browser sidebar panel is open on this rail's side, so the panel's buttons list stands in for the rail. */
+  private covered = false;
+  private windowId: number | null = null;
+
+  constructor(
+    private s: Settings,
+    private dock: Dock,
+  ) {
+    this.host.setAttribute('data-sidegig', '');
     this.shell.className = 'shell';
     this.rail.className = 'rail';
     this.rail.setAttribute('aria-label', 'sidegig');
@@ -89,22 +107,62 @@ class Rail {
     return !this.disabled && this.s.rail.mode !== 'off' && !hostExcluded(this.s.rail.excluded, location.hostname);
   }
 
+  /** Docked right now: always visible and the page makes room. */
+  get docked(): boolean {
+    return !this.disabled && !this.tempHidden && !this.covered && dockedHere(this.s) && !document.fullscreenElement;
+  }
+
   disableHere() {
     this.disabled = true;
+    this.dock.set(0, this.s.rail.side);
     this.hide();
     this.host.style.display = 'none';
+  }
+
+  /** Remember which window this page is in, then follow the sidebar panel's open state. */
+  setWindow(id: number) {
+    this.windowId = id;
+    void this.checkPanel();
+    setInterval(() => void this.checkPanel(), 20_000);
+  }
+
+  private async checkPanel() {
+    if (this.windowId === null) return;
+    const map = await getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {});
+    const e = map[String(this.windowId)];
+    const open = !!e && Date.now() - e.ts < 40_000 && e.side === this.s.rail.side;
+    if (open === this.covered) return;
+    this.covered = open;
+    this.applySettings(this.s);
+  }
+
+  private drawerWidth(): number {
+    return parseInt(this.drawer.style.width, 10) || this.s.drawer.width;
+  }
+
+  /** Tell the page how much room to make: the rail, plus the drawer when it's open. */
+  private updateDock() {
+    const w = this.docked ? railWidth(this.s) + (this.view ? this.drawerWidth() : 0) : 0;
+    this.dock.set(w, this.s.rail.side);
   }
 
   applySettings(s: Settings) {
     this.s = s;
     this.host.dataset.side = s.rail.side;
     this.host.dataset.size = s.rail.size;
-    this.host.style.display = this.enabledHere || this.sticky ? '' : 'none';
+    this.host.dataset.mode = this.docked ? 'docked' : 'hover';
+    this.host.style.display = (this.enabledHere && !this.tempHidden && !this.covered) || this.sticky ? '' : 'none';
+    if (this.covered) {
+      this.closeDrawer();
+      this.open = false;
+      delete this.host.dataset.open;
+    }
     this.applyTheme();
     if (this.built) this.renderRail();
-    if (s.rail.mode === 'pinned' && this.enabledHere) this.show(false);
-    else if (this.open && !this.sticky && !this.view) this.hide();
     if (this.drawer.classList.contains('show')) this.drawer.style.width = `${s.drawer.width}px`;
+    if (this.docked) this.show(false);
+    else if (this.open && !this.sticky && !this.view) this.hide();
+    this.updateDock();
   }
 
   private applyTheme() {
@@ -131,12 +189,12 @@ class Rail {
     void this.refreshNews();
   }
 
-  private button(label: string, inner: string, onClick: (e: MouseEvent) => void, extra = ''): HTMLButtonElement {
+  private button(label: string, inner: Node | Node[], onClick: (e: MouseEvent) => void, extra = ''): HTMLButtonElement {
     const b = document.createElement('button');
     b.className = `item ${extra}`.trim();
     b.type = 'button';
     b.setAttribute('aria-label', label);
-    b.innerHTML = inner;
+    b.append(...(Array.isArray(inner) ? inner : [inner]));
     // Keep the page's text selection and focus when clicking the rail.
     b.addEventListener('mousedown', (e) => e.preventDefault());
     b.addEventListener('click', (e) => {
@@ -148,12 +206,24 @@ class Rail {
     return b;
   }
 
-  private appIcon(app: AppEntry): string {
+  private appIcon(app: AppEntry): Node[] {
     const src = faviconFor(app.url, 32);
     const letter = (app.name.trim()[0] ?? '?').toUpperCase();
-    return src
-      ? `<img alt="" src="${src}" data-letter="${letter}"><span class="badge" hidden></span>`
-      : `<span class="mono" style="--h:${hueOf(app.url)}">${letter}</span><span class="badge" hidden></span>`;
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.hidden = true;
+    if (src) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = src;
+      img.dataset.letter = letter;
+      return [img, badge];
+    }
+    const mono = document.createElement('span');
+    mono.className = 'mono';
+    mono.textContent = letter;
+    mono.style.setProperty('--h', String(hueOf(app.url)));
+    return [mono, badge];
   }
 
   /** Swap a broken site icon for a tinted letter tile. */
@@ -169,7 +239,7 @@ class Rail {
   private renderRail() {
     const s = this.s;
     this.rail.textContent = '';
-    this.rail.append(this.tool('home', 'Home', icon('logo', 22), 'logo'));
+    this.rail.append(this.tool('home', 'Home', iconNode('logo', 22), 'logo'));
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
 
     const apps = document.createElement('div');
@@ -180,12 +250,12 @@ class Rail {
       this.wireFallback(b, app);
       apps.append(b);
     }
-    apps.append(this.tool('add', 'Add this site', icon('plus', 20), 'add'));
+    apps.append(this.tool('add', 'Add this site', iconNode('plus', 20), 'add'));
     this.rail.append(apps);
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
-    this.rail.append(this.tool('search', `Search  ${keys('K')}`, icon('search')));
-    this.rail.append(this.tool('status', 'Status', icon('pulse'), this.statusNews ? 'glow status' : 'status'));
-    const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, icon('sparkle'), () => this.askAi(), 'ai');
+    this.rail.append(this.tool('search', `Search  ${keys('K')}`, iconNode('search')));
+    this.rail.append(this.tool('status', 'Status', iconNode('pulse'), this.statusNews ? 'glow status' : 'status'));
+    const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, iconNode('sparkle'), () => this.askAi(), 'ai');
     ai.addEventListener('pointerenter', () => this.showFlyout(ai, 450));
     ai.addEventListener('pointerleave', () => this.hideFlyout(300));
     ai.addEventListener('contextmenu', (e) => {
@@ -194,17 +264,18 @@ class Rail {
     });
     this.rail.append(ai);
     this.rail.append(Object.assign(document.createElement('div'), { className: 'spacer' }));
-    const pinned = s.rail.mode === 'pinned';
-    const pin = this.button(pinned ? 'Unpin (show on hover)' : 'Keep visible', icon(pinned ? 'pinOff' : 'pin'), () => this.togglePin());
-    pin.setAttribute('aria-pressed', String(pinned));
+    const docked = s.rail.mode === 'docked';
+    const dockIcon = iconNode(s.rail.side === 'left' ? 'sidebar' : 'sidebarRight');
+    const pin = this.button(docked ? 'Undock (show on hover)' : 'Dock to the side', dockIcon, () => this.togglePin());
+    pin.setAttribute('aria-pressed', String(docked));
     this.rail.append(pin);
-    this.rail.append(this.tool('settings', 'Settings', icon('sliders')));
+    this.rail.append(this.tool('settings', 'Settings', iconNode('sliders')));
     this.setBadges(this.badges);
     this.markActive();
   }
 
   /** A rail button that opens a drawer view and shows as pressed while it's open. */
-  private tool(view: DrawerView, label: string, inner: string, extra = ''): HTMLButtonElement {
+  private tool(view: DrawerView, label: string, inner: Node, extra = ''): HTMLButtonElement {
     const b = this.button(label, inner, () => this.toggleDrawer(view), extra);
     b.dataset.view = view;
     return b;
@@ -239,7 +310,7 @@ class Rail {
         b.className = 'item';
         b.title = app.name;
         b.setAttribute('aria-label', `Ask ${app.name}`);
-        b.innerHTML = this.appIcon(app);
+        b.append(...this.appIcon(app));
         this.wireFallback(b, app);
         b.addEventListener('mousedown', (e) => e.preventDefault());
         b.addEventListener('click', () => {
@@ -307,7 +378,7 @@ class Rail {
   }
 
   hide() {
-    if (this.s.rail.mode === 'pinned' && this.enabledHere) {
+    if (this.docked) {
       this.closeDrawer();
       return;
     }
@@ -322,7 +393,7 @@ class Rail {
   private scheduleHide(ms = 350) {
     clearTimeout(this.hideTimer);
     // A drawer you opened on purpose stays until Esc, a click on the page, or close.
-    if (this.sticky || this.s.rail.mode === 'pinned' || this.view || this.drawerFocused()) return;
+    if (this.sticky || this.docked || this.view || this.drawerFocused()) return;
     this.hideTimer = window.setTimeout(() => this.hide(), ms);
   }
 
@@ -376,6 +447,7 @@ class Rail {
     this.drawer.style.width = `${this.s.drawer.width}px`;
     this.drawer.classList.add('show');
     this.markActive();
+    this.updateDock();
     if (view === 'status') {
       this.statusNews = false;
       this.rail.querySelector('.status')?.classList.remove('glow');
@@ -383,9 +455,11 @@ class Rail {
   }
 
   closeDrawer() {
+    const had = !!this.view;
     this.view = null;
     this.drawer.classList.remove('show');
     this.markActive();
+    if (had) this.updateDock();
   }
 
   toggleDrawer(view: DrawerView) {
@@ -409,6 +483,7 @@ class Rail {
         handle.classList.remove('drag');
         this.drawer.classList.remove('resizing');
         const width = parseInt(this.drawer.style.width, 10);
+        this.updateDock();
         void updateSettings((s) => void (s.drawer.width = width));
       };
       handle.addEventListener('pointermove', move);
@@ -444,7 +519,7 @@ class Rail {
   }
 
   private togglePin() {
-    void updateSettings((s) => void (s.rail.mode = s.rail.mode === 'pinned' ? 'hover' : 'pinned'));
+    void updateSettings((s) => void (s.rail.mode = s.rail.mode === 'docked' ? 'hover' : 'docked'));
   }
 
   // ------------------------------------------------------------ tooltips
@@ -488,7 +563,7 @@ class Rail {
         if (raf) return;
         raf = requestAnimationFrame(() => {
           raf = 0;
-          if (!this.enabledHere || this.open) return;
+          if (!this.enabledHere || this.open || this.docked) return;
           const near = this.atEdge(e.clientX, 28);
           if (near) this.host.dataset.near = '';
           else delete this.host.dataset.near;
@@ -509,8 +584,9 @@ class Rail {
       'mousedown',
       (e) => {
         if (!this.open || e.composedPath().includes(this.host)) return;
-        if (this.s.rail.mode === 'pinned' && this.enabledHere) this.closeDrawer();
-        else this.hide();
+        // Docked: the drawer sits beside the page like a pinned Opera panel, so clicks on the page leave it open.
+        if (this.docked) return;
+        this.hide();
       },
       true,
     );
@@ -524,8 +600,10 @@ class Rail {
       true,
     );
     document.addEventListener('fullscreenchange', () => {
-      if (!this.s.rail.hideInFullscreen) return;
-      this.host.style.visibility = document.fullscreenElement ? 'hidden' : '';
+      const full = !!document.fullscreenElement;
+      this.dock.suspend(full);
+      if (this.s.rail.hideInFullscreen) this.host.style.visibility = full ? 'hidden' : '';
+      if (!full) this.updateDock();
     });
     window.addEventListener('message', (e) => {
       if (!this.iframe || e.source !== this.iframe.contentWindow) return;
@@ -554,7 +632,17 @@ class Rail {
         return false;
       }
       if (msg.type === 'toggle-rail') {
-        if (this.open) this.hide();
+        if (dockedHere(this.s)) {
+          // Docked: hide it on this page (and give the space back), or bring it back.
+          this.tempHidden = !this.tempHidden;
+          if (this.tempHidden) {
+            this.closeDrawer();
+            this.open = false;
+            delete this.host.dataset.open;
+            this.host.style.display = 'none';
+          } else this.applySettings(this.s);
+          this.updateDock();
+        } else if (this.open) this.hide();
         else this.show(true);
       }
       if (msg.type === 'open-view') {
@@ -568,6 +656,7 @@ class Rail {
     onLocalChanged('badges', (b) => this.setBadges((b as Record<string, number>) ?? {}));
     onLocalChanged('status', () => void this.refreshNews());
     onLocalChanged('statusSeen', () => void this.refreshNews());
+    onLocalChanged('panelOpen', () => void this.checkPanel());
     if (this.s.theme.mode === 'page') {
       matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyTheme());
     }
@@ -578,10 +667,19 @@ async function main() {
   if ((window as any).__sidegigRail) return;
   (window as any).__sidegigRail = true;
   const settings = await loadSettings();
-  const rail = new Rail(settings);
-  // Mini windows sidegig opens for apps stay clean: no rail inside them.
-  const info = (await send({ type: 'tab-info' })) as { popup?: boolean } | undefined;
-  if (info?.popup) rail.disableHere();
+  // Make room as early as possible (this script runs at document_start), so the
+  // page lays out at its narrower width from the start instead of jumping.
+  const dock = new Dock();
+  if (dockedHere(settings)) dock.set(railWidth(settings), settings.rail.side);
+  const start = async () => {
+    const rail = new Rail(settings, dock);
+    // Mini windows sidegig opens for apps stay clean: no rail inside them.
+    const info = (await send({ type: 'tab-info' })) as { popup?: boolean; windowId?: number } | undefined;
+    if (info?.popup) rail.disableHere();
+    else if (typeof info?.windowId === 'number') rail.setWindow(info.windowId);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => void start(), { once: true });
+  else void start();
 }
 
 if (window.top === window && document.documentElement && !(document.contentType && !/html/.test(document.contentType))) {

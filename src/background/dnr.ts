@@ -56,29 +56,22 @@ export function buildRules(apps: AppEntry[], extensionHost: string): Rule[] {
   let id = 1;
   const appHosts = [...new Set(apps.map((a) => hostOf(a.url)).filter(Boolean))];
   const sub = ['sub_frame' as chrome.declarativeNetRequest.ResourceType];
+  const trusted = [...new Set([...appHosts, ...AUTH_HOSTS])];
 
-  // 1. Frames sidegig's panel opens directly.
-  rules.push({ id: id++, priority: 1, action: stripFrameHeaders, condition: { resourceTypes: sub, tabIds: [-1], initiatorDomains: [extensionHost] } });
-  // 2. Navigations inside those frames (redirects, sign-in pages).
+  // 1. Frames sidegig's own pages open (the sidebar panel, the in-page panel).
+  rules.push({ id: id++, priority: 1, action: stripFrameHeaders, condition: { resourceTypes: sub, initiatorDomains: [extensionHost] } });
+  // 2. Navigations inside those frames: sign-in redirects and in-app links, started by
+  //    the app (or its sign-in page) itself. A third-party site embedding these apps
+  //    doesn't match, because it isn't one of the initiators.
   if (appHosts.length) {
     rules.push({
       id: id++,
       priority: 1,
       action: stripFrameHeaders,
-      condition: { resourceTypes: sub, tabIds: [-1], requestDomains: [...appHosts, ...AUTH_HOSTS] },
+      condition: { resourceTypes: sub, requestDomains: trusted, initiatorDomains: [extensionHost, ...trusted] },
     });
   }
-  // 3. Apps the user chose to open inside the in-page drawer.
-  const drawerHosts = apps.filter((a) => a.openIn === 'drawer').map((a) => hostOf(a.url)).filter(Boolean);
-  if (drawerHosts.length) {
-    rules.push({
-      id: id++,
-      priority: 1,
-      action: stripFrameHeaders,
-      condition: { resourceTypes: sub, initiatorDomains: [extensionHost], requestDomains: drawerHosts },
-    });
-  }
-  // 4. Mobile layout: ask for the phone version inside sidegig's panel only.
+  // 3. Mobile layout: ask for the phone version, only for frames sidegig shows.
   const mobileHosts = apps.filter((a) => a.mobile).map((a) => hostOf(a.url)).filter(Boolean);
   if (mobileHosts.length) {
     rules.push({
@@ -93,7 +86,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string): Rule[] {
           { header: 'if-none-match', operation: 'remove' as chrome.declarativeNetRequest.HeaderOperation },
         ],
       },
-      condition: { resourceTypes: sub, tabIds: [-1], requestDomains: mobileHosts },
+      condition: { resourceTypes: sub, requestDomains: mobileHosts, initiatorDomains: [extensionHost, ...trusted] },
     });
   }
   return rules;

@@ -146,3 +146,16 @@ button.item.add:hover { color: var(--m-fg); }
 .fly-label { font-size: 11.5px; font-weight: 600; color: var(--m-fg-muted); padding: 0 4px 6px; }
 .fly-row { display: flex; gap: 2px; }
 .flyout button.item { width: 38px; height: 38px; }
+
+/* Docked: flush to the edge, full height, part of the page's frame like Opera's sidebar. */
+:host([data-mode="docked"]) .shell { top: 0; bottom: 0; gap: 0; opacity: 1; transform: none; transition: none; }
+:host([data-mode="docked"][data-side="left"]) .shell { left: 0; }
+:host([data-mode="docked"][data-side="right"]) .shell { right: var(--sbw, 0px); }
+:host([data-mode="docked"]) .rail,
+:host([data-mode="docked"]) .drawer { border-radius: 0; box-shadow: none; border-top: 0; border-bottom: 0; }
+:host([data-mode="docked"][data-side="left"]) .rail,
+:host([data-mode="docked"][data-side="left"]) .drawer { border-left: 0; }
+:host([data-mode="docked"][data-side="right"]) .rail,
+:host([data-mode="docked"][data-side="right"]) .drawer { border-right: 0; }
+:host([data-mode="docked"]) .rail { padding: 10px 0; }
+:host([data-mode="docked"]) .hint { display: none; }

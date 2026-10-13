@@ -314,16 +314,17 @@ function railSection(): HTMLElement {
   return section(
     'rail',
     'Rail',
-    `Move the pointer to the edge of any page and the rail slides in. Shortcuts: ${keys('S')} toggles it, ${keys('K')} searches, ${keys('A')} asks AI.`,
+    `Docked keeps the rail beside every page, like Opera's sidebar: pages make room for it, so nothing is covered. On hover, it slides in when the pointer touches the edge. Shortcuts: ${keys('S')} toggles it, ${keys('K')} searches, ${keys('A')} asks AI.`,
     h(
       'div',
       { class: 'group' },
-      opt('Show', null, seg(s.rail.mode, [['hover', 'On hover'], ['pinned', 'Always'], ['off', 'Off']], (v) => commit((x) => void (x.rail.mode = v)))),
+      opt('Show', null, seg(s.rail.mode, [['docked', 'Docked'], ['hover', 'On hover'], ['off', 'Off']], (v) => commit((x) => void (x.rail.mode = v)))),
       opt('Side', null, seg(s.rail.side, [['left', 'Left'], ['right', 'Right']], (v) => commit((x) => void (x.rail.side = v)))),
       opt('Size', null, seg(s.rail.size, [['compact', 'Compact'], ['comfortable', 'Comfortable']], (v) => commit((x) => void (x.rail.size = v)))),
       opt('Edge sensitivity', `${s.rail.hotZone}px from the edge`, h('input', { class: 'range', type: 'range', min: '2', max: '24', value: String(s.rail.hotZone), onchange: (e: Event) => commit((x) => void (x.rail.hotZone = Number((e.target as HTMLInputElement).value))) })),
       opt('Delay', `${s.rail.delay}ms before it appears`, h('input', { class: 'range', type: 'range', min: '0', max: '600', step: '20', value: String(s.rail.delay), onchange: (e: Event) => commit((x) => void (x.rail.delay = Number((e.target as HTMLInputElement).value))) })),
       opt('Hide in fullscreen', 'Videos and presentations', toggle(s.rail.hideInFullscreen, (v) => commit((x) => void (x.rail.hideInFullscreen = v)), 'Hide in fullscreen')),
+      opt('Float instead of docking on', 'Comma separated. The rail slides over these sites instead of making room', textInput(s.rail.floatOn.join(', '), (v) => commit((x) => void (x.rail.floatOn = v.split(',').map((e) => e.trim()).filter(Boolean))), { style: { width: '260px' }, placeholder: 'docs.google.com' })),
       opt('Hidden on these sites', 'Comma separated', textInput(s.rail.excluded.join(', '), (v) => commit((x) => void (x.rail.excluded = v.split(',').map((e) => e.trim()).filter(Boolean))), { style: { width: '260px' }, placeholder: 'docs.google.com, figma.com' })),
       features.sidePanel || TARGET === 'firefox'
         ? opt('Keyboard shortcuts', 'Change them in the browser’s extension shortcuts page', h('button', { class: 'btn', type: 'button', onclick: () => void ext.tabs.create({ url: TARGET === 'firefox' ? 'about:addons' : 'chrome://extensions/shortcuts' }) }, 'Open'))

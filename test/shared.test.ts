@@ -86,7 +86,7 @@ test('settings merge keeps defaults for missing or mistyped values', () => {
   assert.equal(merged.apps.length, 1);
   assert.equal((merged as any).unknown, undefined);
   assert.deepEqual(mergeSettings(d, null), d);
-  assert.equal((migrate({}) as any).version, 1);
+  assert.equal((migrate({}) as any).version, 2);
 });
 
 test('catalog is well formed', () => {

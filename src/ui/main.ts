@@ -5,6 +5,9 @@ import { loadSettings, onSettingsChanged, getLocal, onLocalChanged } from '../sh
 import { themeCss } from '../shared/theme.ts';
 import type { Ctx, Kind, ViewName } from './ctx.ts';
 import { send } from './ctx.ts';
+import { panelRail } from './views/prail.ts';
+import { updateSettings, setLocal } from '../shared/storage.ts';
+import { iconButton } from './dom.ts';
 import { h } from './dom.ts';
 import { homeView } from './views/home.ts';
 import { searchView } from './views/search.ts';
@@ -38,8 +41,22 @@ async function boot() {
   if (pageMode !== 'light' && pageMode !== 'dark') pageMode = null;
 
   const view = h('div', { class: 'view' });
-  const shell = h('div', { class: 'app' }, view, framesHost);
-  document.body.append(shell);
+  const railHost = h('div', { class: 'prail-host' });
+  const hintHost = h('div');
+  // Which side the browser shows its sidebar on (Chrome 140+ can tell us).
+  let side: 'left' | 'right' = settings.rail.side;
+  let browserSide: 'left' | 'right' | null = null;
+  if (kind === 'panel') {
+    const layout = await (ext as any).sidePanel?.getLayout?.().catch(() => null);
+    if (layout?.side === 'left' || layout?.side === 'right') browserSide = side = layout.side;
+  }
+  if (kind === 'panel') {
+    // Opera layout: buttons list on the outer edge, the panel right beside it.
+    const main = h('div', { class: 'pmain' }, hintHost, view, framesHost);
+    document.body.append(h('div', { class: 'pshell', 'data-side': side }, railHost, main));
+  } else {
+    document.body.append(h('div', { class: 'app' }, view, framesHost));
+  }
 
   let current: { name: ViewName; app?: string } = { name: 'home' };
   let token = 0;
@@ -75,17 +92,69 @@ async function boot() {
     view.replaceChildren(el);
     view.style.flex = name === 'app' ? 'none' : '1 1 auto';
     showFrames(name === 'app');
+    if (kind === 'panel') void renderRail();
     if (kind === 'drawer') window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'view', view: name }, '*');
   }
 
+  async function renderRail() {
+    railHost.replaceChildren(await panelRail(ctx, current));
+  }
+
+  /** Offer to line the rail up with the side the browser puts its sidebar on. */
+  async function renderHint() {
+    hintHost.textContent = '';
+    if (kind !== 'panel' || !browserSide || browserSide === ctx.settings.rail.side) return;
+    if (await getLocal('sideHintDismissed', false)) return;
+    const other = browserSide === 'left' ? 'left' : 'right';
+    hintHost.append(
+      h(
+        'div',
+        { class: 'side-hint' },
+        h('div', { class: 'side-hint-text' }, `Your rail is on the ${ctx.settings.rail.side}, but this browser opens its sidebar on the ${other}. Put them on the same side so apps open right next to the rail.`),
+        h(
+          'div',
+          { class: 'actions' },
+          h('button', { class: 'btn primary', type: 'button', onclick: () => void ext.tabs.create({ url: 'chrome://settings/appearance' }) }, `Open browser settings`),
+          h('button', { class: 'btn', type: 'button', onclick: () => void updateSettings((s) => void (s.rail.side = other)) }, `Move rail to the ${other}`),
+          iconButton('close', 'Dismiss', async () => {
+            await setLocal('sideHintDismissed', true);
+            hintHost.textContent = '';
+          }),
+        ),
+      ),
+    );
+  }
+
+  // Tell pages in this window the panel is open, so a rail on the same side steps
+  // aside and the panel's own buttons list takes its place (one sidebar, not two).
+  if (kind === 'panel' && where.windowId !== undefined) {
+    const wid = String(where.windowId);
+    const beat = async () => {
+      const map = await getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {});
+      map[wid] = { side, ts: Date.now() };
+      await setLocal('panelOpen', map);
+    };
+    void beat();
+    setInterval(() => void beat(), 15_000);
+    addEventListener('pagehide', () => {
+      void getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {}).then((map) => {
+        delete map[wid];
+        return setLocal('panelOpen', map);
+      });
+    });
+  }
+
   applyTheme();
+  void renderHint();
   onSettingsChanged((s) => {
     ctx.settings = s;
     applyTheme();
     // Re-render data-driven views; leave search alone so typing isn't interrupted.
     if (current.name !== 'search') void render(current.name, { app: current.app });
+    void renderHint();
   });
-  onLocalChanged('badges', () => current.name === 'app' && void render('app', { app: current.app }));
+  onLocalChanged('badges', () => (kind === 'panel' ? void renderRail() : current.name === 'app' && void render('app', { app: current.app })));
+  onLocalChanged('status', () => kind === 'panel' && void renderRail());
 
   // Drawer: messages from the rail in the hosting page (checked by nonce).
   window.addEventListener('message', (e) => {
