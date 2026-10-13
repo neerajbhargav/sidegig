@@ -14,6 +14,8 @@ import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
+import { checkFavicons } from './favicons.ts';
+import { findCollection, readPool, refreshPool, REFRESH_MS } from '../shared/collect.ts';
 
 let cache: Settings | null = null;
 const now = () => cache ?? defaultSettings();
@@ -34,6 +36,7 @@ function aiApp(s: Settings): AppEntry | undefined {
 
 async function sync(): Promise<void> {
   cache = await loadSettings();
+  void checkFavicons(cache.apps);
   await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
   setupActionBehavior();
@@ -79,6 +82,21 @@ async function setupAlarms(s: Settings) {
   }
   await ext.alarms.clear('sleep');
   if (s.sleep.enabled) ext.alarms.create('sleep', { periodInMinutes: 10 });
+  // Wallpaper collections refresh on their own; app icons get rechecked as the browser learns them.
+  if (s.newtab.background.kind === 'collection') {
+    if (!(await ext.alarms.get('walls'))) ext.alarms.create('walls', { periodInMinutes: 180, delayInMinutes: 1 });
+  } else await ext.alarms.clear('walls');
+  if (!(await ext.alarms.get('favicons'))) ext.alarms.create('favicons', { periodInMinutes: 360, delayInMinutes: 0.2 });
+}
+
+async function refreshWalls() {
+  const s = now();
+  const bg = s.newtab.background;
+  if (bg.kind !== 'collection') return;
+  const c = findCollection(bg.ref, s.newtab.collections);
+  if (!c) return;
+  const pool = await readPool(c.id);
+  if (!pool || Date.now() - pool.at > REFRESH_MS) await refreshPool(c).catch(() => undefined);
 }
 
 // ---------------------------------------------------------------- AI hand-off
@@ -190,7 +208,13 @@ export async function defaultSpaceId(): Promise<string> {
 ext.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     const stored = await (ext.storage.sync ?? ext.storage.local).get('settings');
-    if (!(stored as any).settings) await saveSettings(defaultSettings());
+    if (!(stored as any).settings) {
+      const fresh = defaultSettings();
+      // Start the rail on the side this browser opens its sidebar, so apps open right beside it.
+      const layout = await (ext as any).sidePanel?.getLayout?.().catch(() => null);
+      if (layout?.side === 'left' || layout?.side === 'right') fresh.rail.side = layout.side;
+      await saveSettings(fresh);
+    }
     ext.runtime.openOptionsPage?.();
   }
   await sync();
@@ -289,6 +313,8 @@ ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'status') void refreshStatus();
   if (a.name === 'sleep') void sleepTabs(now().sleep.afterMin);
   if (a.name === 'edition') void buildEdition();
+  if (a.name === 'walls') void refreshWalls();
+  if (a.name === 'favicons') void checkFavicons(now().apps);
 });
 
 // Toolbar button where the browser has no side panel behavior.

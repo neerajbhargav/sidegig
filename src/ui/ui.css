@@ -932,7 +932,7 @@ html[data-look="mono"] {
   --grain-blend: multiply; --grain-op: 0.05; --riso-op: 0.45;
 }
 /* Custom: three colours of yours; everything else is mixed from them. */
-html[data-look="custom"] {
+html:is([data-look="custom"], [data-look="picture"]) {
   --c-bg: #f1ede4; --c-ink: #1d1b16; --c-signal: #ff4f00;
   --c-panel: color-mix(in oklab, var(--c-bg), var(--c-ink) 7%);
   --c-card: color-mix(in oklab, var(--c-bg), var(--c-ink) 2.5%);
@@ -963,9 +963,9 @@ html[data-look="custom"] {
   content: ""; position: absolute; inset: 0;
   background:
     linear-gradient(90deg,
-      color-mix(in srgb, var(--c-bg) min(100%, calc(var(--wall-dim) * 100% + 45%)), transparent) 0%,
-      color-mix(in srgb, var(--c-bg) min(100%, calc(var(--wall-dim) * 100% + 30%)), transparent) 30%,
-      color-mix(in srgb, var(--c-bg) min(100%, calc(var(--wall-dim) * 100% + 4%)), transparent) 58%,
+      color-mix(in srgb, var(--c-bg) min(100%, calc(var(--wall-dim) * 100% + 28%)), transparent) 0%,
+      color-mix(in srgb, var(--c-bg) min(100%, calc(var(--wall-dim) * 100% + 16%)), transparent) 30%,
+      color-mix(in srgb, var(--c-bg) min(100%, calc(var(--wall-dim) * 100%)), transparent) 58%,
       color-mix(in srgb, var(--c-bg) calc(var(--wall-dim) * 55%), transparent) 100%),
     linear-gradient(to bottom, transparent 42%, color-mix(in srgb, var(--c-bg) 80%, transparent) 70%, var(--c-bg) 94%);
 }
@@ -1052,3 +1052,98 @@ html[data-look="native"] .cz-sec-h { font-family: var(--f-text); font-size: 12.5
 /* Text that sits on the accent colour stays readable whatever the accent. */
 .nt-led, .ai-send, .ctx-newtab .btn.primary, .ed-lead-tag, .nt-mic[aria-pressed="true"] { color: var(--c-on-signal) !important; }
 .ctx-newtab ::selection { color: var(--c-on-signal); }
+
+/* Black brand logos turn white on dark surfaces. */
+html[data-ui="dark"] img.brand-dark,
+html:is([data-look="night"], [data-look="cobalt"], [data-look="phosphor"], [data-look="ultramarine"], [data-pal="dark"]) img.brand-dark,
+html[data-look="native"][data-scheme="dark"] img.brand-dark { filter: invert(1); }
+img.fav.brand { object-fit: contain; }
+
+/* From picture: dark pictures make a dark page, so the grain screens instead of multiplies. */
+html[data-look="picture"][data-pal="dark"] { --grain-blend: screen; --grain-op: 0.06; --c-shade: rgba(0, 0, 0, 0.5); }
+
+/* ======================================================================
+   Picture effects (after Super Visuals' background library)
+   ====================================================================== */
+/* Film: warm, slightly crushed, grain and a vignette. */
+.nt-wall[data-fx="film"] img.wall-photo { filter: blur(var(--wall-blur)) contrast(1.06) saturate(0.86) sepia(0.12) brightness(0.94); }
+.nt-wall .wall-grain {
+  position: absolute; inset: -50%; pointer-events: none; opacity: 0.32; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.6 -0.3'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation: grain-drift 1.2s steps(4) infinite;
+}
+.nt-wall[data-fx="film"]::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(120% 90% at 65% 40%, transparent 45%, rgba(0, 0, 0, 0.55) 100%); }
+@keyframes grain-drift { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
+/* Dream: soft focus, lifted light, a fine dot grid. */
+.nt-wall[data-fx="dream"] img.wall-photo { filter: blur(calc(var(--wall-blur) + 1.5px)) saturate(1.12) brightness(1.05); }
+.nt-wall .wall-dots { position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0.9px, transparent 1.4px); background-size: 18px 18px; mix-blend-mode: soft-light; }
+.nt-wall[data-fx="dream"]::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to bottom, rgba(255, 255, 255, 0.18), transparent 45%); }
+/* LED and mosaic are drawn on a canvas at screen size. */
+.nt-wall img.fx-led, .nt-wall img.fx-mosaic { opacity: 0; transition: opacity 500ms ease; filter: blur(var(--wall-blur)); }
+.nt-wall img.fx-led[src] { opacity: 1; }
+.nt-wall img.fx-mosaic[src] { opacity: 1; }
+.nt-wall[data-fx="led"]::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(95% 85% at 68% 38%, transparent 45%, rgba(0, 0, 0, 0.6) 100%); }
+/* Mosaic fades into the page at the bottom, like a hero image. */
+.nt-wall[data-fx="mosaic"] img.fx-mosaic { -webkit-mask: linear-gradient(to bottom, #000 40%, transparent 92%); mask: linear-gradient(to bottom, #000 40%, transparent 92%); }
+.nt-wall[data-loading="true"] .wall-fill { animation: wall-breathe 2.4s ease-in-out infinite alternate; }
+@keyframes wall-breathe { from { opacity: 0.55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .nt-wall .wall-grain, .nt-wall[data-loading="true"] .wall-fill { animation: none; } }
+
+/* Wallpaper credit with next / hide in the footer. */
+.nt-wallbar { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 46vw; pointer-events: auto; }
+.nt-wallbar-k { color: var(--c-faint); flex: none; }
+.nt-credit { color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+a.nt-credit:hover { text-decoration: underline; text-underline-offset: 3px; }
+.nt-wallbtn { all: unset; cursor: pointer; flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--c-mute); border: 1px solid var(--c-line); background: color-mix(in srgb, var(--c-card) 70%, transparent); }
+.nt-wallbtn:hover { color: var(--c-ink); border-color: var(--c-line2); }
+.nt-wallbtn:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
+
+/* Customize: collections and effects. */
+.cz-hint-top { margin: 0 0 10px; }
+.cz-make { margin: 0 0 12px; }
+.cz-grid-packs { margin-bottom: 8px; }
+.cz-grid-packs .cz-tile-label { display: none; }
+.cz-pack { position: absolute; inset: 0; display: block; background: linear-gradient(135deg, var(--c-panel), var(--c-line2)); }
+.cz-pack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cz-pack::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.62), transparent 62%); }
+.cz-pack-name { position: absolute; left: 7px; bottom: 5px; z-index: 1; color: #fff; font: 600 11.5px/1.2 var(--f-text); letter-spacing: 0; text-transform: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.cz-row-top { align-items: flex-start; }
+.cz-row-top > span:first-child { padding-top: 6px; }
+.cz-fx { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.cz-fx-b { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 6px; border-radius: 999px; font-size: 12px; color: var(--c-mute); border: 1px solid var(--c-line); background: var(--c-card); }
+.cz-fx-b:hover { color: var(--c-ink); border-color: var(--c-line2); }
+.cz-fx-b[aria-checked="true"] { color: var(--c-ink); border-color: var(--c-signal); box-shadow: 0 0 0 1px var(--c-signal); }
+.cz-fx-b:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
+.cz-fx-sw { width: 16px; height: 16px; border-radius: 50%; flex: none; background: linear-gradient(135deg, #e9b48a, #3b5b8c); }
+.cz-fx-b[data-fx="auto"] .cz-fx-sw { background: conic-gradient(#ff4f00, #2c5bff, #12a150, #ff4f00); }
+.cz-fx-b[data-fx="film"] .cz-fx-sw { background: radial-gradient(circle at 40% 40%, #e08a4a, #2a1a12 75%); }
+.cz-fx-b[data-fx="dream"] .cz-fx-sw { background: radial-gradient(circle, #fff 1px, transparent 1.5px) 0 0 / 5px 5px, linear-gradient(#bfe0ff, #b9e3b0); }
+.cz-fx-b[data-fx="led"] .cz-fx-sw { background: radial-gradient(circle, #ff5a3c 1.4px, transparent 1.8px) 0 0 / 4px 4px, #120404; }
+.cz-fx-b[data-fx="mosaic"] .cz-fx-sw { background: conic-gradient(#f2d14b 25%, #7a9a3a 0 50%, #f2d14b 0 75%, #c46b2a 0) 0 0 / 8px 8px; }
+.cz-fx-b[data-fx="print"] .cz-fx-sw { background: radial-gradient(circle, #1f2a7a 1px, transparent 1.3px) 0 0 / 3px 3px, #efefea; }
+.linkish { all: unset; cursor: pointer; color: var(--c-signal); text-decoration: underline; text-underline-offset: 3px; }
+
+.nt-wallpin { position: fixed; right: 18px; bottom: 16px; z-index: 30; display: flex; padding: 4px 4px 4px 12px; border-radius: 999px; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-mute); background: color-mix(in srgb, var(--c-bg) 72%, transparent); border: 1px solid var(--c-line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0.72; transition: opacity 160ms ease; }
+.nt-wallpin:hover, .nt-wallpin:focus-within { opacity: 1; }
+html[data-look="native"] .nt-wallpin { font-family: var(--f-text); font-size: 12px; letter-spacing: 0; text-transform: none; }
+html[data-cz] .nt-wallpin { right: calc(min(400px, 92vw) + 18px); }
+
+/* Text over a picture: a soft halo in the page colour, so it reads at any veil
+   without hiding the picture. */
+html:not([data-look="native"]) .nt2[data-wall] :is(.nt-greet, .nt-brief, .nt-date, .nt-ampm, .nt-weather, .nt-meta, .nt-ascii, .nt-modes-hint, .nt-label, .nt-word, .nt-tag, .sec-head, .nt-sec-h),
+html:not([data-look="native"]) .nt2[data-wall] .nt-time {
+  text-shadow: 0 0 1px var(--c-bg), 0 0 6px var(--c-bg), 0 0 14px color-mix(in srgb, var(--c-bg) 85%, transparent), 0 0 28px color-mix(in srgb, var(--c-bg) 60%, transparent);
+}
+html[data-look="native"] .nt2[data-wall] :is(.nt-greet, .nt-brief, .nt-date, .nt-time, .nt-weather, .nt-modes-hint) {
+  text-shadow: 0 0 2px var(--c-bg, #fff), 0 0 10px color-mix(in srgb, var(--c-bg, #fff) 80%, transparent), 0 0 24px color-mix(in srgb, var(--c-bg, #fff) 55%, transparent);
+}
+/* A light top band so the bar's small type reads over busy pictures. */
+.nt2[data-wall]::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 120px; z-index: 1; pointer-events: none; background: linear-gradient(to bottom, color-mix(in srgb, var(--c-bg) 70%, transparent), transparent); }
+
+.nt-wallslot { display: flex; justify-content: center; min-width: 0; letter-spacing: 0.08em; }
+.nt-wallslot .nt-wallbar { max-width: 100%; }
+.nt-wallslot .nt-credit { color: var(--c-ink); opacity: 0.8; }
+
+.appbar-wrap { display: flex; flex-direction: column; }
+.signin-note { display: flex; flex-direction: column; gap: 8px; margin: 8px 10px 4px; padding: 10px 12px; border-radius: var(--m-radius, 10px); background: var(--m-surface-2, rgba(11, 87, 208, 0.08)); font-size: 12.5px; line-height: 1.45; }
+.signin-note .btn { align-self: flex-start; }

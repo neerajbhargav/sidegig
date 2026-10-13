@@ -12,6 +12,7 @@ import { ENGINES } from '../shared/ntdata.ts';
 import { findPlace } from '../ui/views/ntwidgets.ts';
 import { addUpload, prepareImage } from '../ui/views/ntwall.ts';
 import { THEMES } from '../ui/views/ntcustom.ts';
+import { PACKS } from '../shared/walls.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -383,7 +384,10 @@ function backgroundControl(): HTMLElement {
     ['upload', 'Your pictures'],
     ['gradient', 'Gradient'],
     ['pattern', 'Pattern'],
+    ...PACKS.map((c): [string, string] => [`collection:${c.id}`, `Collection: ${c.name}`]),
+    ...s.newtab.collections.map((c): [string, string] => [`collection:${c.id}`, `Collection: ${c.name}`]),
   ];
+  const current = b.kind === 'collection' ? `collection:${b.ref}` : b.kind;
   return h(
     'div',
     { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
@@ -392,16 +396,31 @@ function backgroundControl(): HTMLElement {
       {
         class: 'text-input',
         onchange: (e: Event) => {
-          const kind = (e.target as HTMLSelectElement).value as typeof b.kind;
-          const ref = kind === 'gradient' ? 'dawn' : kind === 'pattern' ? 'grille' : '';
+          const v = (e.target as HTMLSelectElement).value;
+          const kind = (v.startsWith('collection:') ? 'collection' : v) as typeof b.kind;
+          const ref = kind === 'collection' ? v.slice('collection:'.length) : kind === 'gradient' ? 'dawn' : kind === 'pattern' ? 'grille' : '';
           void commit((x) => void (x.newtab.background = { ...x.newtab.background, kind, ref }));
         },
       },
-      kinds.map(([v, label]) => h('option', { value: v, selected: v === b.kind }, label)),
+      kinds.map(([v, label]) => h('option', { value: v, selected: v === current }, label)),
       ['photo', 'url', 'color'].includes(b.kind) ? h('option', { value: b.kind, selected: true }, 'Picked on the new tab') : null,
     ),
     h('button', { type: 'button', class: 'btn', onclick: () => file.click() }, 'Upload…'),
-    seg(b.treatment, [['auto', 'Auto'], ['photo', 'Photo'], ['print', 'Print']], (v) => commit((x) => void (x.newtab.background.treatment = v))),
+    h(
+      'select',
+      { class: 'text-input', 'aria-label': 'Effect', onchange: (e: Event) => void commit((x) => void (x.newtab.background.treatment = (e.target as HTMLSelectElement).value as typeof b.treatment)) },
+      (
+        [
+          ['auto', 'Effect: Auto'],
+          ['photo', 'Photo'],
+          ['film', 'Film'],
+          ['dream', 'Dream'],
+          ['led', 'LED'],
+          ['mosaic', 'Mosaic'],
+          ['print', 'Print'],
+        ] as const
+      ).map(([v, label]) => h('option', { value: v, selected: v === b.treatment }, label)),
+    ),
     file,
   );
 }
@@ -507,7 +526,7 @@ function newtabSection(): HTMLElement {
           ),
         ),
       ),
-      opt('Background', 'In studio themes pictures print as a two-tone risograph in the theme’s inks (Auto), or choose Photo or Print. Landscapes come from Lorem Picsum; Monuments are public-domain sculpture from the Art Institute of Chicago. Your pictures stay on this device. More choices, a veil and blur are in Customize on the new tab.', backgroundControl()),
+      opt('Background', 'Pick a collection (Cars, Anime, Tech, Space and more, or your own words in Customize) and sidegig collects the wallpapers people loved most, keeps the ones that look great behind a new tab, and refreshes them on its own. Effects: Film, Dream, LED, Mosaic or a risograph Print. Your pictures stay on this device.', backgroundControl()),
       opt('Interface sounds', 'Quiet, synthesized, never the only signal. Positive actions rise, negative ones fall. There’s also a mute button on the new tab.', toggle(n.sounds, (v) => commit((x) => void (x.newtab.sounds = v)), 'Interface sounds')),
       opt('Weather', 'From Open-Meteo: free, no account. Only the place you pick is sent.', weatherControl()),
       opt('To-do list', 'Finished tasks clear each morning; pinned tasks come back every day.', toggle(n.todo, (v) => commit((x) => void (x.newtab.todo = v)), 'To-do list')),

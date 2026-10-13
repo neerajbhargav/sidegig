@@ -2,13 +2,17 @@
 // your own upload or a link) show as photos in Match browser and, in the
 // studio themes, as two-tone risograph prints in the theme's own inks (after
 // Gabe Tognon's "Risograph Monumentalism"). There are also mesh gradients,
-// industrial patterns and plain colours. A veil keeps text readable.
+// industrial patterns and plain colours. Collections (cars, anime, tech or
+// your own keywords) collect wallpapers on their own and rotate. A veil keeps
+// text readable.
 import { uid } from '../../shared/api.ts';
 import { getLocal, setLocal } from '../../shared/storage.ts';
-import { dayKey } from '../../shared/ntdata.ts';
-import type { NtBackground } from '../../shared/types.ts';
+import type { BgEffect, NtBackground } from '../../shared/types.ts';
+import { pickIndex, type Palette, type RotState } from '../../shared/walls.ts';
+import { findCollection, getPool, hiddenWalls } from '../../shared/collect.ts';
 import { h } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
+import { led, loadBitmap, mosaic, paletteOf } from './ntfx.ts';
 
 /** Picsum ids picked for open sky and room for text: sea, fog, hills, piers, desert. */
 export const LANDSCAPES = [10, 11, 12, 13, 14, 16, 17, 28, 29, 37, 38, 44, 46, 47, 49, 51, 52, 53, 54, 62, 66, 70, 71, 74, 77, 79, 83, 87, 93, 95];
@@ -92,9 +96,17 @@ const dayIndex = () => Math.floor(Date.now() / 86_400_000 - new Date().getTimezo
 export const landscapeUrl = (id: number, w = 2400, h = 1500) => `https://picsum.photos/id/${id}/${w}/${h}`;
 export const monumentUrl = (i: number, w = 1686) => `https://www.artic.edu/iiif/2/${MONUMENTS[i][0]}/full/${w},/0/default.jpg`;
 
-interface Picture {
+export interface Picture {
   url: string;
   credit?: string;
+  /** Where the credit links to. */
+  link?: string;
+  /** Stable id for caching and hiding. */
+  id: string;
+  /** Set for collection pictures. */
+  collection?: string;
+  /** What to preload for next time. */
+  next?: string;
 }
 
 async function landscapeCredit(id: number): Promise<string | undefined> {
@@ -113,11 +125,52 @@ async function landscapeCredit(id: number): Promise<string | undefined> {
   return undefined;
 }
 
-async function picture(bg: NtBackground): Promise<Picture | null> {
+/** Collection rotation advances once per new tab, not on every re-render. */
+const advanced = new Set<string>();
+
+async function collectionPicture(ctx: Ctx, bg: NtBackground): Promise<Picture | null> {
+  const c = findCollection(bg.ref, ctx.settings.newtab.collections);
+  if (!c) return null;
+  const pool = await getPool(c);
+  if (!pool?.items.length) return null;
+  const hidden = new Set(await hiddenWalls());
+  const items = pool.items.filter((it) => !hidden.has(it.id));
+  if (!items.length) return null;
+  const rotate = bg.rotate ?? 'tab';
+  const key = `ntRot:${c.id}`;
+  const st = await getLocal<RotState>(key, { i: 0, skip: 0 });
+  if (rotate === 'tab' && !advanced.has(c.id)) {
+    advanced.add(c.id);
+    st.i = (st.i + 1) % Math.max(1, items.length);
+    await setLocal(key, st);
+  }
+  const n = pickIndex(items.length, rotate, Date.now(), st);
+  const it = items[n];
+  const nx = items[(n + 1) % items.length];
+  return {
+    id: it.id,
+    url: it.src,
+    credit: it.title ? `${it.title} · ${it.credit}` : `${c.name} · ${it.credit}`,
+    link: it.link,
+    collection: c.id,
+    next: nx && nx !== it ? nx.src : undefined,
+  };
+}
+
+/** Show the next picture in this collection (the "next" button). */
+export async function skipWall(id: string): Promise<void> {
+  const key = `ntRot:${id}`;
+  const st = await getLocal<RotState>(key, { i: 0, skip: 0 });
+  await setLocal(key, { ...st, skip: st.skip + 1 });
+}
+
+async function picture(ctx: Ctx, bg: NtBackground): Promise<Picture | null> {
   const i = dayIndex();
-  const monument = (n: number): Picture => ({ url: monumentUrl(n), credit: `${MONUMENTS[n][1]} · Art Institute of Chicago · public domain` });
-  const landscape = async (id: number): Promise<Picture> => ({ url: landscapeUrl(id), credit: await landscapeCredit(id) });
+  const monument = (n: number): Picture => ({ id: `m:${n}`, url: monumentUrl(n), credit: `${MONUMENTS[n][1]} · Art Institute of Chicago · public domain`, link: 'https://www.artic.edu/' });
+  const landscape = async (id: number): Promise<Picture> => ({ id: `p:${id}`, url: landscapeUrl(id), credit: await landscapeCredit(id), link: `https://picsum.photos/id/${id}/info` });
   switch (bg.kind) {
+    case 'collection':
+      return collectionPicture(ctx, bg);
     case 'daily':
       return landscape(LANDSCAPES[i % LANDSCAPES.length]);
     case 'monuments':
@@ -131,10 +184,10 @@ async function picture(bg: NtBackground): Promise<Picture | null> {
     case 'upload': {
       const ups = await listUploads();
       const up = ups.find((u) => u.id === bg.ref) ?? ups[0];
-      return up ? { url: up.url, credit: 'Your picture' } : null;
+      return up ? { id: `u:${up.id}`, url: up.url, credit: 'Your picture' } : null;
     }
     case 'url':
-      return /^https?:\/\//.test(bg.ref) ? { url: bg.ref } : null;
+      return /^https?:\/\//.test(bg.ref) ? { id: `url:${bg.ref.slice(0, 200)}`, url: bg.ref } : null;
     default:
       return null;
   }
@@ -212,11 +265,40 @@ export async function risograph(blob: Blob, w: number, h: number, dark: number[]
   return c.toDataURL('image/png');
 }
 
-/** Whether a picture background prints as a risograph here. */
-export function printsHere(bg: NtBackground): boolean {
-  if (bg.treatment === 'print') return true;
-  if (bg.treatment === 'photo') return false;
-  return document.documentElement.dataset.look !== 'native' || bg.kind === 'monuments' || bg.ref.startsWith('m:');
+/** The effect a picture gets here. Auto: photos in Match browser; studio themes print gallery pictures and film collections. */
+export function effectFor(bg: NtBackground, look = document.documentElement.dataset.look): Exclude<BgEffect, 'auto'> {
+  if (bg.treatment && bg.treatment !== 'auto') return bg.treatment;
+  if (bg.kind === 'monuments' || bg.ref.startsWith('m:')) return 'print';
+  if (look === 'native' || look === 'picture') return 'photo';
+  if (bg.kind === 'collection' || bg.kind === 'upload' || bg.kind === 'url') return 'film';
+  return 'print';
+}
+/** Kept for callers that only ask "is this printed?". */
+export const printsHere = (bg: NtBackground) => effectFor(bg) === 'print';
+
+/** Apply a palette as the "From picture" theme, and remember it so the next tab paints in it. */
+export function applyPalette(pal: Palette) {
+  const root = document.documentElement;
+  root.style.setProperty('--c-bg', pal.bg);
+  root.style.setProperty('--c-ink', pal.ink);
+  if (!root.style.getPropertyValue('--c-signal') || root.dataset.accent !== 'user') root.style.setProperty('--c-signal', pal.accent);
+  root.dataset.scheme = pal.dark ? 'dark' : 'light';
+  root.dataset.pal = pal.dark ? 'dark' : 'light';
+  try {
+    localStorage.setItem('sidegig.ntPicture', JSON.stringify(pal));
+  } catch {
+    /* fine */
+  }
+}
+
+async function cachedFx(key: string, make: () => Promise<string>): Promise<string> {
+  const cache = await getLocal<{ key: string; url: string }[]>('ntFx', []);
+  const hit = cache.find((c) => c.key === key);
+  if (hit) return hit.url;
+  const url = await make();
+  // A few recent renders (current + next) keep flipping instant without filling storage.
+  await setLocal('ntFx', [{ key, url }, ...cache.filter((c) => c.key !== key)].slice(0, 4));
+  return url;
 }
 
 export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
@@ -239,35 +321,77 @@ export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
     return wrap;
   }
 
-  const pic = await picture(bg);
-  if (!pic) return null;
+  const pic = await picture(ctx, bg);
+  if (!pic) {
+    // A collection still loading (first run, offline): a calm gradient instead of nothing.
+    if (bg.kind !== 'collection') return null;
+    wrap.dataset.kind = 'gradient';
+    wrap.dataset.loading = 'true';
+    wrap.append(h('div', { class: 'wall-fill', style: { background: GRADIENTS[4].css } }));
+    return wrap;
+  }
   if (pic.credit) wrap.dataset.credit = pic.credit;
-  const print = printsHere(bg);
-  wrap.dataset.print = String(print);
-  if (!print) {
+  if (pic.link) wrap.dataset.link = pic.link;
+  wrap.dataset.pic = pic.id;
+  if (pic.collection) wrap.dataset.collection = pic.collection;
+  const fx = effectFor(bg);
+  wrap.dataset.fx = fx;
+  wrap.dataset.print = String(fx === 'print');
+  const wantPalette = ctx.settings.newtab.look === 'picture';
+
+  // Preload the next picture so the next tab is instant.
+  if (pic.next) setTimeout(() => void fetch(pic.next!, { credentials: 'omit' }).catch(() => undefined), 2500);
+
+  if (fx === 'photo' || fx === 'film' || fx === 'dream') {
     const img = h('img', { src: pic.url, alt: '', decoding: 'async', referrerpolicy: 'no-referrer', class: 'wall-photo' });
     img.addEventListener('error', () => wrap.remove(), { once: true });
     wrap.append(img);
+    if (fx === 'film') wrap.append(h('div', { class: 'wall-grain' }));
+    if (fx === 'dream') wrap.append(h('div', { class: 'wall-dots' }));
+    if (wantPalette) void paletteFor(pic).then((p) => p && applyPalette(p));
     return wrap;
   }
-  // Printed at half resolution, shown with crisp pixels: each grain is 2×2 screen points.
-  const w = Math.round(innerWidth / 2);
-  const hgt = Math.round(innerHeight / 2);
+
+  // Canvas effects render at half resolution (print) or full CSS size (LED, mosaic).
+  const half = fx === 'print';
+  const w = Math.round(innerWidth / (half ? 2 : 1));
+  const hgt = Math.round(innerHeight / (half ? 2 : 1));
   const [dark, light] = inks();
-  const key = `${bg.kind}:${bg.ref}:${pic.url.length > 300 ? pic.url.length : pic.url}:${dayKey()}:${dark}:${light}:${w}x${hgt}`;
-  const img = h('img', { alt: '', decoding: 'async', class: 'riso' });
+  const key = `fx2:${fx}:${pic.id}:${pic.url.length > 300 ? pic.url.length : pic.url}:${fx === 'print' ? `${dark}:${light}` : fx === 'mosaic' ? light : ''}:${w}x${hgt}`;
+  const img = h('img', { alt: '', decoding: 'async', class: fx === 'print' ? 'riso' : `fx-${fx}` });
   wrap.append(img);
   void (async () => {
-    const cached = await getLocal<{ key: string; url: string } | null>('ntRiso', null);
-    if (cached?.key === key) return void (img.src = cached.url);
     try {
-      const blob = await (await fetch(pic.url, { credentials: 'omit' })).blob();
-      const url = await risograph(blob, w, hgt, dark, light);
-      img.src = url;
-      await setLocal('ntRiso', { key, url });
+      let bmp: ImageBitmap | null = null;
+      const load = async () => (bmp ??= await loadBitmap(pic.url));
+      img.src = await cachedFx(key, async () => {
+        if (fx === 'print') return risograph(await (await fetch(pic.url, { credentials: 'omit' })).blob(), w, hgt, dark, light);
+        if (fx === 'led') return led(await load(), w, hgt);
+        return mosaic(await load(), w, hgt, `rgb(${light.join(',')})`);
+      });
+      if (wantPalette) {
+        const p = await paletteFor(pic, bmp ?? undefined);
+        if (p) applyPalette(p);
+      }
     } catch {
       wrap.remove();
     }
   })();
   return wrap;
+}
+
+/** The picture's palette, cached by picture. */
+async function paletteFor(pic: Picture, bmp?: ImageBitmap): Promise<Palette | null> {
+  const cache = await getLocal<Record<string, Palette>>('ntPal', {});
+  if (cache[pic.id]) return cache[pic.id];
+  try {
+    const pal = paletteOf(bmp ?? (await loadBitmap(pic.url)));
+    const keys = Object.keys(cache);
+    if (keys.length > 60) delete cache[keys[0]];
+    cache[pic.id] = pal;
+    await setLocal('ntPal', cache);
+    return pal;
+  } catch {
+    return null;
+  }
 }

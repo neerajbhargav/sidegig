@@ -7,14 +7,15 @@ import { badgeLabel } from '../../shared/badge.ts';
 import type { AppEntry, NtLook } from '../../shared/types.ts';
 import type { Edition, SavedItem } from '../../shared/edition/types.ts';
 import { ED_KINDS, KIND_LABEL } from '../../shared/edition/types.ts';
-import { h, ico, favicon, keys } from '../dom.ts';
+import { h, ico, favicon, appFavicon, keys } from '../dom.ts';
 import { type Ctx, openUrl, openApp, openOptions } from '../ctx.ts';
 import { createSearch } from './search.ts';
 import { spacesFor, stackEl } from './home.ts';
 import { editionSection, KIND_COLOR } from './edition.ts';
 import { aiView } from './ntai.ts';
 import { greetingEl, analogClockEl, weatherEl, todoSection, launcherEl, addKey, voiceButton } from './ntwidgets.ts';
-import { wallpaperEl, addUpload, prepareImage } from './ntwall.ts';
+import { wallpaperEl, addUpload, prepareImage, skipWall } from './ntwall.ts';
+import { hideWall } from '../../shared/collect.ts';
 import { customize } from './ntcustom.ts';
 import { configureSound, play } from '../sound.ts';
 import { detectBrowser, type DetectedBrowser } from '../browser.ts';
@@ -64,10 +65,29 @@ export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', 
       /* fine */
     }
   }
-  if (accent) root.style.setProperty('--c-signal', accent);
+  // From picture: the palette read from the current wallpaper (last one, until the new one is read).
+  let picAccent = '';
+  delete root.dataset.pal;
+  if (look === 'picture') {
+    try {
+      const pal = JSON.parse(localStorage.getItem('sidegig.ntPicture') || 'null');
+      if (pal?.bg) {
+        root.style.setProperty('--c-bg', pal.bg);
+        root.style.setProperty('--c-ink', pal.ink);
+        picAccent = pal.accent;
+        root.dataset.pal = pal.dark ? 'dark' : 'light';
+      }
+    } catch {
+      /* fine */
+    }
+  }
+  // Your accent wins; otherwise the theme's (custom and picture themes carry their own).
+  const sig = accent || (look === 'custom' ? custom?.accent ?? '' : look === 'picture' ? picAccent : '');
+  if (sig) root.style.setProperty('--c-signal', sig);
   else root.style.removeProperty('--c-signal');
+  if (accent) root.dataset.accent = 'user';
+  else delete root.dataset.accent;
   // Text on the accent colour: dark on light accents, white on dark ones.
-  const sig = accent || (look === 'custom' ? custom?.accent : '');
   if (sig && /^#[0-9a-f]{6}$/i.test(sig)) {
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(sig.slice(i, i + 2), 16) / 255);
     root.style.setProperty('--c-on-signal', 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? '#111111' : '#ffffff');
@@ -131,14 +151,15 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
   return h('p', { class: 'nt-brief' }, 'Today: ', ...parts, '.');
 }
 
-function topBar(ctx: Ctx, czButton: HTMLElement): HTMLElement {
+function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null = null): HTMLElement {
   const d = new Date();
   const code = `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}  ·  W${pad(isoWeek(d))}  ·  D${String(dayOfYear(d)).padStart(3, '0')}`;
   return h(
     'header',
     { class: 'nt-top' },
     h('div', { class: 'nt-brand' }, h('span', { class: 'nt-word' }, 'sidegig'), h('span', { class: 'nt-tag' }, 'ntp–1')),
-    h('div', { class: 'nt-ascii', 'aria-hidden': 'true' }, '/\\-_=+|<  -/=  ~:*-/  ·  ·  ·'),
+    // With a picture, the strip carries its credit and next/hide; otherwise it's decoration.
+    wall?.dataset.credit || wall?.dataset.collection ? h('div', { class: 'nt-ascii nt-wallslot' }, wallCredit(ctx, wall)) : h('div', { class: 'nt-ascii', 'aria-hidden': 'true' }, '/\\-_=+|<  -/=  ~:*-/  ·  ·  ·'),
     h(
       'div',
       { class: 'nt-meta' },
@@ -261,7 +282,7 @@ function appKeys(ctx: Ctx, badges: Record<string, number>): HTMLElement {
           onclick: (e: MouseEvent) => launch(ctx, app, e),
           onauxclick: (e: MouseEvent) => e.button === 1 && launch(ctx, app, e),
         },
-        h('span', { class: 'nt-cap' }, num ? h('span', { class: 'nt-num' }, num) : null, favicon(app.url, app.name, 'fav'), n !== 0 ? h('span', { class: 'nt-led', ...(n < 0 ? { 'data-dot': '' } : {}) }, n > 0 ? badgeLabel(n) : '') : null),
+        h('span', { class: 'nt-cap' }, num ? h('span', { class: 'nt-num' }, num) : null, appFavicon(app, 'fav'), n !== 0 ? h('span', { class: 'nt-led', ...(n < 0 ? { 'data-dot': '' } : {}) }, n > 0 ? badgeLabel(n) : '') : null),
         h('span', { class: 'nt-label' }, app.name),
       ),
     );
@@ -361,6 +382,55 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
   return card;
 }
 
+/** Wallpaper credit (linked to its source) and, for collections, next and hide. */
+function wallCredit(ctx: Ctx, wall: HTMLElement | null): HTMLElement {
+  if (!wall?.dataset.credit && !wall?.dataset.collection) return h('span', {}, 'sidegig · free and open source');
+  const credit = wall.dataset.credit ?? '';
+  const label = wall.dataset.link ? h('a', { href: wall.dataset.link, target: '_blank', rel: 'noopener noreferrer', class: 'nt-credit' }, credit) : h('span', { class: 'nt-credit' }, credit);
+  const col = wall.dataset.collection;
+  const pic = wall.dataset.pic;
+  return h(
+    'span',
+    { class: 'nt-wallbar' },
+    h('span', { class: 'nt-wallbar-k' }, 'Wallpaper'),
+    label,
+    col
+      ? h(
+          'button',
+          {
+            type: 'button',
+            class: 'nt-wallbtn',
+            title: 'Next wallpaper',
+            'aria-label': 'Next wallpaper',
+            onclick: async () => {
+              play('key');
+              await skipWall(col);
+              ctx.go('home');
+            },
+          },
+          ico('next', 16),
+        )
+      : null,
+    col && pic
+      ? h(
+          'button',
+          {
+            type: 'button',
+            class: 'nt-wallbtn',
+            title: 'Not this one: never show it again',
+            'aria-label': 'Hide this wallpaper',
+            onclick: async () => {
+              play('dismiss');
+              await hideWall(pic, col);
+              ctx.go('home');
+            },
+          },
+          ico('notFor', 16),
+        )
+      : null,
+  );
+}
+
 /** Window listeners for the current render (replaced on each re-render). */
 let pageListeners: AbortController | undefined;
 
@@ -417,7 +487,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   root.append(
     h('div', { class: 'nt-frame', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'), h('i')),
     h('div', { class: 'nt-grain', 'aria-hidden': 'true' }),
-    h('div', { class: 'nt-page' }, topBar(ctx, cz.button), modes, home, aiHost),
+    h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall), modes, home, aiHost),
     cz.panel,
   );
   root.dataset.mode = mode;
@@ -469,7 +539,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       { class: 'nt-foot' },
       h('span', {}, h('kbd', {}, '/'), ' search   ', h('kbd', {}, '1–9'), ' apps   ', h('kbd', {}, keys('K')), ' anywhere'),
       h('span', { class: 'nt-ascii' }, '~:*-/  =+|<  /\\-_'),
-      h('span', {}, wall?.dataset.credit ? `Wallpaper: ${wall.dataset.credit}` : 'sidegig · free and open source'),
+      h('span', {}, 'sidegig · free and open source'),
     ),
   );
 

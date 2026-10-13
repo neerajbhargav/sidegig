@@ -3,7 +3,7 @@ import { ext, features } from '../../shared/api.ts';
 import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
 import { badgeLabel } from '../../shared/badge.ts';
 import type { Workspace } from '../../shared/types.ts';
-import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys } from '../dom.ts';
+import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys, appFavicon } from '../dom.ts';
 import { type Ctx, openApp, openUrl, switchTo, activeTab, send, openOptions } from '../ctx.ts';
 
 type Node = chrome.bookmarks.BookmarkTreeNode;
@@ -91,7 +91,7 @@ export function appTiles(ctx: Ctx, badges: Record<string, number>): HTMLElement 
       h(
         'button',
         { class: 'tile', type: 'button', title: app.name, onclick: () => openApp(ctx, app) },
-        favicon(app.url, app.name),
+        appFavicon(app),
         h('span', { class: 'name' }, app.name),
         n !== 0 ? h('span', { class: 'badge' }, badgeLabel(n) || ' ') : null,
       ),

@@ -7,7 +7,7 @@ import type { Ctx, Kind, ViewName } from './ctx.ts';
 import { send } from './ctx.ts';
 import { panelRail } from './views/prail.ts';
 import { updateSettings, setLocal } from '../shared/storage.ts';
-import { iconButton } from './dom.ts';
+import { iconButton, setFavMissing } from './dom.ts';
 import { h } from './dom.ts';
 import { homeView } from './views/home.ts';
 import { searchView } from './views/search.ts';
@@ -58,6 +58,7 @@ async function boot() {
   }
   // Match the browser we're in (fonts, corner radius) so sidegig never looks alien.
   void getLocal<{ id?: string } | null>('browserInfo', null).then((b) => b?.id && (document.body.dataset.browser = b.id));
+  setFavMissing(await getLocal<string[]>('favMissing', []));
   const themeStyle = h('style');
   document.head.append(themeStyle);
   let pageMode: 'light' | 'dark' | null = (params.get('mode') as 'light' | 'dark' | null) ?? null;
@@ -98,6 +99,7 @@ async function boot() {
     const t = ctx.settings.theme;
     const mode = t.mode === 'page' ? pageMode ?? 'system' : t.mode;
     themeStyle.textContent = themeCss(':root', mode, t, t.radius) + (t.customCss || '');
+    if (kind !== 'newtab') document.documentElement.dataset.ui = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
   };
 
   async function render(name: ViewName, opts: { app?: string; q?: string } = {}) {
@@ -175,6 +177,10 @@ async function boot() {
     // Re-render data-driven views; leave search alone so typing isn't interrupted.
     if (current.name !== 'search') void render(current.name, { app: current.app });
     void renderHint();
+  });
+  onLocalChanged('favMissing', (v) => {
+    setFavMissing((v as string[] | undefined) ?? []);
+    if (current.name !== 'search') void render(current.name, { app: current.app });
   });
   onLocalChanged('badges', () => (kind === 'panel' ? void renderRail() : current.name === 'app' && void render('app', { app: current.app })));
   onLocalChanged('status', () => kind === 'panel' && void renderRail());

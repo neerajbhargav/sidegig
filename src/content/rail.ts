@@ -8,6 +8,7 @@ import { ext, faviconFor, TARGET } from '../shared/api.ts';
 import { loadSettings, onSettingsChanged, getLocal, setLocal, onLocalChanged, updateSettings } from '../shared/storage.ts';
 import { ASIDE_EXTENSION } from '../shared/browserai.ts';
 import { themeCss, modeForBackground } from '../shared/theme.ts';
+import { BRAND_ICONS, DARK_BRANDS } from '../shared/brands.ts';
 import { iconNode } from '../shared/icons.ts';
 import { hostExcluded } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
@@ -68,6 +69,10 @@ class Rail {
   private tempHidden = false;
   /** The browser sidebar panel is open on this rail's side, so the panel's buttons list stands in for the rail. */
   private covered = false;
+  /** Which app the drawer shows. */
+  private drawerApp: string | null = null;
+  /** Apps whose site icon the browser doesn't have yet. */
+  private favMissing = new Set<string>();
   private windowId: number | null = null;
 
   constructor(
@@ -176,6 +181,7 @@ class Rail {
         'system';
     }
     this.mode = mode;
+    this.host.dataset.scheme = mode;
     this.style.textContent = css + themeCss(':host', mode, t, t.radius) + (t.customCss || '');
     this.post({ type: 'theme', mode });
   }
@@ -187,6 +193,10 @@ class Rail {
     this.built = true;
     this.renderRail();
     void getLocal<Record<string, number>>('badges', {}).then((b) => this.setBadges(b));
+    void getLocal<string[]>('favMissing', []).then((m) => {
+      this.favMissing = new Set(m);
+      if (m.length) this.renderRail();
+    });
     void this.refreshNews();
   }
 
@@ -204,11 +214,17 @@ class Rail {
     });
     b.addEventListener('pointerenter', () => this.showTip(b, label));
     b.addEventListener('pointerleave', () => this.hideTip());
+    // The label would sit on top of whatever opens: drop it on click.
+    b.addEventListener('pointerdown', () => this.hideTip());
     return b;
   }
 
   private appIcon(app: AppEntry): Node[] {
-    const src = faviconFor(app.url, 32);
+    const cat = app.catalogId ?? app.id;
+    // The browser shows a blank globe for sites you haven't visited yet, and black
+    // logos vanish on dark pages: use the bundled brand icon in those cases.
+    const brand = BRAND_ICONS.has(cat) && (this.favMissing.has(app.id) || DARK_BRANDS.has(cat));
+    const src = brand ? ext.runtime.getURL(`icons/brands/${cat}.svg`) : faviconFor(app.url, 32);
     const letter = (app.name.trim()[0] ?? '?').toUpperCase();
     const badge = document.createElement('span');
     badge.className = 'badge';
@@ -218,6 +234,7 @@ class Rail {
       img.alt = '';
       img.src = src;
       img.dataset.letter = letter;
+      if (brand) img.className = DARK_BRANDS.has(cat) ? 'brand brand-dark' : 'brand';
       return [img, badge];
     }
     const mono = document.createElement('span');
@@ -500,7 +517,12 @@ class Rail {
   }
 
   openApp(app: AppEntry) {
-    if (app.openIn === 'drawer') return this.toggleDrawer('app'), this.post({ type: 'view', view: 'app', app: app.id });
+    if (app.openIn === 'drawer') {
+      // Same app again closes the drawer; another app switches to it.
+      if (this.view === 'app' && this.drawerApp === app.id) return this.closeDrawer();
+      this.drawerApp = app.id;
+      return this.openDrawer('app', app.id);
+    }
     send({ type: 'open-app', appId: app.id, url: app.url, openIn: app.openIn, side: this.s.rail.side });
   }
 
@@ -658,6 +680,10 @@ class Rail {
     onLocalChanged('status', () => void this.refreshNews());
     onLocalChanged('statusSeen', () => void this.refreshNews());
     onLocalChanged('panelOpen', () => void this.checkPanel());
+    onLocalChanged('favMissing', (m) => {
+      this.favMissing = new Set((m as string[] | undefined) ?? []);
+      if (this.built) this.renderRail();
+    });
     if (this.s.theme.mode === 'page') {
       matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyTheme());
     }

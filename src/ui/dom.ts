@@ -1,4 +1,5 @@
-import { faviconFor } from '../shared/api.ts';
+import { faviconFor, ext } from '../shared/api.ts';
+import { BRAND_ICONS, DARK_BRANDS } from '../shared/brands.ts';
 import { icon } from '../shared/icons.ts';
 
 type Kid = Node | string | number | null | undefined | false;
@@ -37,12 +38,32 @@ export function iconButton(name: string, label: string, onClick: (e: MouseEvent)
 /** Site icon with a lettered fallback when the favicon can't load. */
 export function favicon(url: string, name: string, cls = 'fav'): HTMLElement {
   const letter = (name.trim()[0] ?? '?').toUpperCase();
-  const src = faviconFor(url, 32);
   const fallback = () => h('span', { class: `${cls} mono`, style: { '--h': String(hueOf(url)) } as any }, letter);
+  // Browser and extension pages have no site icon (the browser draws a "blocked" glyph): use a letter.
+  if (!/^https?:/i.test(url)) return fallback();
+  const src = faviconFor(url, 32);
   if (!src) return fallback();
   const img = h('img', { class: cls, src, alt: '', loading: 'lazy', decoding: 'async' });
   img.addEventListener('error', () => img.replaceWith(fallback()), { once: true });
   return img;
+}
+
+/** Apps whose site icon the browser doesn't know yet (filled in by the background check). */
+let favMissing = new Set<string>();
+export const setFavMissing = (ids: string[]) => void (favMissing = new Set(ids));
+
+/**
+ * An app's icon: the site's own icon when the browser has it; otherwise (and
+ * always for black logos, which vanish on dark surfaces) the bundled brand icon.
+ */
+export function appFavicon(app: { id: string; catalogId?: string; url: string; name: string }, cls = 'fav'): HTMLElement {
+  const cat = app.catalogId ?? app.id;
+  if (BRAND_ICONS.has(cat) && (favMissing.has(app.id) || DARK_BRANDS.has(cat)) && ext?.runtime?.getURL) {
+    const img = h('img', { class: `${cls} brand${DARK_BRANDS.has(cat) ? ' brand-dark' : ''}`, src: ext.runtime.getURL(`icons/brands/${cat}.svg`), alt: '', decoding: 'async' });
+    img.addEventListener('error', () => img.replaceWith(favicon(app.url, app.name, cls)), { once: true });
+    return img;
+  }
+  return favicon(app.url, app.name, cls);
 }
 
 /** Stable hue (0-359) for a site, used to tint its letter tile. */
