@@ -92,7 +92,7 @@ export function greetingLine(ctx: Ctx): HTMLElement | null {
   return h('h1', { class: 'nt-greet' }, n.message.trim() || `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}`);
 }
 
-export function timeBlock(ctx: Ctx): HTMLElement {
+export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLElement {
   const n = ctx.settings.newtab;
   const date = h('div', { class: 'nt-date' });
   const paintDate = () => (date.textContent = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' }));
@@ -126,7 +126,7 @@ export function timeBlock(ctx: Ctx): HTMLElement {
   paint();
   const tick = () => setTimeout(() => (time.isConnected ? (paint(), tick()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
   tick();
-  return h('section', { class: 'nt-timeblock nt-card has-fig' }, watch, h('div', { class: 'nt-timetext' }, time, date));
+  return h('section', { class: 'nt-timeblock nt-card has-fig', 'aria-label': 'Clock' }, watch, h('div', { class: 'nt-timetext' }, time, date, brief));
 }
 
 // ---------------------------------------------------------------- weather
@@ -282,7 +282,26 @@ export function calendarCard(ctx: Ctx): HTMLElement {
   const title = h('h2', {});
   const grid = h('div', { class: 'cal-grid', role: 'grid' });
   const dayPanel = h('div', { class: 'cal-day', 'aria-live': 'polite' });
+  // Small and medium sizes show what's next instead of the month.
+  const upNext = h('div', { class: 'cal-next' });
   let events: CalEvent[] = [];
+  const paintNext = () => {
+    const now = Date.now();
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const evs = occurrences(events, start, start + 7 * 86_400_000)
+      .filter((e) => (e.allDay ? e.end > now : e.end > now))
+      .slice(0, 3);
+    const when = (e: CalEvent) => {
+      const d = new Date(e.start);
+      const day = sameDay(d, new Date()) ? '' : `${d.toLocaleDateString(locale, { weekday: 'short' })} `;
+      return e.allDay ? `${day || 'Today '}all day`.trim() : `${day}${d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}`;
+    };
+    upNext.replaceChildren(
+      ...(evs.length
+        ? evs.map((e) => h('button', { type: 'button', class: 'cal-ev', style: { '--c': `var(--feed-${e.feed % 4})` }, title: e.location ?? e.title, onclick: () => (e.url ? void openUrl(ctx, e.url) : openDay(new Date(e.start))) }, h('span', { class: 'cal-ev-t' }, when(e)), h('span', { class: 'cal-ev-n' }, e.title)))
+        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing this week' : 'No calendars yet')]),
+    );
+  };
 
   const openDay = (d: Date) => void openUrl(ctx, app.day(d));
   const newEvent = (d: Date) => {
@@ -357,6 +376,7 @@ export function calendarCard(ctx: Ctx): HTMLElement {
       }),
     );
     paintDay();
+    paintNext();
   };
   const step = (k: number) => {
     const d = new Date(view!.y, view!.m + k, 1);
@@ -401,7 +421,8 @@ export function calendarCard(ctx: Ctx): HTMLElement {
       paint();
     },
   });
-  return h('section', { class: 'nt-card nt-cal has-fig', 'aria-label': 'Calendar' }, cubes, head, grid, dayPanel);
+  paintNext();
+  return h('section', { class: 'nt-card nt-cal has-fig', 'aria-label': 'Calendar' }, cubes, head, grid, dayPanel, upNext);
 }
 
 // ---------------------------------------------------------------- pomodoro
@@ -597,15 +618,34 @@ const hostName = (u: string) => {
 /** A site's icon (the shared icon system picks a logo, the site icon or a letter). */
 const markIcon = (url: string, title: string) => favicon(url, title || hostName(url), 'fav');
 
-/** A folder you can see into: a few of its sites peek out of the top, like papers. */
-function folderArt(f: Mark, kids: Mark[]): HTMLElement {
+/** Folder colours: muted leathers and papers. */
+export const FOLDER_TONES: [string, string][] = [
+  ['oat', 'Oat'],
+  ['sage', 'Sage'],
+  ['slate', 'Slate'],
+  ['clay', 'Clay'],
+  ['rose', 'Rose'],
+  ['ink', 'Ink'],
+  ['graphite', 'Graphite'],
+];
+/** A folder's colour: the one you picked, or a steady one from its id. */
+export function folderTone(ctx: Ctx, id: string): string {
+  const mine = ctx.settings.newtab.folderTones?.[id];
+  if (mine && FOLDER_TONES.some(([k]) => k === mine)) return mine;
+  let n = 0;
+  for (const ch of id) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
+  return FOLDER_TONES[n % 5][0];
+}
+
+/** A pocket folder: a few of its sites peek out of the top like cards. */
+function folderArt(f: Mark, kids: Mark[], tone = 'oat'): HTMLElement {
   const papers = kids
     .filter((k) => k.url)
     .slice(0, 3)
     .map((k) => h('span', { class: 'fold-paper' }, faviconOnly(k.url!, 'fav') ?? favicon(k.url!, k.title, 'fav')));
   return h(
     'span',
-    { class: 'fold-art', 'aria-hidden': 'true' },
+    { class: 'fold-art', 'aria-hidden': 'true', dataset: { tone } },
     h('span', { class: 'fold-back' }),
     h('span', { class: 'fold-papers', dataset: { n: String(papers.length) } }, papers),
     h('span', { class: 'fold-front' }),
@@ -628,6 +668,29 @@ function tileMenu(ctx: Ctx, b: Mark, at: { x: number; y: number }, after: () => 
     'div',
     { class: 'shelf-menu', role: 'menu', style: { left: `${at.x}px`, top: `${at.y}px` } },
     b.url ? item('Open in a new tab', () => void ext.tabs.create({ url: b.url! })) : null,
+    b.url
+      ? null
+      : h(
+          'div',
+          { class: 'menu-tones', role: 'group', 'aria-label': 'Folder colour' },
+          FOLDER_TONES.map(([k, name]) =>
+            h('button', {
+              type: 'button',
+              class: 'menu-tone',
+              title: name,
+              'aria-label': `${name} folder`,
+              'aria-pressed': String(folderTone(ctx, b.id) === k),
+              dataset: { tone: k },
+              onclick: async () => {
+                close();
+                play('key');
+                ctx.settings.newtab.folderTones = { ...ctx.settings.newtab.folderTones, [b.id]: k };
+                await updateSettings((s) => void (s.newtab.folderTones = { ...s.newtab.folderTones, [b.id]: k }));
+                after();
+              },
+            }),
+          ),
+        ),
     item(b.url ? 'Remove' : 'Remove folder and its sites', async () => {
       play('dismiss');
       await (b.url ? ext.bookmarks.remove(b.id) : ext.bookmarks.removeTree(b.id));
@@ -685,25 +748,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
             ]
           : []),
     );
-    head.append(
-      h('span', { class: 'ask-gap' }),
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'nt-chip shelf-addbtn',
-          'aria-expanded': String(!form.hidden),
-          title: 'Add a site or a folder here',
-          onclick: () => {
-            form.hidden = !form.hidden;
-            if (!form.hidden) (form.querySelector('input') as HTMLInputElement | null)?.focus();
-            void paint();
-          },
-        },
-        ico('plus', 18),
-        h('span', {}, 'Add'),
-      ),
-    );
+    head.hidden = !head.childElementCount;
     const tiles = kids.map((k, n) => {
       const menu = (e: MouseEvent) => {
         e.preventDefault();
@@ -720,7 +765,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
         });
       }
       const sites = inner[n].filter((x) => x.url).length;
-      return tile(k.title || 'Folder', folderArt(k, inner[n]), {
+      return tile(k.title || 'Folder', folderArt(k, inner[n], folderTone(ctx, k.id)), {
         class: 'nt-key is-folder',
         title: `${k.title || 'Folder'}: ${sitesLabel(sites)}`,
         'aria-label': `${k.title || 'Folder'} folder, ${sitesLabel(sites)}`,
@@ -728,6 +773,19 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
         oncontextmenu: menu,
       });
     });
+    // Add, as the last tile (like the first builds): a site or a folder, right where you are.
+    tiles.push(
+      tile('Add', h('span', { class: 'nt-cap nt-cap-add' }, ico('plus', 22)), {
+        class: 'nt-key shelf-addkey',
+        title: 'Add a site or a folder here',
+        'aria-expanded': String(!form.hidden),
+        onclick: () => {
+          form.hidden = !form.hidden;
+          play('key');
+          if (!form.hidden) (form.querySelector('input') as HTMLInputElement | null)?.focus();
+        },
+      }),
+    );
     reveal(grid, ...tiles);
     if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
   };

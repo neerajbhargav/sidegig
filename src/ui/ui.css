@@ -1982,3 +1982,283 @@ html[data-look] .nt2 .has-fig .nt-date { font-size: 1rem; margin-top: 0.375rem; 
 .cz-w-on:hover { color: var(--c-ink); background: color-mix(in srgb, var(--c-ink) 6%, transparent); }
 .cz-w-add:focus-visible, .cz-w-on:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
 html[data-theme="dark"] .cz-w-on { color: #81c995; }
+
+/* ======================================================================
+   The desk (v8): one 12 × 8 grid that fills the screen. Widgets keep to the
+   edges by default so the middle of the wallpaper stays open. Each draws
+   small, medium or large from its size (data-size), using container units so
+   it fits any screen.
+   ====================================================================== */
+html[data-look] .nt2 .nt-page { width: auto; max-width: none; margin: 0; padding: 0.75rem clamp(1rem, 2.2vw, 2rem) 1.5rem; container-type: normal; }
+html[data-look] .nt2 .nt-dash { display: block; margin-top: 0.5rem; }
+.nt-grid-wrap { position: relative; }
+.nt-grid {
+  position: relative; display: grid; gap: clamp(0.625rem, 1vw, 1rem);
+  grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr));
+  height: calc(100dvh - 5.75rem); min-height: 28rem;
+}
+.gw { grid-column: var(--x) / span var(--w); grid-row: var(--y) / span var(--h); position: relative; z-index: 1; min-width: 0; min-height: 0; container-type: size; border-radius: var(--r-cardx); outline: none; }
+.gw[hidden] { display: none; }
+html[data-look] .nt2 .gw > .nt-card { position: relative; z-index: 1; width: 100%; height: 100%; margin: 0; overflow: hidden; }
+html[data-look] .nt2 .gw[data-size="s"] > .nt-card { padding: 0.75rem 0.875rem; }
+.gw .fig { min-height: 0; min-width: 0; }
+.gw .fig svg { width: 100%; height: 100%; }
+.gw[data-size="s"]:has(.gw-more), .gw[data-size="m"]:has(.gw-more) { cursor: pointer; }
+.gw-more { all: unset; box-sizing: border-box; position: absolute; z-index: 3; right: 0.375rem; bottom: 0.375rem; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 999px; color: var(--c-mute); opacity: 0; cursor: pointer; transition: opacity 160ms ease-out, background 160ms ease-out; }
+.gw:is(:hover, :focus-within) .gw-more, .gw-more:focus-visible { opacity: 1; }
+.gw-more:hover { background: var(--hov); color: var(--c-ink); }
+.gw-more:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 1px; }
+.gw[data-size="l"] .gw-more, .nt-grid[data-edit] .gw-more, .nt-grid[data-flow="true"] .gw-more { display: none; }
+
+/* One column you scroll, on narrow or short windows. */
+.nt-grid[data-flow="true"] { display: flex; flex-direction: column; height: auto; min-height: 0; }
+.nt-grid[data-flow="true"] .gw { container-type: inline-size; }
+html[data-look] .nt2 .nt-grid[data-flow="true"] .gw > .nt-card { height: auto; overflow: visible; }
+.nt-grid[data-flow="true"] .gw[data-w="clock"], .nt-grid[data-flow="true"] .gw[data-w="weather"] { min-height: 9rem; }
+
+/* Opened in place: full size, on solid-enough glass, over a light scrim. */
+.gw.is-open { position: fixed; z-index: 45; }
+html[data-look] .nt2 .gw.is-open > .nt-card {
+  --card-bg: color-mix(in oklab, var(--c-card) 84%, transparent); --card-blur: blur(calc(28px * var(--ui-s, 1))) saturate(1.4);
+  background: var(--card-bg); -webkit-backdrop-filter: var(--card-blur); backdrop-filter: var(--card-blur); border: 1px solid var(--card-line); overflow: auto;
+}
+.gw-scrim { position: fixed; inset: 0; z-index: 44; background: color-mix(in oklab, var(--c-bg) 22%, transparent); -webkit-backdrop-filter: blur(calc(2px * var(--ui-s, 1))); backdrop-filter: blur(calc(2px * var(--ui-s, 1))); }
+.gw-scrim[hidden] { display: none; }
+
+/* Search: the box sits mid-cell; suggestions and AI drop down over the page. */
+.gw[data-w="search"] { z-index: 6; }
+.gw-search { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+html[data-look] .nt2 .gw-search > .nt-ask { width: 100%; margin: 0; }
+html[data-look] .nt2 .gw-search > .nt-results { position: absolute; left: 0; right: 0; top: calc(100% + 0.5rem); z-index: 30; width: auto; margin: 0; max-height: 60vh; overflow: auto; }
+.gw-search > .nt-ai-host { position: absolute; left: 0; right: 0; top: calc(100% + 0.5rem); z-index: 30; max-height: calc(100dvh - 22rem); overflow: auto; border-radius: var(--r-cardx); }
+.nt2[data-mode="home"] .gw-search > .nt-ai-host { display: none; }
+html[data-look] .nt2 .nt-grid[data-flow="true"] .gw-search > :is(.nt-results, .nt-ai-host) { position: static; max-height: none; margin-top: 0.75rem; }
+.nt-below { margin-top: 1.5rem; }
+.nt-below .nt-feed:empty { display: none; }
+html[data-look] .nt2 .nt-below .nt-feed { width: min(70rem, 100%); margin: 0 auto; }
+.nt-choice-float { position: fixed; z-index: 40; left: 50%; bottom: 1.25rem; transform: translateX(-50%); width: min(40rem, calc(100% - 2rem)); }
+
+/* Clock. Medium: the big time, the date and the day's line, straight on the picture. */
+html[data-look] .nt2 .gw[data-w="clock"] .nt-timeblock.has-fig { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 0.75rem; padding: 0.5rem 0.875rem; }
+.gw[data-w="clock"][data-size="m"] .fig-watch { display: none; }
+html[data-look] .nt2 .gw[data-w="clock"] .nt-time { font-size: min(54cqh, 21cqw); line-height: 0.86; }
+html[data-look] .nt2 .gw[data-w="clock"] .nt-ampm { font-size: max(0.875rem, 9cqh); }
+html[data-look] .nt2 .gw[data-w="clock"] .nt-date { font-size: clamp(0.875rem, 11cqh, 1.375rem); margin-top: 0.5rem; }
+html[data-look] .nt2 .gw[data-w="clock"] .nt-brief { margin: 0.25rem 0 0; font-size: clamp(0.8125rem, 9cqh, 1.0625rem); text-align: left; color: var(--c-mute); }
+html[data-look] .nt2 .gw[data-w="clock"][data-size="s"] .nt-timeblock { grid-template-rows: minmax(0, 1fr) auto; justify-items: center; text-align: center; gap: 0.25rem; }
+.gw[data-w="clock"][data-size="s"] .fig-watch { width: 100%; height: 100%; }
+html[data-look] .nt2 .gw[data-w="clock"][data-size="s"] .nt-time { font-size: min(18cqh, 15cqw); }
+.gw[data-w="clock"][data-size="s"] :is(.nt-date, .nt-brief, .nt-ampm) { display: none; }
+html[data-look] .nt2 .gw[data-w="clock"][data-size="l"] .nt-timeblock { grid-template-columns: 40% minmax(0, 1fr); }
+html[data-look] .nt2 .gw[data-w="clock"][data-size="l"] .nt-time { font-size: min(34cqh, 13cqw); }
+.gw[data-w="clock"][data-size="l"] .fig-watch { height: 80cqh; }
+
+/* Weather. Small: the station and the temperature; medium adds the sky; large adds the days. */
+html[data-look] .nt2 .gw[data-w="weather"] .nt-wx { display: flex; flex-direction: column; }
+.gw[data-w="weather"] .nt-card-h { min-height: 0; margin-bottom: 0; }
+html[data-look] .nt2 .gw[data-w="weather"] .wx-scene { flex: 1; min-height: 0; grid-template-columns: minmax(0, 46%) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+html[data-look] .nt2 .gw[data-w="weather"] .wx-scene .fig-station { height: 100%; margin: 0; }
+.gw[data-w="weather"]:not([data-size="l"]) .wx-days { display: none; }
+html[data-look] .nt2 .gw[data-w="weather"] .wx-temp { font-size: clamp(1.75rem, 30cqh, 3.5rem); }
+.gw[data-w="weather"][data-size="s"] :is(.wx-icon, .wx-desc) { display: none; }
+html[data-look] .nt2 .gw[data-w="weather"][data-size="s"] .wx-temp { font-size: min(26cqh, 22cqw); }
+html[data-look] .nt2 .gw[data-w="weather"][data-size="s"] .nt-card-h h2 { font-size: 0.8125rem; }
+
+/* Calendar. Small: the cubes and what's on today; medium: side by side; large: the month. */
+html[data-look] .nt2 .gw[data-w="calendar"] .nt-cal { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 0.25rem; }
+.gw[data-w="calendar"]:not([data-size="l"]) :is(.nt-card-h, .cal-grid) { display: none; }
+html[data-look] .nt2 .gw[data-w="calendar"]:not([data-size="l"]) .fig-cubes { width: 100%; height: 100%; margin: 0; }
+.gw[data-w="calendar"]:not([data-size="l"]) .cal-day { min-height: 0; overflow: hidden; margin: 0; padding: 0; border: 0; }
+.gw[data-w="calendar"][data-size="s"] .cal-ev:nth-of-type(n + 2) { display: none; }
+.gw[data-w="calendar"][data-size="s"] .cal-day-a { display: none; }
+html[data-look] .nt2 .gw[data-w="calendar"][data-size="m"] .nt-cal { grid-template-columns: minmax(0, 44%) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: 0.75rem; }
+html[data-look] .nt2 .gw[data-w="calendar"][data-size="l"] .nt-cal { grid-template-rows: auto auto minmax(0, 1fr); }
+html[data-look] .nt2 .gw[data-w="calendar"][data-size="l"] .fig-cubes { position: absolute; top: 0.5rem; right: 6.75rem; width: 5.5rem; height: 2.75rem; margin: 0; }
+.gw[data-w="calendar"][data-size="l"] .cal-day { min-height: 0; overflow: auto; }
+
+/* Pomodoro. Small: the timer and the time (tap the timer to start); medium adds the controls. */
+html[data-look] .nt2 .gw[data-w="pomodoro"] .nt-pomo { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.gw[data-w="pomodoro"] .pomo-figbtn { height: 100%; min-height: 0; margin: 0; }
+.gw[data-w="pomodoro"] .pomo-figbtn svg { height: 100%; }
+.gw[data-w="pomodoro"]:not([data-size="l"]) .nt-card-h { display: none; }
+html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="s"] .nt-pomo { grid-template-rows: minmax(0, 1fr) auto; }
+.gw[data-w="pomodoro"][data-size="s"] :is(.pomo-dots, .pomo-go) { display: none; }
+.gw[data-w="pomodoro"][data-size="s"] .pomo-row { justify-content: center; }
+html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-time { font-size: min(16cqh, 14cqw); }
+.gw[data-w="pomodoro"][data-size="s"] .pomo-read { align-items: center; text-align: center; }
+html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="m"] .nt-pomo { grid-template-columns: minmax(0, 52%) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: 0.75rem; }
+html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+
+/* To-do. Small: the spike, the count and the first tasks; medium and large add the box to type in. */
+html[data-look] .nt2 .gw[data-w="todo"] .nt-todo { display: flex; flex-direction: column; }
+.gw[data-w="todo"] .todo-list { flex: 1; min-height: 0; overflow: auto; }
+.gw[data-w="todo"][data-size="s"] .todo-list { overflow: hidden; }
+.gw[data-w="todo"][data-size="s"] :is(.todo-input, .todo-list .pin, .todo-list .note-x, .todo-list button:not(.todo-check)) { display: none; }
+html[data-look] .nt2 .gw[data-w="todo"][data-size="s"] .fig-spike { width: 2.75rem; top: 0.25rem; right: 0.5rem; }
+html[data-look] .nt2 .gw[data-w="todo"][data-size="s"] .nt-card-h { padding-right: 3rem; min-height: 3.25rem; }
+
+/* Notes. Small: the pad (tap for a new note); medium: a row of notes; large: all of them. */
+html[data-look] .nt2 .gw[data-w="notes"] .nt-notes { display: flex; flex-direction: column; }
+.gw[data-w="notes"] .notes { flex: 1; min-height: 0; overflow: auto; }
+.gw[data-w="notes"][data-size="s"] :is(.notes, .notes-empty) { display: none; }
+html[data-look] .nt2 .gw[data-w="notes"][data-size="s"] .fig-pad { position: static; width: 100%; height: auto; flex: 1; min-height: 0; }
+html[data-look] .nt2 .gw[data-w="notes"][data-size="s"] .fig-pad svg { height: 100%; }
+html[data-look] .nt2 .gw[data-w="notes"][data-size="s"] .nt-card-h { min-height: 0; }
+.gw[data-w="notes"][data-size="m"] .notes { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(8rem, 1fr); grid-template-rows: minmax(0, 1fr); overflow-x: auto; overflow-y: hidden; }
+
+/* Bookmarks fill their cell and scroll inside it. */
+html[data-look] .nt2 .gw[data-w="bookmarks"] .nt-shelf.nt-card { display: flex; flex-direction: column; width: 100%; margin: 0; padding: 0.75rem 1rem 0.75rem; }
+.gw[data-w="bookmarks"] .shelf-grid { flex: 1; min-height: 0; overflow: auto; align-content: start; }
+
+/* ======================================================================
+   Clear: no box at all; text reads straight off the picture. Each widget
+   gets white or dark text from the patch behind it, and a feathered
+   dimming layer only as strong as that patch needs (ntlegible.ts).
+   ====================================================================== */
+html[data-look] .nt2[data-wall][data-panels="clear"] .gw:not([data-w="search"]):not(.is-open) > .nt-card { background: transparent; border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+.gw { --feather: calc(1.5rem * var(--ui-s, 1)); }
+.gw::before { content: ""; position: absolute; z-index: 0; inset: calc(-1 * var(--feather)); pointer-events: none; opacity: 0; transition: opacity 320ms ease-out; border-radius: calc(var(--r-cardx) + var(--feather)); }
+.nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open)::before {
+  opacity: 1;
+  background: rgb(var(--lg-rgb) / var(--lg-dim, 0));
+  -webkit-backdrop-filter: blur(var(--lg-blur, 0px)); backdrop-filter: blur(var(--lg-blur, 0px));
+  -webkit-mask: linear-gradient(to right, transparent, #000 var(--feather), #000 calc(100% - var(--feather)), transparent), linear-gradient(to bottom, transparent, #000 var(--feather), #000 calc(100% - var(--feather)), transparent);
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+}
+.nt2[data-panels="clear"] :is(.gw[data-tone="light"], .gw[data-tone="light"] .nt-card) {
+  --lg-rgb: 0 0 0; --c-ink: #fff; --c-mute: rgb(255 255 255 / 0.8); --c-mute-glass: rgb(255 255 255 / 0.8);
+  --c-line: rgb(255 255 255 / 0.22); --c-line2: rgb(255 255 255 / 0.14); --card-line: rgb(255 255 255 / 0.2); --hov: rgb(255 255 255 / 0.14);
+  color: var(--c-ink);
+}
+.nt2[data-panels="clear"] :is(.gw[data-tone="dark"], .gw[data-tone="dark"] .nt-card) {
+  --lg-rgb: 255 255 255; --c-ink: #141414; --c-mute: rgb(20 20 20 / 0.72); --c-mute-glass: rgb(20 20 20 / 0.72);
+  --c-line: rgb(20 20 20 / 0.16); --c-line2: rgb(20 20 20 / 0.1); --card-line: rgb(20 20 20 / 0.14); --hov: rgb(0 0 0 / 0.07);
+  color: var(--c-ink);
+}
+/* The objects follow the text: dark-bodied on dark patches, paper-bodied on light ones. */
+html .nt2[data-panels="clear"] .gw[data-tone="light"] .iso {
+  --c-bg: #1d1d20; --fig-paper: #2a2a2e;
+  --anatomy-face: color-mix(in oklab, var(--fig-paper) 88%, #fff); --anatomy-top: color-mix(in oklab, var(--fig-paper) 84%, #fff);
+  --anatomy-shade-0: color-mix(in oklab, var(--fig-paper) 62%, #000); --anatomy-shade-1: color-mix(in oklab, var(--fig-paper) 70%, #000);
+  --anatomy-shade-2: color-mix(in oklab, var(--fig-paper) 79%, #000); --anatomy-shade-3: color-mix(in oklab, var(--fig-paper) 88%, #000);
+}
+html .nt2[data-panels="clear"] .gw[data-tone="dark"] .iso {
+  --c-bg: #f4f2ed; --fig-paper: #ebe8e1;
+  --anatomy-face: color-mix(in oklab, var(--fig-paper) 55%, #fff); --anatomy-top: color-mix(in oklab, var(--fig-paper) 45%, #fff);
+  --anatomy-shade-0: color-mix(in oklab, var(--fig-paper) 82%, var(--c-ink)); --anatomy-shade-1: color-mix(in oklab, var(--fig-paper) 87%, var(--c-ink));
+  --anatomy-shade-2: color-mix(in oklab, var(--fig-paper) 92%, var(--c-ink)); --anatomy-shade-3: color-mix(in oklab, var(--fig-paper) 96%, var(--c-ink));
+}
+/* Bookmark tiles keep a plate so coloured logos read; their labels follow the tone. */
+html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .nt-shelf .nt-cap { background: color-mix(in oklab, #fff 86%, transparent); box-shadow: none; }
+html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .nt-shelf .nt-label { color: var(--c-ink); }
+
+/* ======================================================================
+   Arrange: the grid shows, widgets get a handle, a size button and remove.
+   ====================================================================== */
+.grid-cells { display: none; }
+.nt-grid[data-edit] .grid-cells { display: contents; }
+.grid-cells i { position: relative; z-index: 0; border-radius: calc(0.875rem * var(--ui-s, 1)); background: color-mix(in oklab, var(--c-bg) 26%, transparent); outline: 1px dashed color-mix(in oklab, var(--c-ink) 22%, transparent); outline-offset: -1px; }
+.nt-grid[data-edit] .gw { cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.nt-grid[data-edit] .gw > :not(.gw-chrome) { pointer-events: none; }
+.gw::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; outline: 0 solid transparent; transition: outline-color 160ms ease-out; }
+.nt-grid[data-edit] .gw::after { outline: 1.5px solid color-mix(in oklab, var(--c-signal) 55%, transparent); background: color-mix(in oklab, var(--c-card) 26%, transparent); }
+.nt-grid[data-edit] .gw:focus-visible::after { outline: 2.5px solid var(--c-signal); }
+.gw.dragging { z-index: 20; cursor: grabbing; opacity: 0.92; }
+.gw.dragging::after { outline-color: var(--c-signal); }
+.gw-chrome { display: none; position: absolute; z-index: 3; left: 0.5rem; right: 0.5rem; top: 0.5rem; align-items: center; gap: 0.25rem; }
+.nt-grid[data-edit] .gw-chrome { display: flex; }
+.gw-name { display: inline-flex; align-items: center; gap: 0.25rem; margin-right: auto; min-width: 0; padding: 0.25rem 0.625rem 0.25rem 0.375rem; border-radius: 999px; background: var(--c-card); color: var(--c-ink); font: 500 0.8125rem/1.2 var(--f-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gw-btn { all: unset; box-sizing: border-box; flex: none; display: inline-flex; align-items: center; gap: 0.25rem; height: 2rem; padding: 0 0.625rem; border-radius: 999px; background: var(--c-card); color: var(--c-ink); font: 500 0.8125rem/1 var(--f-text); cursor: pointer; border: 1px solid var(--c-line); }
+.gw-btn:hover { background: color-mix(in oklab, var(--c-signal) 12%, var(--c-card)); }
+.gw-btn:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 1px; }
+.gw[data-size="s"] .gw-btn span { display: none; }
+.gw-ghost { grid-column: var(--x) / span var(--w); grid-row: var(--y) / span var(--h); z-index: 1; pointer-events: none; border-radius: var(--r-cardx); border: 2px dashed var(--c-signal); background: color-mix(in oklab, var(--c-signal) 12%, transparent); }
+.gw-ghost[hidden] { display: none; }
+.gw-ghost[data-ok="false"] { border-color: #d93025; background: color-mix(in oklab, #d93025 12%, transparent); }
+.grid-bar { position: fixed; z-index: 50; top: 0.75rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 0.375rem; padding: 0.3125rem 0.3125rem 0.3125rem 1rem; border-radius: 999px; background: var(--c-card); border: 1px solid var(--c-line); color: var(--c-ink); }
+.grid-bar[hidden] { display: none; }
+.grid-bar-t { font-size: 0.875rem; color: var(--c-mute); margin-right: 0.375rem; white-space: nowrap; }
+.grid-bar .nt-chip { gap: 0.375rem; }
+.grid-bar .nt-chip.primary { background: var(--c-ink); color: var(--c-bg); padding: 0 1.125rem; }
+html[data-arranging] .nt2 .nt-top { opacity: 0.35; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .gw::before, .gw::after { transition: none; } }
+/* Calendar, up next (small and medium). */
+.cal-next { display: flex; flex-direction: column; gap: 0.125rem; min-height: 0; overflow: hidden; }
+.gw[data-w="calendar"] .cal-day { display: none; }
+.gw[data-w="calendar"][data-size="l"] .cal-day { display: block; }
+.gw[data-w="calendar"][data-size="l"] .cal-next { display: none; }
+.gw[data-w="calendar"][data-size="s"] .cal-next .cal-ev:nth-child(n + 2) { display: none; }
+.nt-grid[data-flow="true"] .gw[data-w="calendar"] .cal-next { display: none; }
+.nt-grid[data-flow="true"] .gw[data-w="calendar"] .cal-day { display: block; }
+.cal-next .cal-ev { padding-block: 0.25rem; }
+.gw[data-w="calendar"][data-size="s"] .cal-next .cal-ev { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.gw[data-w="calendar"][data-size="s"] .cal-ev-t { font-size: 0.75rem; color: var(--c-mute); }
+/* The dimming hugs what's actually drawn in the widget. */
+.nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open)::before {
+  inset: calc(var(--lg-t, 0px) - var(--feather)) calc(var(--lg-r, 0px) - var(--feather)) calc(var(--lg-b, 0px) - var(--feather)) calc(var(--lg-l, 0px) - var(--feather));
+}
+
+/* ======================================================================
+   Pocket folders: muted leathers and papers, a stitched pocket, the sites
+   peeking out as cards. One shape everywhere; the colour is per folder.
+   ====================================================================== */
+.fold-art { --f-back: #b4a487; --f-front: #d9cdb6; --f-stitch: rgb(255 255 255 / 0.55); --f-card: #fbfaf6; }
+.fold-art[data-tone="sage"] { --f-back: #8d9a84; --f-front: #b7c1ad; }
+.fold-art[data-tone="slate"] { --f-back: #7d8da1; --f-front: #aab7c7; }
+.fold-art[data-tone="clay"] { --f-back: #b58673; --f-front: #d7b09f; }
+.fold-art[data-tone="rose"] { --f-back: #ad8790; --f-front: #d2b0b6; }
+.fold-art[data-tone="ink"] { --f-back: #262d3c; --f-front: #3d4760; --f-stitch: rgb(255 255 255 / 0.3); }
+.fold-art[data-tone="graphite"] { --f-back: #3d3d42; --f-front: #5b5b62; --f-stitch: rgb(255 255 255 / 0.3); }
+html[data-look] .nt2 .nt-key.is-folder .fold-art { width: 3.75rem; height: 3.25rem; margin: 0.125rem 0 0; }
+html .fold-art .fold-back { inset: 0.5rem 0 0 0; border-radius: 0.3125rem 0.625rem 0.5625rem 0.5625rem; background: var(--f-back); }
+html .fold-art .fold-back::before { top: -0.3125rem; width: 42%; height: 0.625rem; border-radius: 0.3125rem 0.5rem 0 0; background: var(--f-back); }
+html .fold-art .fold-paper { background: var(--f-card); box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08); }
+html .fold-art .fold-front {
+  height: 58%; border-radius: 0.25rem 0.25rem 0.5625rem 0.5625rem; -webkit-backdrop-filter: none; backdrop-filter: none;
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--f-front) 78%, #fff) 0, var(--f-front) 0.3125rem, color-mix(in oklab, var(--f-front) 90%, #000) 100%);
+}
+/* The stitch along the pocket's lip. */
+.fold-front::after { content: ""; position: absolute; left: 0.3125rem; right: 0.3125rem; top: 0.3125rem; border-top: 1px dashed var(--f-stitch); }
+html[data-icons="themed"] .fold-art { --f-back: color-mix(in oklab, var(--c-ink) 70%, var(--c-bg)); --f-front: color-mix(in oklab, var(--c-ink) 45%, var(--c-bg)); }
+/* Folder colours in the right-click menu. */
+.menu-tones { display: flex; gap: 0.375rem; padding: 0.5rem 0.625rem 0.375rem; border-top: 1px solid var(--c-line); margin-top: 0.25rem; }
+.menu-tone { all: unset; box-sizing: border-box; width: 1.375rem; height: 1.375rem; border-radius: 999px; cursor: pointer; background: linear-gradient(135deg, var(--f-front) 50%, var(--f-back) 50%); outline: 1px solid rgb(0 0 0 / 0.12); outline-offset: -1px; }
+.menu-tone { --f-back: #b4a487; --f-front: #d9cdb6; }
+.menu-tone[data-tone="sage"] { --f-back: #8d9a84; --f-front: #b7c1ad; }
+.menu-tone[data-tone="slate"] { --f-back: #7d8da1; --f-front: #aab7c7; }
+.menu-tone[data-tone="clay"] { --f-back: #b58673; --f-front: #d7b09f; }
+.menu-tone[data-tone="rose"] { --f-back: #ad8790; --f-front: #d2b0b6; }
+.menu-tone[data-tone="ink"] { --f-back: #262d3c; --f-front: #3d4760; }
+.menu-tone[data-tone="graphite"] { --f-back: #3d3d42; --f-front: #5b5b62; }
+.menu-tone[aria-pressed="true"] { outline: 2px solid var(--c-signal); outline-offset: 2px; }
+.menu-tone:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
+/* Add, as the last tile; its form floats over the shelf. */
+html[data-look] .nt2 .shelf-addkey .nt-cap-add { background: transparent; border: 1.5px dashed color-mix(in oklab, var(--c-ink) 30%, transparent); color: var(--c-mute); }
+html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .shelf-addkey .nt-cap-add { background: transparent; }
+.gw[data-w="bookmarks"] .nt-shelf { position: relative; }
+html[data-look] .nt2 .gw[data-w="bookmarks"] .shelf-add { position: absolute; z-index: 5; left: 0.75rem; right: 0.75rem; bottom: 0.75rem; margin: 0; --card-bg: color-mix(in oklab, var(--c-card) 90%, transparent); background: var(--card-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.shelf-head[hidden] { display: none; }
+/* Customize: each tab says what it changes. */
+.cz-lede { margin: 0.25rem 0.25rem 0.75rem; font-size: 0.9375rem; line-height: 1.45; color: var(--c-mute); }
+.cz-btnrow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cz-btnrow .btn { display: inline-flex; align-items: center; gap: 0.375rem; }
+.cz-val { min-width: 3.25rem; text-align: right; font-variant-numeric: tabular-nums; color: var(--c-ink); font-size: 0.875rem; }
+/* Arrange controls keep the page's own colours, whatever tone the widget under them took. */
+.nt2 { --pg-ink: var(--c-ink); --pg-card: var(--c-card); --pg-line: var(--c-line); --pg-mute: var(--c-mute); }
+.gw-name, .gw-btn { background: var(--pg-card); color: var(--pg-ink); border-color: var(--pg-line); }
+.gw-btn:hover { background: color-mix(in oklab, var(--c-signal) 12%, var(--pg-card)); }
+.nt-grid[data-edit] .gw::after { background: color-mix(in oklab, var(--pg-card) 22%, transparent); }
+.gw.is-open, .gw.is-open .nt-card { --c-ink: var(--pg-ink); --c-mute: var(--pg-mute); --c-line: var(--pg-line); }
+.nt-grid { height: var(--nt-avail, calc(100dvh - 5.75rem)); }
+.nt-grid[data-flow="true"] { height: auto; }
+.gw[data-w="todo"][data-size="s"] .todo-list > :nth-child(n + 3) { display: none; }
+.gw[data-w="todo"]:not([data-size="l"]) .todo-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* One column: sizes come from the width, never the (unbounded) height. */
+.nt-grid[data-flow="true"] .gw :is(.fig, .pomo-figbtn) { height: auto; max-height: 11rem; }
+.nt-grid[data-flow="true"] .gw :is(.fig, .pomo-figbtn) svg { height: auto; max-height: 11rem; }
+html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="clock"] .nt-ampm { font-size: 1rem; }
+html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="clock"] .nt-time { font-size: min(5rem, 14cqw); }
+.nt-grid[data-flow="true"] .gw[data-w="clock"] .fig-watch { height: 9rem; }
+html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="calendar"] .fig-cubes { position: static; width: 8rem; height: auto; margin: 0 auto; }
+/* Bookmarks: the card hugs its tiles (up to the cell), so Glass and Solid don't show an empty tray. */
+html[data-look] .nt2 .gw[data-w="bookmarks"] > .nt-shelf.nt-card { height: auto; max-height: 100%; }

@@ -176,8 +176,15 @@ async function boot() {
 
   applyTheme();
   void renderHint();
+  // Moving widgets or recolouring a folder saves settings but is already drawn: don't rebuild the page for it.
+  const drawnKey = (s: typeof ctx.settings) => JSON.stringify({ ...s, newtab: { ...s.newtab, layout: null, folderTones: null } });
+  let drawn = drawnKey(ctx.settings);
   onSettingsChanged((s) => {
+    const key = drawnKey(s);
+    const same = kind === 'newtab' && key === drawn;
+    drawn = key;
     ctx.settings = s;
+    if (same) return;
     applyTheme();
     // Re-render data-driven views; leave search alone so typing isn't interrupted.
     if (current.name !== 'search') void render(current.name, { app: current.app });

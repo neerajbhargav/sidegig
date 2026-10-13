@@ -1,0 +1,215 @@
+// Keep widget text readable straight on the wallpaper (the Clear surface).
+// We keep a small copy of the wallpaper as it's drawn on screen (fit, blur and
+// veil included), then for each widget read the patch behind it and set its
+// text tone, dimming and blur (see shared/legible.ts for the maths).
+import { colorsIn, legibilityFor, patchOf, patchOfColors, type Patch } from '../../shared/legible.ts';
+import { onArranged } from './ntgrid.ts';
+
+type Sample = { px: Uint8ClampedArray; W: number; H: number } | { flat: Patch };
+
+const SAMPLE_W = 200;
+
+/** Any CSS colour (vars, color-mix) as RGB, read through a probe. */
+function rgbOf(css: string, host: HTMLElement): [number, number, number] {
+  const probe = h0('i');
+  probe.style.cssText = `position:absolute;visibility:hidden;color:${css}`;
+  host.append(probe);
+  const m = getComputedStyle(probe).color.match(/[\d.]+/g) ?? ['255', '255', '255'];
+  probe.remove();
+  return [+m[0], +m[1], +m[2]];
+}
+const h0 = (tag: string) => document.createElement(tag);
+
+/** Something canvas can read without tainting: the image itself (same origin), or a fetched copy. */
+async function readable(img: HTMLImageElement): Promise<CanvasImageSource | null> {
+  try {
+    await img.decode();
+  } catch {
+    if (!img.complete || !img.naturalWidth) return null;
+  }
+  const src = img.currentSrc || img.src;
+  if (/^(data|blob):/.test(src) || new URL(src, location.href).origin === location.origin) return img;
+  try {
+    return await createImageBitmap(await (await fetch(src, { credentials: 'omit' })).blob());
+  } catch {
+    return null;
+  }
+}
+
+/** Draw an image the way CSS draws it (object-fit and object-position) into the sample. */
+function drawLike(x: OffscreenCanvasRenderingContext2D, src: CanvasImageSource, img: HTMLImageElement, k: number) {
+  const r = img.getBoundingClientRect();
+  const cs = getComputedStyle(img);
+  const nw = (src as ImageBitmap).width || img.naturalWidth;
+  const nh = (src as ImageBitmap).height || img.naturalHeight;
+  if (!nw || !nh || !r.width) return;
+  const s = cs.objectFit === 'contain' ? Math.min(r.width / nw, r.height / nh) : cs.objectFit === 'fill' ? 0 : Math.max(r.width / nw, r.height / nh);
+  const pos = cs.objectPosition.split(/\s+/).map((v) => (v.endsWith('%') ? parseFloat(v) / 100 : 0.5));
+  const dw = s ? nw * s : r.width;
+  const dh = s ? nh * s : r.height;
+  const ox = r.left + (r.width - dw) * (pos[0] ?? 0.5);
+  const oy = r.top + (r.height - dh) * (pos[1] ?? 0.5);
+  x.drawImage(src, ox * k, oy * k, dw * k, dh * k);
+}
+
+async function sampleOf(wall: HTMLElement, root: HTMLElement): Promise<Sample | null> {
+  const dim = parseFloat(wall.style.getPropertyValue('--wall-dim')) || 0;
+  const bg = rgbOf('var(--c-bg)', root);
+  const veil = dim * 0.55;
+  const fill = wall.querySelector<HTMLElement>('.wall-fill');
+  if (fill) {
+    const cs = getComputedStyle(fill);
+    const cols = colorsIn(`${cs.backgroundImage} ${cs.backgroundColor}`).map((c) => c.map((v, i) => v * (1 - veil) + bg[i] * veil) as [number, number, number]);
+    return { flat: patchOfColors(cols.length ? cols : [bg]) };
+  }
+  const imgs = [...wall.querySelectorAll<HTMLImageElement>('img.wall-backdrop, img.wall-photo, img.riso, img[class^="fx-"]')];
+  if (!imgs.length) return null;
+  const W = SAMPLE_W;
+  const H = Math.max(1, Math.round((SAMPLE_W * innerHeight) / innerWidth));
+  const k = W / innerWidth;
+  const c = new OffscreenCanvas(W, H);
+  const x = c.getContext('2d', { willReadFrequently: true });
+  if (!x) return null;
+  x.fillStyle = `rgb(${bg.join(',')})`;
+  x.fillRect(0, 0, W, H);
+  const blur = parseFloat(wall.style.getPropertyValue('--wall-blur')) || 0;
+  let drew = false;
+  for (const img of imgs) {
+    const src = await readable(img);
+    if (!src) continue;
+    x.filter = img.classList.contains('wall-backdrop') ? `blur(${Math.max(2, 24 * k)}px)` : blur ? `blur(${blur * k}px)` : 'none';
+    drawLike(x, src, img, k);
+    drew = true;
+  }
+  if (!drew) return null;
+  x.filter = 'none';
+  // The veil: an even wash plus a soft band under the top bar.
+  x.fillStyle = `rgba(${bg.join(',')},${veil})`;
+  x.fillRect(0, 0, W, H);
+  const band = x.createLinearGradient(0, 0, 0, 128 * k);
+  band.addColorStop(0, `rgba(${bg.join(',')},${Math.min(1, dim * 0.5 + 0.22)})`);
+  band.addColorStop(1, `rgba(${bg.join(',')},0)`);
+  x.fillStyle = band;
+  x.fillRect(0, 0, W, 128 * k);
+  try {
+    return { px: x.getImageData(0, 0, W, H).data, W, H };
+  } catch {
+    return null;
+  }
+}
+
+/** The box around what's actually drawn in a widget: its text, pictures and controls (not empty space). */
+export function contentRect(el: HTMLElement): { left: number; top: number; right: number; bottom: number } | null {
+  let l = Infinity;
+  let t = Infinity;
+  let r = -Infinity;
+  let b = -Infinity;
+  const add = (rc: DOMRect) => {
+    if (rc.width < 1 || rc.height < 1) return;
+    l = Math.min(l, rc.left);
+    t = Math.min(t, rc.top);
+    r = Math.max(r, rc.right);
+    b = Math.max(b, rc.bottom);
+  };
+  const range = document.createRange();
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      if (n.nodeType === Node.TEXT_NODE) return n.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      const e = n as Element;
+      if (e.matches('.gw-more, .gw-chrome, .sr-only')) return NodeFilter.FILTER_REJECT;
+      // Whole drawn things count as one box.
+      if (e.matches('svg, img, input, textarea, .nt-cap, .todo-check, .note, .fold-art, .btn, .nt-chip')) return NodeFilter.FILTER_ACCEPT;
+      return NodeFilter.FILTER_SKIP;
+    },
+  });
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (n.nodeType === Node.TEXT_NODE) {
+      range.selectNodeContents(n);
+      add(range.getBoundingClientRect());
+    } else {
+      add((n as Element).getBoundingClientRect());
+    }
+  }
+  return l < r && t < b ? { left: l, top: t, right: r, bottom: b } : null;
+}
+
+/**
+ * Start keeping widgets readable. Returns a stop function. Only runs for the
+ * Clear surface on a wallpaper; otherwise it clears any tones it set.
+ */
+export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: boolean, signal: AbortSignal) {
+  const widgets = () => [...root.querySelectorAll<HTMLElement>('.gw:not([data-w="search"]):not(.is-open)')];
+  if (!on || !wall) {
+    for (const w of widgets()) {
+      delete w.dataset.tone;
+      w.style.removeProperty('--lg-dim');
+      w.style.removeProperty('--lg-blur');
+    }
+    return;
+  }
+  let sample: Sample | null = null;
+  let failed = false;
+  const refresh = () => {
+    if (!root.isConnected) return;
+    if (!sample) {
+      // The picture couldn't be read (it hasn't loaded, or its host won't share pixels):
+      // Apple's fallback for clear glass, a 35% dimming layer, with text to match.
+      if (!failed) return;
+      const dark = document.documentElement.dataset.pal === 'dark' || matchMedia('(prefers-color-scheme: dark)').matches;
+      for (const w of widgets()) {
+        w.dataset.tone = dark ? 'light' : 'dark';
+        w.style.setProperty('--lg-dim', '0.35');
+        w.style.setProperty('--lg-blur', '10px');
+      }
+      return;
+    }
+    for (const w of widgets()) {
+      const r = w.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      // Measure (and dim) only around what's drawn, clipped to the widget.
+      const c = contentRect(w) ?? r;
+      const box = { left: Math.max(r.left, c.left - 8), top: Math.max(r.top, c.top - 6), right: Math.min(r.right, c.right + 8), bottom: Math.min(r.bottom, c.bottom + 6) };
+      w.style.setProperty('--lg-l', `${Math.round(box.left - r.left)}px`);
+      w.style.setProperty('--lg-t', `${Math.round(box.top - r.top)}px`);
+      w.style.setProperty('--lg-r', `${Math.round(r.right - box.right)}px`);
+      w.style.setProperty('--lg-b', `${Math.round(r.bottom - box.bottom)}px`);
+      const frac = { x: box.left / innerWidth, y: box.top / innerHeight, w: (box.right - box.left) / innerWidth, h: (box.bottom - box.top) / innerHeight };
+      const patch = 'flat' in sample ? sample.flat : patchOf(sample.px, sample.W, sample.H, frac);
+      const l = legibilityFor(patch);
+      w.dataset.tone = l.tone;
+      w.style.setProperty('--lg-dim', String(l.dim));
+      w.style.setProperty('--lg-blur', `${l.blur}px`);
+      w.dataset.ratio = String(l.ratio);
+    }
+    root.dataset.readable = 'true';
+  };
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  const resample = (delay = 120) => {
+    clearTimeout(pending);
+    pending = setTimeout(async () => {
+      sample = await sampleOf(wall, root);
+      // Only call it failed once there's a picture that should have been readable.
+      failed = !sample && !!wall.querySelector('img[src]');
+      refresh();
+    }, delay);
+  };
+  resample(0);
+  // Pictures arrive late (effects render, collections load): read again when they do.
+  const mo = new MutationObserver(() => resample());
+  mo.observe(wall, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
+  wall.addEventListener('load', () => resample(), { capture: true, signal });
+  addEventListener('resize', () => resample(200), { signal });
+  onArranged(refresh, signal);
+  // Widgets fill in (weather arrives, a task is added): measure again, quietly.
+  let soon: ReturnType<typeof setTimeout> | undefined;
+  const grid = root.querySelector('.nt-grid');
+  const ticking = (n: Node) => !!(n.nodeType === Node.ELEMENT_NODE ? (n as Element) : n.parentElement)?.closest('.pomo-time, .nt-time, .pomo-read, .iso-svg');
+  const content = new MutationObserver((records) => {
+    if (records.every((r) => ticking(r.target))) return;
+    clearTimeout(soon);
+    soon = setTimeout(refresh, 250);
+  });
+  if (grid) content.observe(grid, { subtree: true, childList: true, characterData: true });
+  signal.addEventListener('abort', () => content.disconnect());
+  signal.addEventListener('abort', () => mo.disconnect());
+}

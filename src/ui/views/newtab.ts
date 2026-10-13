@@ -2,6 +2,9 @@
 // to-do, notes), one box in the middle to search or ask AI, with your apps and
 // your edition under it, and your bookmarks on the right. Cards sit over the
 // wallpaper as frosted glass, clear glass, or solid; each one can be turned off.
+import { widgetGrid, type GridItem } from './ntgrid.ts';
+import type { Settings } from '../../shared/types.ts';
+import { keepReadable } from './ntlegible.ts';
 import { ext } from '../../shared/api.ts';
 import { getLocal, updateSettings, setLocal } from '../../shared/storage.ts';
 import type { NtLook } from '../../shared/types.ts';
@@ -256,7 +259,7 @@ function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
   );
 }
 
-function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null): HTMLElement {
+function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arrange: HTMLElement): HTMLElement {
   return h(
     'header',
     { class: 'nt-top' },
@@ -266,6 +269,7 @@ function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null): HTML
       { class: 'nt-meta' },
       wall ? wallCredit(ctx, wall) : null,
       czButton,
+      arrange,
       soundToggle(ctx),
       launcherEl(),
       h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 18)),
@@ -341,7 +345,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const root = h('div', { class: 'nt2', dataset: { panels: n.panels } });
 
   // ------------------------------------------------ the box: search, or ask AI
-  const input = h('input', { class: 'nt-input', placeholder: 'Search or type a URL', autocomplete: 'off', spellcheck: 'false', autofocus: true, 'aria-label': 'Search or type a URL' });
+  const input = h('input', { class: 'nt-input', placeholder: 'Search or type a URL', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Search or type a URL' });
   const results = h('div', { class: 'results nt-results', hidden: true });
   const aiOn = n.aiTab;
   let mode: Mode = aiOn ? getMode() : 'home';
@@ -378,33 +382,29 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const box = h(
     'div',
     { class: 'nt-ask nt-card' },
-    greet ? h('div', { class: 'ask-head' }, greet, w.brief ? await briefEl(ctx) : null) : null,
+    greet ? h('div', { class: 'ask-head' }, greet) : null,
     h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
     h('div', { class: 'ask-bar' }, seg?.el ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
   );
 
-  // ------------------------------------------------ columns
+  // ------------------------------------------------ the grid
+  // Every widget sits on one 12 × 8 grid that fills the screen (see ntgrid.ts);
+  // the edition, when it's on, follows underneath.
   const feedHost = h('div', { class: 'nt-feed' });
-  const center = h(
-    'main',
-    { class: 'nt-center' },
-    await choiceCard(ctx, browser),
-    box,
-    results,
-    h('div', { class: 'nt-home' }, w.bookmarks ? await bookmarkShelf(ctx) : null, feedHost),
-    ai ? h('div', { class: 'nt-ai-host' }, ai.below) : null,
-  );
-  const left = h(
-    'aside',
-    { class: 'nt-left', 'aria-label': 'Today' },
-    n.clock || w.greeting ? timeBlock(ctx) : null,
-    w.weather ? weatherCard(ctx) : null,
-    w.calendar ? calendarCard(ctx) : null,
-    w.pomodoro ? await pomodoroCard(ctx) : null,
-    await todoSection(ctx),
-    w.notes ? await notesCard() : null,
-  );
-  const dash = h('div', { class: 'nt-dash', dataset: { left: String(left.childElementCount > 0) } }, left, center);
+  const off = (put: (s: Settings) => void) => () => void updateSettings(put);
+  const items: GridItem[] = [];
+  const push = (id: GridItem['id'], label: string, el: HTMLElement | null, more: Partial<GridItem> = {}) => el && items.push({ id, label, el, ...more });
+  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.brief ? await briefEl(ctx) : null) : null, { remove: off((s) => void (s.newtab.clock = false)) });
+  push('weather', 'Weather', w.weather ? weatherCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.weather = false)) });
+  push('search', 'Search', h('div', { class: 'gw-search' }, box, results, ai ? h('div', { class: 'nt-ai-host' }, ai.below) : null));
+  push('bookmarks', 'Bookmarks', w.bookmarks ? await bookmarkShelf(ctx) : null, { remove: off((s) => void (s.newtab.widgets.bookmarks = false)) });
+  push('calendar', 'Calendar', w.calendar ? calendarCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.calendar = false)) });
+  push('pomodoro', 'Pomodoro', w.pomodoro ? await pomodoroCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.pomodoro = false)) });
+  push('todo', 'To-do', await todoSection(ctx), { expandable: true, remove: off((s) => void (s.newtab.todo = false)) });
+  push('notes', 'Notes', w.notes ? await notesCard() : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.notes = false)) });
+  const grid = widgetGrid(ctx, items);
+  const choice = await choiceCard(ctx, browser);
+  const dash = h('div', { class: 'nt-dash' }, choice ? h('div', { class: 'nt-choice-float' }, choice) : null, grid.el, h('div', { class: 'nt-below' }, feedHost));
 
   const setMode = async (m: Mode) => {
     if (!aiOn) m = 'home';
@@ -414,15 +414,16 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     root.dataset.mode = m;
     document.documentElement.dataset.mode = m;
     seg?.set(m);
-    if (m === 'ai') ai?.box.focus();
-    else input.focus();
+    if (m === 'ai') ai?.box.focus({ preventScroll: true });
+    else input.focus({ preventScroll: true });
   };
 
   const wall = await wallpaperEl(ctx);
   if (wall) root.dataset.wall = n.background.kind;
   const cz = customize(ctx);
   if (wall) root.append(wall);
-  root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall), dash), cz.panel);
+  const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 18));
+  root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall, arrange), dash), cz.panel);
   root.dataset.mode = mode;
   document.documentElement.dataset.mode = mode;
 
@@ -466,6 +467,9 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   pageListeners?.abort();
   pageListeners = new AbortController();
   const signal = pageListeners.signal;
+  // Clear widgets read the wallpaper behind them to stay readable.
+  keepReadable(root, wall, n.panels === 'clear', signal);
+  addEventListener('nt-arrange', () => grid.edit(true), { signal });
 
   // Keys: "/" to search, 1–9 to open the first bookmarks (when you're not typing).
   const onKey = (e: KeyboardEvent) => {
@@ -529,6 +533,6 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     }
   }, { signal });
   if (mode === 'ai') void setMode('ai');
-  else requestAnimationFrame(() => input.focus());
+  else requestAnimationFrame(() => input.focus({ preventScroll: true }));
   return root;
 }

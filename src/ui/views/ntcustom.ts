@@ -18,6 +18,7 @@ import { CUBES } from '../figures/cubes.ts';
 import { SPIKE } from '../figures/spike.ts';
 import { PAD } from '../figures/pad.ts';
 import { play } from '../sound.ts';
+import { SCALE_MAX, SCALE_MIN, applyScale, clampScale } from '../../shared/scale.ts';
 import { GRADIENTS, PATTERNS, LANDSCAPES, MONUMENTS, RISO, effectFor, landscapeUrl, monumentUrl, listUploads, addUpload, removeUpload, prepareImage } from './ntwall.ts';
 
 export const THEMES: { id: NtLook; name: string; note: string; swatch: [string, string, string]; studio: boolean }[] = [
@@ -111,6 +112,11 @@ function themeCard(ctx: Ctx, t: (typeof THEMES)[number]): HTMLElement {
       'aria-pressed': String(on),
       onclick: () => {
         play('key');
+        try {
+          localStorage.setItem('sidegig.lastPalette', t.id);
+        } catch {
+          /* fine */
+        }
         set((s) => void (s.newtab.look = t.id));
       },
     },
@@ -168,7 +174,6 @@ function tile(label: string, on: boolean, onClick: () => void, visual: Node | nu
 const thumb = (src: string) => h('img', { src, alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer' });
 
 const FX: [NtBackground['treatment'], string, string][] = [
-  ['auto', 'Auto', 'Right for the theme'],
   ['photo', 'Photo', 'As it is'],
   ['film', 'Film', 'Grain, warm shadows, vignette'],
   ['dream', 'Dream', 'Soft focus and a fine dot grid'],
@@ -208,7 +213,7 @@ function fxPicker(current: NtBackground['treatment']): HTMLElement {
           class: 'cz-fx-b',
           dataset: { fx: id },
           title: note,
-          'aria-checked': String(current === id),
+          'aria-checked': String((current === 'auto' ? 'photo' : current) === id),
           onclick: () => {
             play('key');
             setBg({ treatment: id });
@@ -370,13 +375,14 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
 
   // Controls first: they apply to whatever you pick.
   const live = (prop: string, value: string) => document.querySelector<HTMLElement>('.nt-wall')?.style.setProperty(prop, value);
-  const dim = h('input', { type: 'range', min: 0, max: 90, value: bg.dim, 'aria-label': 'Veil' });
+  const dim = h('input', { type: 'range', min: 0, max: 90, value: bg.dim, 'aria-label': 'Fade' });
   dim.addEventListener('input', () => live('--wall-dim', String(Number(dim.value) / 100)));
   dim.addEventListener('change', () => setBg({ dim: Number(dim.value) }));
-  const blur = h('input', { type: 'range', min: 0, max: 24, value: bg.blur, 'aria-label': 'Blur' });
+  const blur = h('input', { type: 'range', min: 0, max: 24, value: bg.blur, 'aria-label': 'Soften' });
   blur.addEventListener('input', () => live('--wall-blur', `${blur.value}px`));
   blur.addEventListener('change', () => setBg({ blur: Number(blur.value) }));
   wrap.append(
+    h('p', { class: 'cz-lede' }, 'The picture behind everything, and how it’s drawn. Changing it never changes your colours.'),
     h(
       'div',
       { class: 'cz-controls' },
@@ -384,9 +390,9 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
       bg.kind === 'collection'
         ? h('div', { class: 'cz-row' }, h('span', {}, 'New picture'), seg(bg.rotate ?? 'tab', [['tab', 'Every tab'], ['hour', 'Hourly'], ['day', 'Daily']], (v) => setBg({ rotate: v })))
         : null,
-      h('div', { class: 'cz-row' }, h('span', {}, 'Veil'), dim),
-      h('div', { class: 'cz-row' }, h('span', {}, 'Blur'), blur),
-      h('p', { class: 'cz-hint' }, 'Auto keeps photos in Match browser and gives studio themes film grain or a risograph print. Drop any image on the new tab to use it.'),
+      h('div', { class: 'cz-row' }, h('span', {}, 'Fade'), dim),
+      h('div', { class: 'cz-row' }, h('span', {}, 'Soften'), blur),
+      h('p', { class: 'cz-hint' }, 'Fade washes the picture toward your page colour; Soften blurs it. Drop any image on the new tab to use it.'),
     ),
   );
 
@@ -503,22 +509,56 @@ function nameSection(ctx: Ctx): HTMLElement {
   );
 }
 
-function themeTab(ctx: Ctx): HTMLElement {
+/** The last palette you picked, so switching back to Palette lands on it. */
+const lastPalette = (): NtLook => {
+  try {
+    const v = localStorage.getItem('sidegig.lastPalette') as NtLook | null;
+    return v && THEMES.some((t) => t.id === v && t.id !== 'auto' && t.id !== 'picture') ? v : 'paper';
+  } catch {
+    return 'paper';
+  }
+};
+
+/** Colours: where the page's colours come from (the wallpaper, your browser, or a palette), the accent and icons. */
+function coloursTab(ctx: Ctx): HTMLElement {
   const n = ctx.settings.newtab;
+  const source: 'picture' | 'browser' | 'palette' = n.look === 'picture' ? 'picture' : n.look === 'auto' ? 'browser' : 'palette';
+  const hasPicture = !['none', 'gradient', 'pattern', 'color'].includes(n.background.kind);
+  const note = {
+    picture: hasPicture ? 'Page, widget and accent colours are read from your wallpaper and change with it.' : 'Pick a picture in Wallpaper first. Until then this follows your browser.',
+    browser: 'Follows your browser’s own look, light or dark.',
+    palette: 'A fixed set of colours that stays the same whatever the wallpaper.',
+  }[source];
   return h(
     'div',
     { class: 'cz-themes-wrap' },
-    h('div', { class: 'cz-themes' }, THEMES.map((t) => themeCard(ctx, t))),
-    nameSection(ctx),
+    h('p', { class: 'cz-lede' }, 'Colours for the page and its widgets. They never change your wallpaper.'),
     h(
       'section',
       { class: 'cz-sec' },
-      h('div', { class: 'cz-sec-h' }, 'Icons'),
+      h('div', { class: 'cz-sec-h' }, 'Colours from'),
+      seg(source, [['picture', 'Wallpaper'], ['browser', 'Browser'], ['palette', 'Palette']], (v) => {
+        play('key');
+        set((s) => void (s.newtab.look = v === 'picture' ? 'picture' : v === 'browser' ? 'auto' : lastPalette()));
+      }),
+      h('p', { class: 'cz-hint' }, note),
+    ),
+    source === 'palette'
+      ? h(
+          'section',
+          { class: 'cz-sec' },
+          h('div', { class: 'cz-sec-h' }, 'Palette'),
+          h('div', { class: 'cz-themes' }, THEMES.filter((t) => t.id !== 'auto' && t.id !== 'picture').map((t) => themeCard(ctx, t))),
+          n.look === 'custom' ? customEditor(ctx) : null,
+        )
+      : null,
+    h(
+      'section',
+      { class: 'cz-sec' },
+      h('div', { class: 'cz-sec-h' }, 'Site icons'),
       seg(ctx.settings.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => set((s) => void (s.theme.icons = v))),
       h('p', { class: 'cz-hint' }, 'Original keeps each site’s own icon, sized to match. Themed draws known logos in your theme’s ink, here and in the sidebar.'),
     ),
-
-    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Custom theme'), customEditor(ctx)),
     h(
       'section',
       { class: 'cz-sec' },
@@ -526,7 +566,7 @@ function themeTab(ctx: Ctx): HTMLElement {
       h(
         'div',
         { class: 'swatches' },
-        h('button', { type: 'button', class: 'swatch', title: 'The theme’s own', 'aria-pressed': String(!n.accent), style: { background: 'conic-gradient(#ff4f00, #2c5bff, #12a150, #ff4f00)' }, onclick: () => set((s) => void (s.newtab.accent = '')) }),
+        h('button', { type: 'button', class: 'swatch', title: 'From your colours', 'aria-pressed': String(!n.accent), style: { background: 'conic-gradient(#ff4f00, #2c5bff, #12a150, #ff4f00)' }, onclick: () => set((s) => void (s.newtab.accent = '')) }),
         ['#ff4f00', '#0b57d0', '#6e56ff', '#e0407f', '#12a150', '#e7a800', '#121212'].map((c) =>
           h('button', { type: 'button', class: 'swatch', title: c, 'aria-pressed': String(n.accent === c), style: { background: c }, onclick: () => set((s) => void (s.newtab.accent = c)) }),
         ),
@@ -687,16 +727,57 @@ function addWidgets(ctx: Ctx): HTMLElement {
   return h('section', { class: 'cz-sec' }, find, list);
 }
 
-function widgetsTab(ctx: Ctx): HTMLElement {
+const SURFACE_NOTE = {
+  clear: 'No boxes. Each widget reads the picture behind it, picks white or dark text, and dims only where the picture is bright or busy.',
+  frosted: 'Frosted glass panels: calm over any picture.',
+  solid: 'Solid panels in your colours.',
+} as const;
+
+/** One Size control: live while you drag, saved when you let go. */
+function sizeSlider(ctx: Ctx): HTMLElement {
+  const v = clampScale(ctx.settings.theme.scale);
+  const out = h('output', { class: 'cz-val' }, `${v}%`);
+  const range = h('input', { type: 'range', min: SCALE_MIN, max: SCALE_MAX, step: 5, value: v, 'aria-label': 'Size' });
+  range.addEventListener('input', () => {
+    out.textContent = `${range.value}%`;
+    applyScale(document.documentElement, Number(range.value));
+  });
+  range.addEventListener('change', () => set((s) => void (s.theme.scale = clampScale(Number(range.value)))));
+  return h('div', { class: 'cz-row' }, h('span', {}, 'Size'), range, out);
+}
+
+/** Layout: how widgets sit on the wallpaper, where they go, what's on the page, and how big. */
+function layoutTab(ctx: Ctx): HTMLElement {
   const st = ctx.settings;
   return h(
     'div',
     { class: 'cz-themes-wrap' },
+    h('p', { class: 'cz-lede' }, 'What’s on the page, where it sits and how big it is.'),
+    h(
+      'section',
+      { class: 'cz-sec' },
+      h('div', { class: 'cz-sec-h' }, 'Widgets sit'),
+      seg(st.newtab.panels, [['clear', 'Clear'], ['frosted', 'Glass'], ['solid', 'Solid']], (v) => (play('key'), set((s) => void (s.newtab.panels = v)))),
+      h('p', { class: 'cz-hint' }, SURFACE_NOTE[st.newtab.panels]),
+    ),
+    h(
+      'section',
+      { class: 'cz-sec' },
+      h('div', { class: 'cz-sec-h' }, 'Arrange'),
+      h(
+        'div',
+        { class: 'cz-btnrow' },
+        h('button', { type: 'button', class: 'btn primary', onclick: () => (document.querySelector<HTMLElement>('.nt-cz .nt-gear[aria-label="Close"]')?.click(), dispatchEvent(new Event('nt-arrange'))) }, ico('arrange', 18), 'Arrange widgets'),
+        h('button', { type: 'button', class: 'btn', onclick: () => (play('dismiss'), set((s) => void (s.newtab.layout = {}))) }, 'Reset layout'),
+      ),
+      h('p', { class: 'cz-hint' }, 'Drag widgets to move them and change their size. Small ones open up when you click them.'),
+      sizeSlider(ctx),
+    ),
     addWidgets(ctx),
-    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Cards'), seg(st.newtab.panels, [['frosted', 'Frosted'], ['clear', 'Clear'], ['solid', 'Solid']], (v) => set((s) => void (s.newtab.panels = v))), h('p', { class: 'cz-hint' }, 'Frosted and clear let the wallpaper show through.')),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Weather'), weatherPlace(ctx)),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Calendar'), calendarSettings(ctx)),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Pomodoro'), pomodoroSettings(ctx)),
+    nameSection(ctx),
   );
 }
 
@@ -705,12 +786,13 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
   const body = h('div', { class: 'cz-body' });
   const tabs = h('div', { class: 'cz-tabs', role: 'tablist' });
   const panel = h('aside', { class: 'nt-cz', role: 'dialog', 'aria-label': 'Customize', hidden: true }, h('header', { class: 'cz-head' }, h('b', {}, 'Customize'), tabs, h('button', { type: 'button', class: 'nt-gear', 'aria-label': 'Close', onclick: () => close() }, ico('close', 18))), body);
-  let tab = recalled() || 'theme';
+  const OLD: Record<string, string> = { theme: 'colours', background: 'wallpaper', widgets: 'layout' };
+  let tab = OLD[recalled()] ?? (recalled() || 'wallpaper');
   const show = async (t: string) => {
     tab = t;
     remember(t);
     tabs.replaceChildren(
-      ...([['theme', 'Theme'], ['background', 'Background'], ['widgets', 'Widgets']] as const).map(([id, label]) =>
+      ...([['wallpaper', 'Wallpaper'], ['colours', 'Colours'], ['layout', 'Layout']] as const).map(([id, label]) =>
         h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === t), onclick: () => void show(id) }, label),
       ),
     );
@@ -720,7 +802,7 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
     } catch {
       /* storage blocked: memory only */
     }
-    body.replaceChildren(t === 'theme' ? themeTab(ctx) : t === 'widgets' ? widgetsTab(ctx) : await backgroundTab(ctx));
+    body.replaceChildren(t === 'colours' ? coloursTab(ctx) : t === 'layout' ? layoutTab(ctx) : await backgroundTab(ctx));
     body.scrollTop = scroll;
   };
   body.addEventListener('scroll', () => {
@@ -747,7 +829,7 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
   const [bg, ink, accent] = ctx.settings.newtab.look === 'custom' ? [ctx.settings.newtab.custom.bg, ctx.settings.newtab.custom.ink, ctx.settings.newtab.custom.accent] : (THEMES.find((t) => t.id === ctx.settings.newtab.look) ?? THEMES[0]).swatch;
   const button = h(
     'button',
-    { type: 'button', class: 'nt-gear nt-cz-btn', title: 'Customize: theme, background and widgets', 'aria-label': 'Customize', 'aria-haspopup': 'dialog', onclick: () => (panel.hidden ? open() : close()) },
+    { type: 'button', class: 'nt-gear nt-cz-btn', title: 'Customize: wallpaper, colours and layout', 'aria-label': 'Customize', 'aria-haspopup': 'dialog', onclick: () => (panel.hidden ? open() : close()) },
     ico('palette', 18),
     h('i', { class: 'cz-dot', 'aria-hidden': 'true', style: { background: `linear-gradient(135deg, ${bg} 50%, ${ink} 50%)`, boxShadow: `0 0 0 1.5px ${accent}` } }),
   );
