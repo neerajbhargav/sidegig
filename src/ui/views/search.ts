@@ -5,7 +5,7 @@ import { rank } from '../../shared/fuzzy.ts';
 import { updateSettings } from '../../shared/storage.ts';
 import { appFromCatalog } from '../../shared/defaults.ts';
 import { catalogById } from '../../shared/catalog.ts';
-import { h, ico, iconButton, favicon, hostOf, toast } from '../dom.ts';
+import { h, ico, iconButton, favicon, hostOf, toast, appFavicon } from '../dom.ts';
 import { type Ctx, openApp, openUrl, switchTo, send, openOptions, activeTab } from '../ctx.ts';
 
 type Kind = 'Tab' | 'App' | 'Bookmark' | 'History' | 'Command' | 'Web';
@@ -146,7 +146,7 @@ export async function createSearch(ctx: Ctx, input: HTMLInputElement, list: HTML
       title: a.name,
       meta: `Opens in ${a.openIn === 'panel' ? 'sidebar' : a.openIn}`,
       url: a.url,
-      icon: () => favicon(a.url, a.name, 'fav sm'),
+      icon: () => appFavicon(a, 'fav sm'),
       run: () => openApp(ctx, a),
     }));
     const seen = new Set([...data.tabs.map((t) => t.url)]);

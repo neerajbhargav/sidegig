@@ -70,6 +70,9 @@ const ICONS = {
   wallpaper: 'wallpaper',
   soundOn: 'volume_up',
   soundOff: 'volume_off',
+  next: 'skip_next',
+  shuffle: 'shuffle',
+  collections: 'photo_library',
 };
 
 async function fetchIcon(name) {

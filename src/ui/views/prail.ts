@@ -5,7 +5,7 @@ import { badgeLabel } from '../../shared/badge.ts';
 import { appFromCatalog } from '../../shared/defaults.ts';
 import { catalogById } from '../../shared/catalog.ts';
 import type { StatusCard } from '../../shared/types.ts';
-import { h, ico, favicon } from '../dom.ts';
+import { h, ico, appFavicon } from '../dom.ts';
 import { type Ctx, type ViewName, openApp, send } from '../ctx.ts';
 
 export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: string }): Promise<HTMLElement> {
@@ -28,7 +28,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
     apps.append(
       btn(
         a.name,
-        [favicon(a.url, a.name, 'fav pfav'), n !== 0 ? h('span', { class: 'badge', ...(n < 0 ? { 'data-dot': '' } : {}) }, badgeLabel(n)) : null],
+        [appFavicon(a, 'fav pfav'), n !== 0 ? h('span', { class: 'badge', ...(n < 0 ? { 'data-dot': '' } : {}) }, badgeLabel(n)) : null],
         () => openApp(ctx, a),
         current.name === 'app' && current.app === a.id,
       ),

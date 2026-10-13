@@ -159,3 +159,8 @@ button.item.add:hover { color: var(--m-fg); }
 :host([data-mode="docked"][data-side="right"]) .drawer { border-right: 0; }
 :host([data-mode="docked"]) .rail { padding: 10px 0; }
 :host([data-mode="docked"]) .hint { display: none; }
+
+/* Black brand logos (ChatGPT, X, GitHub, Notion) turn white on dark rails. */
+:host([data-scheme="dark"]) img.brand-dark { filter: invert(1); }
+@media (prefers-color-scheme: dark) { :host([data-scheme="system"]) img.brand-dark { filter: invert(1); } }
+img.brand { padding: 1px; box-sizing: border-box; }

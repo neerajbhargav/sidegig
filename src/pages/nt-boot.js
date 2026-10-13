@@ -37,6 +37,17 @@
       if (c.accent) root.style.setProperty('--c-signal', c.accent);
     } catch (e) {}
   }
+  if (look === 'picture') {
+    try {
+      var p = JSON.parse(ls('sidegig.ntPicture') || '{}');
+      if (p.bg) {
+        root.style.setProperty('--c-bg', p.bg);
+        root.style.setProperty('--c-ink', p.ink);
+        root.style.setProperty('--c-signal', p.accent);
+        root.dataset.pal = p.dark ? 'dark' : 'light';
+      }
+    } catch (e) {}
+  }
   root.dataset.scheme = dark ? 'dark' : 'light';
   root.dataset.browser = ls('sidegig.ntBrowser') || 'chromium';
   root.dataset.mode = ls('sidegig.ntMode') === 'ai' ? 'ai' : 'home';

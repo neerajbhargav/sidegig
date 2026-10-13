@@ -8,14 +8,18 @@ export type OpenIn = 'panel' | 'window' | 'tab' | 'drawer';
 export type ThemeMode = 'system' | 'light' | 'dark' | 'page';
 export type BadgeKind = 'parens' | 'gmail' | 'none';
 /** New tab theme. "auto" matches the browser; the rest are sidegig's studio themes; "custom" is yours. */
-export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom';
-export type BgKind = 'none' | 'daily' | 'monuments' | 'photo' | 'gradient' | 'pattern' | 'upload' | 'url' | 'color';
+export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom' | 'picture';
+export type BgKind = 'none' | 'daily' | 'monuments' | 'photo' | 'gradient' | 'pattern' | 'upload' | 'url' | 'color' | 'collection';
+/** How a picture is shown: as is, or one of the studio treatments. */
+export type BgEffect = 'auto' | 'photo' | 'print' | 'film' | 'dream' | 'led' | 'mosaic';
 export interface NtBackground {
   kind: BgKind;
   /** Which one: a gallery id ("p:54", "m:3"), gradient or pattern id, upload id, URL or colour. */
   ref: string;
-  /** auto = printed as a risograph in studio themes, a photo in Match browser. */
-  treatment: 'auto' | 'photo' | 'print';
+  /** auto = printed or filmed in studio themes, a photo in Match browser. */
+  treatment: BgEffect;
+  /** Collections: a new picture every new tab, every hour or every day. */
+  rotate?: 'tab' | 'hour' | 'day';
   /** 0–90: how much the page colour veils the picture. */
   dim: number;
   /** 0–24 px. */
@@ -112,6 +116,8 @@ export interface Settings {
     background: NtBackground;
     /** Your own theme: page, ink and accent colours. */
     custom: { bg: string; ink: string; accent: string };
+    /** Wallpaper collections you made from your own keywords. */
+    collections: { id: string; name: string; terms: string[]; anime?: boolean }[];
     /** Quiet interface sounds (opt-in). */
     sounds: boolean;
     weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };

@@ -34,3 +34,11 @@ sidegig reads a page's text only when you ask AI about it (the rail button, the 
 ## Network header changes
 
 To let sites load inside sidegig's own panel, sidegig removes the `X-Frame-Options` and `Content-Security-Policy` response headers, and marks the request as a normal page load, **only for frames that load inside sidegig's panel** (requests not attached to a browser tab, started by sidegig or going to your chosen app sites and their sign-in pages). Your normal browsing is never changed.
+
+## Wallpaper collections
+
+When you pick a collection (Cars, Anime, Tech...) or type your own words, sidegig
+sends those search words, signed out, to Wallhaven, NASA's image library or Bing,
+and downloads the matching pictures and small thumbnails. Nothing else is sent.
+Pictures, rankings and anything you hide stay in this browser's local storage.
+App icons are checked locally against the browser's own icon cache.

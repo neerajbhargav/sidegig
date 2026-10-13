@@ -4,7 +4,7 @@ import { ext, uid } from '../../shared/api.ts';
 import { updateSettings } from '../../shared/storage.ts';
 import { CATALOG } from '../../shared/catalog.ts';
 import { appFromCatalog } from '../../shared/defaults.ts';
-import { h, favicon, iconButton, hostOf, toast, ico } from '../dom.ts';
+import { h, favicon, iconButton, hostOf, toast, ico, appFavicon } from '../dom.ts';
 import { type Ctx, activeTab, openOptions } from '../ctx.ts';
 
 export async function addView(ctx: Ctx): Promise<HTMLElement> {
@@ -81,7 +81,7 @@ export async function addView(ctx: Ctx): Promise<HTMLElement> {
                 toast(`${c.name} added`);
               },
             },
-            favicon(c.url, c.name),
+            appFavicon(c),
             h('span', { class: 'name' }, c.name),
           ),
         ),

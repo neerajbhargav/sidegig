@@ -3,10 +3,9 @@
 // iframe reloads it), so chats stay alive while you switch apps. Frames you
 // haven't looked at for 30 minutes are unloaded to free memory.
 import { ext } from '../../shared/api.ts';
-import { getLocal, updateSettings } from '../../shared/storage.ts';
-import { badgeLabel } from '../../shared/badge.ts';
+import { updateSettings } from '../../shared/storage.ts';
 import type { AppEntry } from '../../shared/types.ts';
-import { h, favicon, iconButton } from '../dom.ts';
+import { h, iconButton, appFavicon } from '../dom.ts';
 import { type Ctx, send } from '../ctx.ts';
 
 const SLEEP_MS = 30 * 60_000;
@@ -51,22 +50,9 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   const apps = ctx.settings.apps;
   const app = apps.find((a) => a.id === appId) ?? apps.find((a) => a.openIn === 'panel') ?? apps[0];
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
-  const badges = await getLocal<Record<string, number>>('badges', {});
-  const bar = h('div', { class: 'appbar' });
-  if (ctx.kind === 'panel') {
-    bar.append(favicon(app.url, app.name, 'fav sm'), h('span', { class: 'app-title' }, app.name));
-  } else bar.append(iconButton('logo', 'sidegig home', () => ctx.go('home')), h('span', { class: 'sep' }));
-  for (const a of ctx.kind === 'panel' ? [] : apps.filter((x) => x.openIn === 'panel' || x.openIn === 'drawer' || x.id === app.id)) {
-    const n = a.badge ? badges[a.id] ?? 0 : 0;
-    bar.append(
-      h(
-        'button',
-        { class: 'iconbtn', type: 'button', title: a.name, 'aria-label': a.name, 'aria-pressed': String(a.id === app.id), onclick: () => ctx.go('app', { app: a.id }) },
-        favicon(a.url, a.name, 'fav sm'),
-        n !== 0 ? h('span', { class: 'badge' }, badgeLabel(n) || ' ') : null,
-      ),
-    );
-  }
+    const bar = h('div', { class: 'appbar' });
+  // The rail (or the panel's own buttons list) already lists the apps: just name this one.
+  bar.append(appFavicon(app, 'fav sm'), h('span', { class: 'app-title' }, app.name));
   bar.append(
     h('span', { style: { flex: '1' } }),
     iconButton('refresh', 'Reload', () => reload(app)),
@@ -86,13 +72,59 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
     iconButton('window', 'Open as mini window', () => void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'window', side: ctx.settings.rail.side })),
     iconButton('external', 'Open in a tab', () => void ext.tabs.create({ url: app.url })),
   );
-  if (ctx.kind === 'drawer') bar.append(iconButton('close', 'Close (Esc)', () => ctx.close()));
+  if (ctx.kind === 'drawer') {
+    // In a page the app can't see your sign-in for most sites; the side panel can.
+    bar.insertBefore(
+      iconButton('sidebar', 'Open in the browser’s side panel (keeps you signed in)', () => {
+        void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'panel', side: ctx.settings.rail.side });
+        ctx.close();
+      }),
+      bar.querySelector('[aria-label="Open as mini window"]'),
+    );
+    bar.append(iconButton('close', 'Close (Esc)', () => ctx.close()));
+  }
+  if (ctx.kind === 'drawer' && needsSignIn(app)) {
+    // Browsers keep your sign-ins away from apps embedded in other sites' pages.
+    const note = h(
+      'div',
+      { class: 'signin-note' },
+      h('span', {}, `${app.name} needs your sign-in, and browsers don’t share it with apps inside a page. The side panel keeps you signed in.`),
+      h(
+        'button',
+        {
+          class: 'btn primary',
+          type: 'button',
+          onclick: async () => {
+            await updateSettings((s) => {
+              const x = s.apps.find((a) => a.id === app.id);
+              if (x) x.openIn = 'panel';
+            });
+            void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'panel', side: ctx.settings.rail.side });
+            ctx.close();
+          },
+        },
+        'Always use the side panel',
+      ),
+    );
+    const wrap = h('div', { class: 'appbar-wrap' }, bar, note);
+    attach(app);
+    return wrap;
+  }
+  attach(app);
+  return bar;
+}
 
+function attach(app: AppEntry) {
   frameFor(app);
   for (const [id, f] of frames) {
     const show = id === app.id;
     if (show) f.lastShown = Date.now();
     f.el.hidden = !show;
   }
-  return bar;
+}
+
+/** Built-in apps you sign in to (all but Translate). Custom sites usually work in a page. */
+function needsSignIn(app: AppEntry): boolean {
+  const cat = app.catalogId ?? '';
+  return !!cat && cat !== 'translate';
 }
