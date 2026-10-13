@@ -44,6 +44,18 @@ const ICONS = {
   globe: 'language',
   sidebar: 'dock_to_left',
   sidebarRight: 'dock_to_right',
+  edition: 'newspaper',
+  saved: 'bookmark_added',
+  forum: 'forum',
+  copy: 'content_copy',
+  article: 'article',
+  play: 'smart_display',
+  headphones: 'headphones',
+  book: 'menu_book',
+  science: 'science',
+  music: 'music_note',
+  notFor: 'do_not_disturb_on',
+  interests: 'interests',
 };
 
 async function fetchIcon(name) {

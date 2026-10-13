@@ -13,6 +13,7 @@ import { applyRules } from './dnr.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
+import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 
 let cache: Settings | null = null;
 const now = () => cache ?? defaultSettings();
@@ -33,7 +34,8 @@ function aiApp(s: Settings): AppEntry | undefined {
 
 async function sync(): Promise<void> {
   cache = await loadSettings();
-  await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache)]);
+  await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
+  void buildIfStale(cache);
   setupActionBehavior();
   setupLinkRules();
 }
@@ -52,6 +54,7 @@ async function setupMenus(s: Settings) {
   menus.create({ id: 'ask-page', title: `Ask ${ai} about this page`, contexts: ['page'] });
   menus.create({ id: 'add-stack', title: 'Add to sidegig stacks', contexts: ['page', 'link'] });
   menus.create({ id: 'link-window', title: 'Open link in a sidegig mini window', contexts: ['link'] });
+  if (s.edition.enabled) menus.create({ id: 'save-edition', title: 'Save to your reading list', contexts: ['page', 'link'] });
 }
 
 async function registerBridge(s: Settings) {
@@ -250,6 +253,12 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     case 'refresh-status':
       refreshStatus().then(sendResponse, () => sendResponse([]));
       return true;
+    case 'edition-build':
+      buildEdition().then(sendResponse, () => sendResponse(null));
+      return true;
+    case 'profile-import':
+      importFromAi(msg.text, msg.host).then(sendResponse, () => sendResponse({ ok: false, count: 0 }));
+      return true;
   }
   return false;
 });
@@ -272,12 +281,14 @@ ext.commands?.onCommand.addListener((command: string, tab?: chrome.tabs.Tab) => 
   if (info.menuItemId === 'ask-selection') return askFromBackground(tab, info.selectionText);
   if (info.menuItemId === 'ask-page') return askFromBackground(tab);
   if (info.menuItemId === 'add-stack') void addToStacks(info.linkUrl ?? info.pageUrl ?? tab.url ?? '', info.linkUrl ? info.selectionText ?? '' : tab.title ?? '');
+  if (info.menuItemId === 'save-edition') void saveLink(info.linkUrl ?? info.pageUrl ?? tab.url ?? '', info.linkUrl ? info.linkText ?? info.selectionText ?? '' : tab.title ?? '');
   if (info.menuItemId === 'link-window' && info.linkUrl) void openMiniWindow({ url: info.linkUrl, openIn: 'window', side: now().rail.side }, tab.windowId);
 });
 
 ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'status') void refreshStatus();
   if (a.name === 'sleep') void sleepTabs(now().sleep.afterMin);
+  if (a.name === 'edition') void buildEdition();
 });
 
 // Toolbar button where the browser has no side panel behavior.

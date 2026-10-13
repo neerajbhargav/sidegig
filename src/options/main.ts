@@ -21,6 +21,7 @@ const NAV: [string, string][] = [
   ['status', 'Status cards'],
   ['rules', 'Link rules'],
   ['tabs', 'Tab sleep'],
+  ['edition', 'New tab edition'],
   ['backup', 'Backup'],
   ['privacy', 'Privacy'],
 ];
@@ -347,6 +348,35 @@ function tabsSection(): HTMLElement {
   );
 }
 
+function editionSection(): HTMLElement {
+  const e = s.edition;
+  const clear = h('button', { class: 'btn', type: 'button' }, 'Clear interests, saves and history');
+  clear.addEventListener('click', async () => {
+    if (!confirm('Clear your interests, reading list and edition history on this device?')) return;
+    await ext.storage.local.remove(['edProfile', 'edSaved', 'edSeen', 'edDismissed', 'edition', 'edStatus', 'edImport']);
+    toast('Cleared');
+  });
+  return section(
+    'edition',
+    'New tab edition',
+    'A short issue of articles, videos, podcasts, books and discussions on every new tab, picked from your interests (your AI can fill them in). It ends instead of scrolling forever. Edit interests and formats on the new tab itself.',
+    h(
+      'div',
+      { class: 'group' },
+      opt('Show the edition on new tabs', null, toggle(e.enabled, (v) => commit((x) => void (x.edition.enabled = v)), 'Show the edition')),
+      opt('Items per edition', null, seg(String(e.size) as '6' | '9' | '12' | '18', [['6', '6'], ['9', '9'], ['12', '12'], ['18', '18']], (v) => commit((x) => void (x.edition.size = Number(v))))),
+      opt('New edition every', null, seg(String(e.refreshHours) as '6' | '12' | '24', [['6', '6 hr'], ['12', '12 hr'], ['24', 'Day']], (v) => commit((x) => void (x.edition.refreshHours = Number(v))))),
+      opt('Let on-device AI review and explain picks', 'Uses the model built into your browser (Gemini Nano in Chrome) when it’s there. Nothing leaves your computer.', toggle(e.onDeviceAi, (v) => commit((x) => void (x.edition.onDeviceAi = v)), 'On-device AI')),
+    ),
+    h(
+      'p',
+      { class: 'muted', style: { lineHeight: '1.7', marginTop: '12px' } },
+      'Your interests, reading list and edition history stay on this device. To build an edition, sidegig sends short search phrases (your interests) to the sources you turn on: Hacker News, Substack, Google News, YouTube, Apple, Open Library, arXiv and Reddit. Requests are signed out, so they don’t touch your accounts or their recommendations.',
+    ),
+    h('div', { class: 'actions' }, clear),
+  );
+}
+
 function backupSection(): HTMLElement {
   const file = h('input', { type: 'file', accept: 'application/json', hidden: true });
   file.addEventListener('change', async () => {
@@ -407,6 +437,7 @@ async function render() {
     await statusSection(),
     rulesSection(),
     tabsSection(),
+    editionSection(),
     backupSection(),
     section(
       'privacy',

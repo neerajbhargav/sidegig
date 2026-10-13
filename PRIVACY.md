@@ -10,6 +10,7 @@ sidegig has no servers, no accounts and no analytics. Nothing you do in sidegig 
 | Custom CSS, workspaces, status card results, unread counts | Browser extension storage on this device | No |
 | GitHub / Vercel tokens | Browser extension storage on this device | Never |
 | Bookmark stacks | Your normal browser bookmarks | However your browser syncs bookmarks |
+| Edition interests, reading list, what you've been shown or waved off | Browser extension storage on this device | No |
 
 ## Network requests sidegig makes
 
@@ -18,6 +19,13 @@ sidegig has no servers, no accounts and no analytics. Nothing you do in sidegig 
 - **Vercel API** (`api.vercel.com`) with your token, only if you turn on the Vercel card.
 - **Gmail's unread feed** (`mail.google.com/mail/u/0/feed/atom`) with your existing Google sign-in, only if you turn on the Gmail card.
 - **Site icons**: in Chrome-family browsers from the browser's own icon cache; in Firefox and Safari from the site's `/favicon.ico`.
+- **The new tab edition**, only once you've given it interests: short search phrases (your interests, never your profile, saves or history) go to the sources you keep on: Hacker News (Algolia), Substack, Google News, YouTube, Apple's iTunes Search, Open Library, arXiv and Reddit. These requests are sent signed out (no cookies), so they don't touch your accounts or their recommendations. Pictures in the edition load from those services.
+
+## Your AI and the edition
+
+When you click “Ask Claude” (or ChatGPT, Gemini) on the new tab, sidegig types one prompt into that AI asking it to describe your interests as a JSON block, and sends it only if you've turned on auto-send for Ask AI. While that request is pending (up to 20 minutes), sidegig looks on that AI's page for the reply block marked `sidegig_profile` and reads only that. It never reads your other conversations. The prompt asks the AI to leave out anything private or sensitive, and you can edit or delete every interest afterwards.
+
+If your browser has a built-in model (Gemini Nano in Chrome), sidegig can ask it to review each edition and explain picks. That runs on your computer; nothing is sent anywhere. You can turn it off in Settings → New tab edition.
 
 ## Page content
 

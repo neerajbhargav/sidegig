@@ -1,3 +1,5 @@
+import type { EdKind } from './edition/types.ts';
+
 export type Side = 'left' | 'right';
 /** docked = always visible and the page makes room (like Opera); hover = slides over the page. */
 export type RailMode = 'docked' | 'hover' | 'off';
@@ -75,6 +77,17 @@ export interface Settings {
   };
   rules: LinkRule[];
   sleep: { enabled: boolean; afterMin: number };
+  /** The new tab edition: a short, finite issue picked from your interests. */
+  edition: {
+    enabled: boolean;
+    /** Items per edition. */
+    size: number;
+    /** A new edition every N hours. */
+    refreshHours: number;
+    kinds: Record<EdKind, boolean>;
+    /** Let the browser's built-in model (Gemini Nano in Chrome) review picks and explain them. */
+    onDeviceAi: boolean;
+  };
 }
 
 /** Never synced; stays on this device. */

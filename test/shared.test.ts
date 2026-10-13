@@ -5,7 +5,7 @@ import { parseBadge, badgeLabel } from '../src/shared/badge.ts';
 import { matchPattern, findRule, hostExcluded } from '../src/shared/rules.ts';
 import { buildPrompt, cleanText, truncate } from '../src/shared/prompt.ts';
 import { mergeSettings, migrate } from '../src/shared/storage.ts';
-import { defaultSettings, appFromCatalog } from '../src/shared/defaults.ts';
+import { defaultSettings, appFromCatalog, SETTINGS_VERSION } from '../src/shared/defaults.ts';
 import { CATALOG } from '../src/shared/catalog.ts';
 
 test('fuzzy: exact words beat scattered letters', () => {
@@ -86,7 +86,7 @@ test('settings merge keeps defaults for missing or mistyped values', () => {
   assert.equal(merged.apps.length, 1);
   assert.equal((merged as any).unknown, undefined);
   assert.deepEqual(mergeSettings(d, null), d);
-  assert.equal((migrate({}) as any).version, 2);
+  assert.equal((migrate({}) as any).version, SETTINGS_VERSION);
 });
 
 test('catalog is well formed', () => {

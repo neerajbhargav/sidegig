@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?><feed xmlns="http://www.w3.org/2005/Atom"><entry>
+    <id>http://arxiv.org/abs/2610.13227v1</id>
+    <title>Understanding and Mitigating Cross-Session Attacks via Persistent Artifacts in Agent Skill Composition</title>
+    <updated>2026-10-09T08:45:27Z</updated>
+    <link href="https://arxiv.org/abs/2610.13227v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.13227v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Agent skills extend the capabilities of AI agents by bundling instructions, code, and resources into reusable packages. During skill execution, agents may produce or modify artifacts, such as files, configurations, and cached data, that are reused by other skills in later sessions. Since these artifacts can persist across sessions and later be accessed by other skills, they introduce a new attack surface that can be exploited to influence subsequent executions. However, the security risks arising from such cross-session skill interactions remain largely unexplored. In this work, we investigate cross-session composition attacks in skill-based AI agents and develop a runtime defense against them. Specifically, we characterize three attack mechanisms, namely Instruction Propagation (IP), Data Boundary Violation (DBV), and Evidence Poisoning (EP), through which malicious effects propagate across skill executions via persistent artifacts. To evaluate whether existing agents can resist these attacks while completing legitimate tasks, we construct SkillRelayBench, a benchmark of 270 adversarial cases drawn from 30 cross-session skill-composition scenarios across ten domains. Our evaluation of seven models across Codex CLI, Gemini CLI, and Claude Code reveals attack success rates (ASR) ranging from 46.7% to 77.4% and attack chain success rates (ACSR) ranging from 35.6% to 61.1%. Successful attack chains cover all five target security consequence categories, highlighting the broad impact of these attacks. To mitigate these risks, we propose SkillRelayGuard, which restores artifact provenance context and provides pre-execution advisory review while leaving the final execution decision to the agent. Evaluation across three agent settings shows that SkillRelayGuard reduces overall ASR from 69.5% to 10.9% and ACSR from 54.8% to 10.0%, while increasing legitimate task completion from 79.6% to 87.5%.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-09T08:45:27Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Dianshu Liao</name>
+    </author>
+    <author>
+      <name>Shidong Pan</name>
+    </author>
+    <author>
+      <name>Guangdong Bai</name>
+    </author>
+    <author>
+      <name>Zhenchang Xing</name>
+    </author>
+    <author>
+      <name>Xiaoyu Sun</name>
+    </author>
+  </entry>
+<entry>
+    <id>http://arxiv.org/abs/2610.12569v1</id>
+    <title>SWE-Duel: Towards a Self-Scaling Arena for Coding Agents</title>
+    <updated>2026-10-08T18:01:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.12569v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.12569v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Static coding benchmarks are fixed at release. Over time their tasks leak into training data, and stronger agents eventually saturate them. We argue that a benchmark should instead aim to be self-scaling: its tasks and oracles are created at evaluation time, so no content exists in advance to leak, and its difficulty is set by the participating agents rather than fixed at release. We introduce SWE-Duel, an arena in which two coding agents evaluate each other over mirrored Red-Blue turns. In each turn, the Red agent works on a real repository across three context-isolated sessions. It proposes and implements a new feature with feature tests, then embeds a subtle bug in that feature along with sealed bug-triggering tests. The resulting pull request is admitted only if (1) it passes the feature tests and the repository's existing tests while failing exactly the bug tests, and (2) a fresh session of the same agent can repair the bug blind, which rules out unsolvable tasks. The Blue agent then reviews the pull request without being told a bug exists. It wins only if its revision passes all three test suites, and then the two agents swap roles. We run a tournament among 11 model-harness participants on 15 repositories in five languages for 1,500 turns. The leaders win in different ways. GPT-5.5 with Codex CLI ranks first as the strongest solver, repairing 98.3% of the defects it reviews. Claude Opus 4.8 with mini-swe-agent ranks second as the strongest task author, with a 27.3% Red win rate. Finally, within one model family, tasks written by the newest version defeat a fixed-reference solver far more often than those of older versions (42.9% vs. 4.0%), giving preliminary evidence that task difficulty scales with task authoring capability.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-08T18:01:00Z</published>
+    <arxiv:comment>Under review as a conference paper at ICLR 2027</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Wei Minn</name>
+    </author>
+    <author>
+      <name>Zhensu Sun</name>
+    </author>
+    <author>
+      <name>Lwin Khin Shar</name>
+    </author>
+    <author>
+      <name>David Lo</name>
+    </author>
+  </entry></feed>

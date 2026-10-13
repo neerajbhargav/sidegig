@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { intrudes, spills, needsFix, firstGuess, correct, type Box } from '../src/shared/dockmath.ts';
 import { migrate, mergeSettings } from '../src/shared/storage.ts';
-import { defaultSettings } from '../src/shared/defaults.ts';
+import { defaultSettings, SETTINGS_VERSION } from '../src/shared/defaults.ts';
 
 const VW = 1440;
 const W = 52;
@@ -62,8 +62,9 @@ test('settings: the old floating "pinned" rail migrates to docked', () => {
   const m = mergeSettings(defaultSettings(), migrate({ version: 1, rail: { mode: 'pinned', side: 'right' } }));
   assert.equal(m.rail.mode, 'docked');
   assert.equal(m.rail.side, 'right');
-  assert.equal(m.version, 2);
+  assert.equal(m.version, SETTINGS_VERSION);
   assert.equal(defaultSettings().rail.mode, 'docked');
+  assert.equal(m.edition.enabled, true, 'older settings pick up the edition defaults');
 });
 
 test('left rail: a full-width bar that follows the page shift is narrowed, not moved', () => {

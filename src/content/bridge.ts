@@ -1,9 +1,13 @@
 // Runs inside app sites (WhatsApp, Gmail, Claude, ...), both in normal tabs and
-// inside sidegig's panel. Two jobs:
+// inside sidegig's panel. Three jobs:
 //   1. report unread counts parsed from the page title (for rail badges)
 //   2. for AI apps, type a prompt handed over from "Ask AI" into the input box
+//   3. right after you ask your AI for your interests (new tab edition), read
+//      back only that one JSON reply. Nothing else on the page is read, and
+//      only while that request is pending.
 import { ext } from '../shared/api.ts';
-import { loadSettings, onLocalChanged } from '../shared/storage.ts';
+import { loadSettings, onLocalChanged, getLocal } from '../shared/storage.ts';
+import { IMPORT_MARKER, parseImport } from '../shared/edition/profile.ts';
 import { catalogByHost } from '../shared/catalog.ts';
 import { parseBadge } from '../shared/badge.ts';
 import type { PendingPrompt } from '../shared/types.ts';
@@ -129,7 +133,51 @@ async function main() {
       const p = v as PendingPrompt | null;
       if (p && p.host === host && document.visibilityState === 'visible') void tryClaim();
     });
+
+    // 3. Read back the interest profile your AI writes for the new tab edition.
+    void watchImport();
+    onLocalChanged('edImport', () => void watchImport());
   }
+}
+
+let watching = false;
+
+/** The newest block on the page that carries the profile marker and parses. */
+function latestProfileText(): string | null {
+  const blocks = [...document.querySelectorAll('pre, code')].map((e) => e.textContent ?? '').filter((t) => t.includes(IMPORT_MARKER));
+  for (let i = blocks.length - 1; i >= 0; i--) if (parseImport(blocks[i])) return blocks[i];
+  // Some apps render JSON as plain text: look after the last mention only (the prompt's own example never parses).
+  const body = document.body?.innerText ?? '';
+  const at = body.lastIndexOf(IMPORT_MARKER);
+  if (at < 0) return null;
+  const tail = body.slice(Math.max(0, body.lastIndexOf('{', at)));
+  return parseImport(tail) ? tail : null;
+}
+
+async function watchImport() {
+  const pending = await getLocal<{ host: string; at: number } | null>('edImport', null);
+  if (watching || !pending || pending.host !== host || Date.now() - pending.at > 20 * 60_000) return;
+  watching = true;
+  let last = '';
+  let since = 0;
+  const stop = () => {
+    clearInterval(timer);
+    watching = false;
+  };
+  const timer = window.setInterval(() => {
+    if (Date.now() - pending.at > 20 * 60_000) return stop();
+    const text = latestProfileText();
+    if (!text) return;
+    // Replies stream in: wait until the block stops changing.
+    if (text !== last) {
+      last = text;
+      since = Date.now();
+      return;
+    }
+    if (Date.now() - since < 1500) return;
+    stop();
+    void send({ type: 'profile-import', text, host }).catch(() => undefined);
+  }, 700);
 }
 
 void main();
