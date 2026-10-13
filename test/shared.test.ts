@@ -134,3 +134,14 @@ test('v6: Gmail and X open in a docked side window; other apps stay put', () => 
   assert.equal(appFromCatalog('gmail').openIn, 'window');
   assert.equal(appFromCatalog('claude').openIn, 'panel');
 });
+
+test('v7: the dashboard arrives with every widget on; weather you turned off stays off', () => {
+  const fresh = mergeSettings(defaultSettings(), migrate({ version: 6, newtab: { weather: { enabled: false, place: '', lat: 0, lon: 0, units: 'f' } } }));
+  assert.equal(fresh.newtab.widgets.weather, true, 'never set up: show the inline city picker');
+  assert.equal(fresh.newtab.widgets.calendar, true);
+  assert.equal(fresh.newtab.panels, 'frosted');
+  assert.equal(fresh.newtab.background.inks, 'theme');
+  const off = mergeSettings(defaultSettings(), migrate({ version: 6, newtab: { weather: { enabled: false, place: 'Jersey City', lat: 40.7, lon: -74, units: 'f' } } }));
+  assert.equal(off.newtab.widgets.weather, false);
+  assert.equal(off.newtab.widgets.notes, true);
+});

@@ -73,6 +73,18 @@ const ICONS = {
   next: 'skip_next',
   shuffle: 'shuffle',
   collections: 'photo_library',
+  palette: 'palette',
+  chevLeft: 'chevron_left',
+  chevRight: 'chevron_right',
+  calendar: 'calendar_month',
+  eventAdd: 'calendar_add_on',
+  timer: 'timer',
+  note: 'sticky_note_2',
+  pause: 'pause',
+  playArrow: 'play_arrow',
+  restart: 'restart_alt',
+  feed: 'newspaper',
+  ai: 'auto_awesome',
 };
 
 async function fetchIcon(name) {

@@ -40,6 +40,6 @@ test('weather: codes, URL and parsing (Open-Meteo shape)', () => {
     'Jersey City',
     1,
   );
-  assert.deepEqual(w, { temp: 58, feels: 55, humidity: 71, code: 3, isDay: true, hi: 62, lo: 49, units: 'f', place: 'Jersey City', at: 1 });
+  assert.deepEqual(w, { temp: 58, feels: 55, humidity: 71, code: 3, isDay: true, hi: 62, lo: 49, units: 'f', place: 'Jersey City', at: 1, days: [] });
   assert.equal(parseWeather({}, 'c', 'x'), null);
 });

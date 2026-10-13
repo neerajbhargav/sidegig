@@ -46,6 +46,10 @@ export function migrate(stored: unknown): unknown {
       isObj(a) && typeof a.catalogId === 'string' && NO_FRAME.has(a.catalogId) && (a.openIn === 'panel' || a.openIn === 'drawer') ? { ...a, openIn: 'window' } : a,
     );
   }
+  // v6 -> v7: the new tab became a dashboard. Weather you turned off stays off.
+  if (v < 7 && isObj(next.newtab) && isObj(next.newtab.weather) && next.newtab.weather.place && next.newtab.weather.enabled === false) {
+    next.newtab = { ...next.newtab, widgets: { ...(isObj(next.newtab.widgets) ? next.newtab.widgets : {}), weather: false } };
+  }
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;

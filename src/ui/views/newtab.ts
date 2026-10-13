@@ -1,25 +1,24 @@
-// New tab page, "NTP–1": an instrument panel rather than a feed. A big quiet
-// clock, a little display that reads out today's edition, search, your apps as
-// keys (press 1–9), the edition itself, and your bookmarks on a shelf below.
+// The new tab: your day on the left (time, weather, calendar, focus timer,
+// to-do, notes), one box in the middle to search or ask AI, with your apps and
+// your edition under it, and your bookmarks on the right. Cards sit over the
+// wallpaper as frosted glass, clear glass, or solid; each one can be turned off.
 import { ext } from '../../shared/api.ts';
-import { getLocal, onLocalChanged, updateSettings } from '../../shared/storage.ts';
-import { badgeLabel } from '../../shared/badge.ts';
-import type { AppEntry, NtLook } from '../../shared/types.ts';
-import type { Edition, SavedItem } from '../../shared/edition/types.ts';
-import { ED_KINDS, KIND_LABEL } from '../../shared/edition/types.ts';
-import { h, ico, favicon, appFavicon, keys } from '../dom.ts';
-import { type Ctx, openUrl, openApp, openOptions } from '../ctx.ts';
+import { getLocal, updateSettings, setLocal } from '../../shared/storage.ts';
+import type { NtLook } from '../../shared/types.ts';
+import type { Edition } from '../../shared/edition/types.ts';
+import { h, ico } from '../dom.ts';
+import { type Ctx, openOptions } from '../ctx.ts';
 import { createSearch } from './search.ts';
-import { spacesFor, stackEl } from './home.ts';
-import { editionSection, KIND_COLOR } from './edition.ts';
-import { aiView } from './ntai.ts';
-import { greetingEl, analogClockEl, weatherEl, todoSection, launcherEl, addKey, voiceButton } from './ntwidgets.ts';
+import { shortCredit } from '../../shared/ntdata.ts';
+import { editionSection } from './edition.ts';
+import { aiParts } from './ntai.ts';
+import { todoSection, launcherEl, voiceButton } from './ntwidgets.ts';
+import { bookmarkShelf, calendarCard, greetingLine, notesCard, pomodoroCard, timeBlock, weatherCard } from './ntdash.ts';
 import { wallpaperEl, addUpload, prepareImage, skipWall } from './ntwall.ts';
 import { hideWall } from '../../shared/collect.ts';
 import { customize } from './ntcustom.ts';
 import { configureSound, play } from '../sound.ts';
 import { detectBrowser, type DetectedBrowser } from '../browser.ts';
-import { setLocal } from '../../shared/storage.ts';
 
 type Mode = 'home' | 'ai';
 const getMode = (): Mode => {
@@ -37,17 +36,6 @@ const saveMode = (m: Mode) => {
   }
 };
 
-
-const pad = (n: number) => String(n).padStart(2, '0');
-
-function isoWeek(d: Date): number {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  return Math.ceil(((t.getTime() - y0.getTime()) / 86_400_000 + 1) / 7);
-}
-const dayOfYear = (d: Date) => Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86_400_000);
 
 /** "auto" = match the browser (native); the others are sidegig's own studio looks. */
 /** Text on the accent colour: whichever of near-black or white reads better on it. */
@@ -157,7 +145,7 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
     if (parts.length) parts.push(', ');
     parts.push(h('b', {}, strong), rest);
   };
-  if (ctx.settings.edition.enabled && ed?.items.length) add(`${ed.items.length} picks`, ' in today’s edition');
+  if (ctx.settings.edition.enabled && ed?.items.length) add(`${ed.items.length} picks`, ' for you');
   const open = ctx.settings.newtab.todo ? todos.filter((t) => !t.done).length : 0;
   if (open) add(`${open} ${open === 1 ? 'task' : 'tasks'}`, ' to do');
   const unread = ctx.settings.apps.reduce((n, a) => n + (a.badge && (badges[a.id] ?? 0) > 0 ? badges[a.id] : 0), 0);
@@ -165,12 +153,10 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
   if (!parts.length) return null;
   const last = parts.lastIndexOf(', ');
   if (last > 0) parts[last] = ' and ';
-  return h('p', { class: 'nt-brief' }, 'Today: ', ...parts, '.');
+  return h('p', { class: 'nt-brief' }, ...parts);
 }
 
 export const brandName = (ctx: Ctx) => ctx.settings.newtab.title.trim() || 'sidegig';
-/** Your name for the page if you set one; otherwise a quiet credit. */
-const footLine = (ctx: Ctx) => (ctx.settings.newtab.title.trim() ? ctx.settings.newtab.title.trim() : 'sidegig · free and open source');
 
 /** The name in the corner. Click it to rename (Enter saves, Esc cancels); clear it to go back to sidegig. */
 function brandEl(ctx: Ctx): HTMLElement {
@@ -217,194 +203,74 @@ function brandEl(ctx: Ctx): HTMLElement {
   return h('div', { class: 'nt-brand' }, word, tag ? h('span', { class: 'nt-tag' }, tag) : null);
 }
 
-function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null = null): HTMLElement {
-  const d = new Date();
-  const code = `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}  ·  W${pad(isoWeek(d))}  ·  D${String(dayOfYear(d)).padStart(3, '0')}`;
+/** Wallpaper credit, kept short (initials; the full name on hover and in the link), plus next and hide for collections. */
+function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
+  const credit = wall.dataset.credit ?? '';
+  const col = wall.dataset.collection;
+  const pic = wall.dataset.pic;
+  if (!shortCredit(credit) && !col) return null;
+  const short = shortCredit(credit);
+  const label = short
+    ? wall.dataset.link
+      ? h('a', { href: wall.dataset.link, target: '_blank', rel: 'noopener noreferrer', class: 'nt-credit', title: credit, 'aria-label': `Wallpaper: ${credit}` }, short || '©')
+      : h('span', { class: 'nt-credit', title: credit, 'aria-label': `Wallpaper: ${credit}` }, short || '©')
+    : null;
+  return h(
+    'span',
+    { class: 'nt-wallbar' },
+    label,
+    col
+      ? h(
+          'button',
+          {
+            type: 'button',
+            class: 'nt-gear',
+            title: 'Next wallpaper',
+            'aria-label': 'Next wallpaper',
+            onclick: async () => {
+              play('key');
+              await skipWall(col);
+              ctx.go('home');
+            },
+          },
+          ico('next', 18),
+        )
+      : null,
+    col && pic
+      ? h(
+          'button',
+          {
+            type: 'button',
+            class: 'nt-gear',
+            title: 'Not this one: never show it again',
+            'aria-label': 'Hide this wallpaper',
+            onclick: async () => {
+              play('dismiss');
+              await hideWall(pic, col);
+              ctx.go('home');
+            },
+          },
+          ico('notFor', 18),
+        )
+      : null,
+  );
+}
+
+function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null): HTMLElement {
   return h(
     'header',
     { class: 'nt-top' },
     brandEl(ctx),
-    // With a picture, the strip carries its credit and next/hide; otherwise it's decoration.
-    wall?.dataset.credit || wall?.dataset.collection ? h('div', { class: 'nt-ascii nt-wallslot' }, wallCredit(ctx, wall)) : h('div', { class: 'nt-ascii', 'aria-hidden': 'true' }, '/\\-_=+|<  -/=  ~:*-/  ·  ·  ·'),
     h(
       'div',
       { class: 'nt-meta' },
-      h('span', { class: 'nt-code' }, code),
+      wall ? wallCredit(ctx, wall) : null,
       czButton,
       soundToggle(ctx),
       launcherEl(),
-      h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 16)),
+      h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 18)),
     ),
   );
-}
-
-// ---------------------------------------------------------------- hero
-
-function clockEl(ctx: Ctx, brief: HTMLElement | null): HTMLElement {
-  if (ctx.settings.newtab.clockStyle === 'analog') {
-    const date = h('div', { class: 'nt-date' }, new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
-    return h('div', { class: 'nt-clock analog' }, greetingEl(ctx), brief, analogClockEl(), date, weatherEl(ctx));
-  }
-  const time = h('div', { class: 'nt-time' });
-  const date = h('div', { class: 'nt-date' });
-  const paint = () => {
-    const d = new Date();
-    const parts = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).formatToParts(d);
-    const hm = parts.filter((p) => p.type === 'hour' || p.type === 'minute' || p.type === 'literal').map((p) => p.value).join('').trim();
-    const ampm = parts.find((p) => p.type === 'dayPeriod')?.value;
-    time.replaceChildren(hm.replace(/\s+$/, ''), ampm ? h('span', { class: 'nt-ampm' }, ampm.toLowerCase()) : '');
-    date.textContent = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  };
-  paint();
-  // Tick on the minute, not every second: a new tab should be still.
-  const next = () => setTimeout(() => (time.isConnected ? (paint(), next()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
-  next();
-  return h('div', { class: 'nt-clock' }, greetingEl(ctx), brief, time, date, weatherEl(ctx));
-}
-
-/** The little screen: reads out today's edition like an OP-1 display. */
-function displayEl(ctx: Ctx): HTMLElement {
-  const screen = h('div', { class: 'nt-screen', role: 'status', 'aria-live': 'polite' });
-  const paint = async () => {
-    const [ed, st, saved, profile] = await Promise.all([
-      getLocal<Edition | null>('edition', null),
-      getLocal<{ building?: boolean } | null>('edStatus', null),
-      getLocal<SavedItem[]>('edSaved', []),
-      getLocal<{ interests?: unknown[] } | null>('edProfile', null),
-    ]);
-    const rows: HTMLElement[] = [];
-    const head = (l: string, r: string) => h('div', { class: 'scr-row scr-head' }, h('span', {}, l), h('span', {}, r));
-    if (!ctx.settings.edition.enabled) {
-      rows.push(head('Edition', 'off'), h('div', { class: 'scr-big' }, 'quiet'), h('div', { class: 'scr-row dim' }, 'Turn it on in settings'));
-    } else if (!profile?.interests?.length) {
-      rows.push(head('Edition', '—'), h('div', { class: 'scr-big' }, 'no signal'), h('div', { class: 'scr-row dim' }, 'Tell it what you’re into ↓'));
-    } else if (!ed) {
-      rows.push(head('Edition', 'tuning'), h('div', { class: 'scr-big blink' }, 'tuning…'));
-    } else {
-      const max = Math.max(1, ...ED_KINDS.map((k) => ed.items.filter((i) => i.kind === k).length));
-      rows.push(head(`Edition ${pad(ed.no ?? 1)}`, new Date(ed.built).getHours() < 12 ? 'am' : 'pm'));
-      for (const k of ED_KINDS) {
-        const n = ed.items.filter((i) => i.kind === k).length;
-        if (!n) continue;
-        rows.push(
-          h(
-            'div',
-            { class: 'scr-row', style: { '--c': KIND_COLOR[k] } },
-            h('span', { class: 'scr-k' }, KIND_LABEL[k]),
-            h('span', { class: 'scr-bar', 'aria-hidden': 'true' }, Array.from({ length: 6 }, (_, j) => h('i', { class: j < Math.round((n / max) * 6) ? 'on' : '' }))),
-            h('span', { class: 'scr-n' }, pad(n)),
-          ),
-        );
-      }
-      const next = new Date(ed.built + ctx.settings.edition.refreshHours * 3_600_000);
-      rows.push(
-        h(
-          'div',
-          { class: 'scr-row scr-foot' },
-          h('span', {}, st?.building ? h('b', { class: 'led busy' }) : h('b', { class: 'led' }), st?.building ? 'Tuning' : `Next ${pad(next.getHours())}:${pad(next.getMinutes())}`),
-          h('span', {}, `Saved ${pad(saved.length)}`),
-        ),
-      );
-    }
-    screen.replaceChildren(...rows);
-  };
-  void paint();
-  for (const k of ['edition', 'edStatus', 'edSaved', 'edProfile']) onLocalChanged(k, () => screen.isConnected && void paint());
-  return h(
-    'button',
-    {
-      class: 'nt-display',
-      type: 'button',
-      title: 'Jump to the edition',
-      onclick: () => document.querySelector('.ed')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    },
-    h('span', { class: 'nt-display-label', 'aria-hidden': 'true' }, 'display'),
-    screen,
-  );
-}
-
-// ---------------------------------------------------------------- keys
-
-/** From a new tab, a shortcut opens right here (like any start page). Shift-click opens it in the sidebar instead. */
-function launch(ctx: Ctx, app: AppEntry, e?: MouseEvent | KeyboardEvent) {
-  play('key');
-  if (e?.shiftKey && !(e.metaKey || e.ctrlKey)) return openApp(ctx, app);
-  void openUrl(ctx, app.url, e);
-}
-
-function appKeys(ctx: Ctx, badges: Record<string, number>): HTMLElement {
-  const row = h('div', { class: 'nt-keys', role: 'toolbar', 'aria-label': 'Shortcuts' });
-  ctx.settings.apps.forEach((app, i) => {
-    const n = app.badge ? badges[app.id] ?? 0 : 0;
-    const num = i < 9 ? String(i + 1) : '';
-    row.append(
-      h(
-        'button',
-        {
-          class: 'nt-key',
-          type: 'button',
-          title: `${app.name}${num ? `  (${num})` : ''}. Shift-click: open in the sidebar`,
-          'aria-keyshortcuts': num || undefined,
-          onclick: (e: MouseEvent) => launch(ctx, app, e),
-          onauxclick: (e: MouseEvent) => e.button === 1 && launch(ctx, app, e),
-        },
-        h('span', { class: 'nt-cap' }, num ? h('span', { class: 'nt-num' }, num) : null, appFavicon(app, 'fav'), n !== 0 ? h('span', { class: 'nt-led', ...(n < 0 ? { 'data-dot': '' } : {}) }, n > 0 ? badgeLabel(n) : '') : null),
-        h('span', { class: 'nt-label' }, app.name),
-      ),
-    );
-  });
-  row.append(addKey(ctx));
-  return row;
-}
-
-// ---------------------------------------------------------------- shelf
-
-async function shelf(ctx: Ctx): Promise<HTMLElement | null> {
-  const spaces = await spacesFor(ctx);
-  const active = spaces.find((s) => s.id === ctx.settings.stacks.activeSpace) ?? spaces[0];
-  if (!active) return null;
-  const sec = h('section', { class: 'nt-shelf ed-sec' });
-  sec.append(
-    h(
-      'div',
-      { class: 'ed-sec-h' },
-      h('span', { class: 'sec-no' }),
-      h('span', { class: 'sec-dot', style: { '--c': 'var(--c-mute)' } }),
-      h('span', { class: 'sec-name' }, 'Bookmarks'),
-      h('span', { class: 'sec-rule' }),
-      spaces.length > 1
-        ? h(
-            'span',
-            { class: 'nt-spaces' },
-            spaces.map((s) =>
-              h('button', { type: 'button', class: 'nt-space', 'aria-pressed': String(s.id === active.id), onclick: () => void updateSettings((st) => void (st.stacks.activeSpace = s.id)) }, s.title || 'Untitled'),
-            ),
-          )
-        : h('span', { class: 'sec-count' }, active.title || 'Bookmarks'),
-    ),
-  );
-  const kids = await ext.bookmarks.getChildren(active.id);
-  const loose = kids.filter((k) => k.url);
-  if (loose.length) {
-    sec.append(
-      h(
-        'div',
-        { class: 'nt-dial' },
-        loose.slice(0, 40).map((l) =>
-          h(
-            'a',
-            { class: 'nt-dial-item', href: l.url, title: l.url, onclick: (e: MouseEvent) => (e.preventDefault(), openUrl(ctx, l.url!, e)) },
-            favicon(l.url!, l.title),
-            h('span', {}, l.title || l.url!),
-          ),
-        ),
-      ),
-    );
-  }
-  const grid = h('div', { class: 'stacks-grid' });
-  for (const f of kids.filter((k) => !k.url)) grid.append(stackEl(ctx, f));
-  if (grid.childElementCount) sec.append(grid);
-  return sec;
 }
 
 // ---------------------------------------------------------------- page
@@ -448,130 +314,128 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
   return card;
 }
 
-/** Wallpaper credit (linked to its source) and, for collections, next and hide. */
-function wallCredit(ctx: Ctx, wall: HTMLElement | null): HTMLElement {
-  if (!wall?.dataset.credit && !wall?.dataset.collection) return h('span', {}, footLine(ctx));
-  const credit = wall.dataset.credit ?? '';
-  const label = wall.dataset.link ? h('a', { href: wall.dataset.link, target: '_blank', rel: 'noopener noreferrer', class: 'nt-credit' }, credit) : h('span', { class: 'nt-credit' }, credit);
-  const col = wall.dataset.collection;
-  const pic = wall.dataset.pic;
-  return h(
-    'span',
-    { class: 'nt-wallbar' },
-    h('span', { class: 'nt-wallbar-k' }, 'Wallpaper'),
-    label,
-    col
-      ? h(
-          'button',
-          {
-            type: 'button',
-            class: 'nt-wallbtn',
-            title: 'Next wallpaper',
-            'aria-label': 'Next wallpaper',
-            onclick: async () => {
-              play('key');
-              await skipWall(col);
-              ctx.go('home');
-            },
-          },
-          ico('next', 16),
-        )
-      : null,
-    col && pic
-      ? h(
-          'button',
-          {
-            type: 'button',
-            class: 'nt-wallbtn',
-            title: 'Not this one: never show it again',
-            'aria-label': 'Hide this wallpaper',
-            onclick: async () => {
-              play('dismiss');
-              await hideWall(pic, col);
-              ctx.go('home');
-            },
-          },
-          ico('notFor', 16),
-        )
-      : null,
-  );
-}
-
 /** Window listeners for the current render (replaced on each re-render). */
 let pageListeners: AbortController | undefined;
 
+/** A two-way switch with a pill that slides to the chosen side. */
+function segmented<T extends string>(label: string, options: [T, string, string][], value: T, onPick: (v: T) => void): { el: HTMLElement; set: (v: T) => void } {
+  const el = h('div', { class: 'nt-seg', role: 'tablist', 'aria-label': label, style: { '--n': String(options.length) } });
+  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, ico(icon, 18), h('span', {}, text)));
+  el.append(...btns);
+  const set = (v: T) => {
+    const i = Math.max(0, options.findIndex(([o]) => o === v));
+    el.style.setProperty('--i', String(i));
+    btns.forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
+  };
+  set(value);
+  return { el, set };
+}
+
 export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const browser = await detectBrowser();
-  applyLook(ctx.settings.newtab.look, browser, ctx.settings.newtab.accent, ctx.settings.newtab.custom);
-  configureSound(ctx.settings.newtab.sounds, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
-  document.body.toggleAttribute('data-calm', ctx.settings.newtab.calmImages);
-  const root = h('div', { class: 'nt2' });
+  const n = ctx.settings.newtab;
+  const w = n.widgets;
+  applyLook(n.look, browser, n.accent, n.custom);
+  configureSound(n.sounds, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
+  document.body.toggleAttribute('data-calm', n.calmImages);
+  const root = h('div', { class: 'nt2', dataset: { panels: n.panels } });
+
+  // ------------------------------------------------ the box: search, or ask AI
   const input = h('input', { class: 'nt-input', placeholder: 'Search or type a URL', autocomplete: 'off', spellcheck: 'false', autofocus: true, 'aria-label': 'Search or type a URL' });
   const results = h('div', { class: 'results nt-results', hidden: true });
-  const content = h('div', { class: 'nt-content' });
-
-  const field = h('label', { class: 'nt-field' }, h('span', { class: 'nt-field-tag' }, 'srch'), h('span', { class: 'nt-field-icon' }, ico('search', 20)), input, voiceButton(input), h('kbd', { class: 'nt-kbd' }, '/'));
-  // One centred column: greeting, time, date and weather; the search under it; then the day.
-  const hero = h('section', { class: 'nt-hero' }, ctx.settings.newtab.clock ? clockEl(ctx, await briefEl(ctx)) : h('div', { class: 'nt-clock' }, greetingEl(ctx), await briefEl(ctx), weatherEl(ctx)));
-  const badges = await getLocal<Record<string, number>>('badges', {});
-
-  // Home | AI: our dashboard, or your browser's AI and every assistant's chats.
-  const aiOn = ctx.settings.newtab.aiTab;
+  const aiOn = n.aiTab;
   let mode: Mode = aiOn ? getMode() : 'home';
-  const home = h('div', { class: 'nt-home' }, await choiceCard(ctx, browser), hero, h('div', { class: 'nt-console' }, field, results, appKeys(ctx, badges)), content);
-  const aiHost = h('div', { class: 'nt-ai-host' });
-  let aiBuilt = false;
-  const modeBtns: HTMLButtonElement[] = [];
+  const ai = aiOn ? await aiParts(ctx, () => void setMode('home')) : null;
+  const searchGo = h('button', { type: 'button', class: 'ask-go round', title: 'Search', 'aria-label': 'Search', onclick: () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) }, ico('forward', 20));
+  const feedOn = w.feed && ctx.settings.edition.enabled;
+  const feedToggle = h(
+    'button',
+    {
+      type: 'button',
+      class: 'ask-feed',
+      role: 'switch',
+      'aria-checked': String(feedOn),
+      title: feedOn ? 'Hide your edition' : 'Show your edition: a short, finite set of picks from what you’re into',
+      onclick: () => {
+        play(feedOn ? 'off' : 'on');
+        void updateSettings((s) => {
+          s.newtab.widgets.feed = !feedOn;
+          if (!feedOn) s.edition.enabled = true;
+        });
+      },
+    },
+    ico('feed', 18),
+    h('span', {}, 'For you'),
+    h('i', { class: 'ask-sw', 'aria-hidden': 'true' }),
+  );
+  const seg = aiOn
+    ? segmented<Mode>('Search or ask AI', [['home', 'Search', 'search'], ['ai', 'AI', 'ai']], mode, (m) => void setMode(m))
+    : null;
+  const searchVoice = voiceButton(input);
+  // Which controls belong to which side of the switch.
+  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai']] as const) if (el) el.dataset.for = side;
+  const box = h(
+    'div',
+    { class: 'nt-ask nt-card' },
+    h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
+    h('div', { class: 'ask-bar' }, seg?.el ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
+  );
+
+  // ------------------------------------------------ columns
+  const feedHost = h('div', { class: 'nt-feed' });
+  const center = h(
+    'main',
+    { class: 'nt-center' },
+    await choiceCard(ctx, browser),
+    h('div', { class: 'nt-greetwrap' }, greetingLine(ctx), w.brief ? await briefEl(ctx) : null),
+    box,
+    results,
+    h('div', { class: 'nt-home' }, w.bookmarks ? await bookmarkShelf(ctx) : null, feedHost),
+    ai ? h('div', { class: 'nt-ai-host' }, ai.below) : null,
+  );
+  const left = h(
+    'aside',
+    { class: 'nt-left', 'aria-label': 'Today' },
+    n.clock || w.greeting ? timeBlock(ctx) : null,
+    w.weather ? weatherCard(ctx) : null,
+    w.calendar ? calendarCard(ctx) : null,
+    w.pomodoro ? await pomodoroCard(ctx) : null,
+    await todoSection(ctx),
+    w.notes ? await notesCard() : null,
+  );
+  const dash = h('div', { class: 'nt-dash', dataset: { left: String(left.childElementCount > 0) } }, left, center);
+
   const setMode = async (m: Mode) => {
+    if (!aiOn) m = 'home';
     if (m !== mode) play(m === 'ai' ? 'on' : 'off');
     mode = m;
     saveMode(m);
     root.dataset.mode = m;
     document.documentElement.dataset.mode = m;
-    modeBtns.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.m === m)));
-    if (m === 'ai' && !aiBuilt) {
-      aiBuilt = true;
-      aiHost.append(await aiView(ctx, () => void setMode('home')));
-    } else if (m === 'ai') aiHost.querySelector<HTMLTextAreaElement>('.ai-input')?.focus();
+    seg?.set(m);
+    if (m === 'ai') ai?.box.focus();
     else input.focus();
   };
-  const modes = aiOn
-    ? h(
-        'nav',
-        { class: 'nt-modes', role: 'tablist', 'aria-label': 'New tab' },
-        (['home', 'ai'] as Mode[]).map((m) => {
-          const b = h('button', { type: 'button', role: 'tab', class: 'nt-mode', dataset: { m }, 'aria-selected': String(m === mode), onclick: () => void setMode(m) }, h('b', { class: 'ai-led' }), m === 'home' ? 'Home' : 'AI');
-          modeBtns.push(b);
-          return b;
-        }),
-        h('span', { class: 'nt-modes-hint' }, h('kbd', {}, '⇥'), ' to switch'),
-      )
-    : null;
+
   const wall = await wallpaperEl(ctx);
-  if (wall) root.dataset.wall = ctx.settings.newtab.background.kind;
+  if (wall) root.dataset.wall = n.background.kind;
   const cz = customize(ctx);
   if (wall) root.append(wall);
-  root.append(
-    h('div', { class: 'nt-frame', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'), h('i')),
-    h('div', { class: 'nt-grain', 'aria-hidden': 'true' }),
-    h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall), modes, home, aiHost),
-    cz.panel,
-  );
+  root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall), dash), cz.panel);
   root.dataset.mode = mode;
   document.documentElement.dataset.mode = mode;
 
-  const ui = await createSearch(ctx, input, results, () => {
+  await createSearch(ctx, input, results, () => {
     input.value = '';
     results.hidden = true;
-    content.hidden = false;
+    root.dataset.typing = 'false';
   });
-  void ui;
   input.addEventListener('input', () => {
     const has = !!input.value.trim();
     results.hidden = !has;
-    content.hidden = has;
+    root.dataset.typing = String(has);
   });
-  // Typing a URL goes straight there.
+  // Typing a URL goes straight there; Tab on an empty box switches to AI.
   input.addEventListener(
     'keydown',
     (e) => {
@@ -595,50 +459,34 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     true,
   );
 
-  // Today: your list and the edition's readout, side by side as two equal cards.
-  const todo = await todoSection(ctx);
-  const today = [todo, ctx.settings.edition.enabled ? h('section', { class: 'nt-today-display' }, displayEl(ctx)) : null].filter((x): x is HTMLElement => !!x);
-  if (today.length) content.append(h('div', { class: 'nt-today', dataset: { n: String(today.length) } }, ...today));
-  if (ctx.settings.edition.enabled) content.append(await editionSection(ctx));
-  const sh = await shelf(ctx);
-  if (sh) content.append(sh);
-  content.append(
-    h(
-      'footer',
-      { class: 'nt-foot' },
-      h('span', {}, h('kbd', {}, '/'), ' search   ', h('kbd', {}, '1–9'), ' apps   ', h('kbd', {}, keys('K')), ' anywhere'),
-      h('span', { class: 'nt-ascii' }, '~:*-/  =+|<  /\\-_'),
-      h('span', {}, footLine(ctx)),
-    ),
-  );
+  // The edition, under your apps.
+  if (feedOn) void editionSection(ctx).then((ed) => feedHost.append(ed));
 
-  // Window listeners live for one render: the page re-renders on every
-  // settings change, so the previous render's listeners are removed here.
   pageListeners?.abort();
   pageListeners = new AbortController();
   const signal = pageListeners.signal;
 
-  // Keys: "/" to search, 1–9 to open apps (when you're not typing).
+  // Keys: "/" to search, 1–9 to open the first bookmarks (when you're not typing).
   const onKey = (e: KeyboardEvent) => {
     if (!root.isConnected) return;
     const t = e.target as HTMLElement;
     if (e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable) return;
     if (e.key === '/') {
       e.preventDefault();
-      if (mode === 'ai') aiHost.querySelector<HTMLTextAreaElement>('.ai-input')?.focus();
+      if (mode === 'ai') ai?.box.focus();
       else input.focus();
     } else if (/^[1-9]$/.test(e.key) && mode === 'home') {
-      const app = ctx.settings.apps[Number(e.key) - 1];
-      if (app) {
+      const key = root.querySelectorAll<HTMLButtonElement>('.nt-shelf .nt-key[aria-keyshortcuts]')[Number(e.key) - 1];
+      if (key) {
         e.preventDefault();
-        root.querySelectorAll<HTMLElement>('.nt-key')[Number(e.key) - 1]?.classList.add('pressed');
-        launch(ctx, app, e);
+        key.classList.add('pressed');
+        key.click();
       }
     }
   };
   addEventListener('keydown', onKey, { signal });
   addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => k.classList.remove('pressed')), { signal });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(ctx.settings.newtab.look, browser, ctx.settings.newtab.accent, ctx.settings.newtab.custom), { signal });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(n.look, browser, n.accent, n.custom), { signal });
 
   // Drop any picture (or an image link) on the page to make it the background.
   const dropHint = h('div', { class: 'nt-drop', hidden: true }, h('span', {}, 'Drop to make this your background'));

@@ -66,7 +66,19 @@ async function ask(ctx: Ctx, p: AiProvider, q: string, side: boolean) {
   location.href = p.home;
 }
 
-export async function aiView(ctx: Ctx, onHome: () => void): Promise<HTMLElement> {
+export interface AiParts {
+  /** The question box (goes inside the page's search box). */
+  box: HTMLTextAreaElement;
+  /** The main button: "Ask Claude". */
+  send: HTMLButtonElement;
+  /** Voice input for the box. */
+  voice: HTMLElement | null;
+  /** Under the box: who to ask, tabs to include, starters, your chats. */
+  below: HTMLElement;
+}
+
+/** The AI side of the new tab, in parts the page arranges. */
+export async function aiParts(ctx: Ctx, onHome: () => void): Promise<AiParts> {
   const native = await detectBrowser();
   const preferred = ctx.settings.ai.defaultApp;
   const providers = providerOrder(native.provider, preferred);
@@ -103,8 +115,8 @@ export async function aiView(ctx: Ctx, onHome: () => void): Promise<HTMLElement>
       ),
     );
   };
-  const sendLabel = () => `Ask ${PROVIDERS[chosen].name} ↵`;
-  const send = h('button', { class: 'ai-send', type: 'button' }, sendLabel());
+  const sendLabel = () => `Ask ${PROVIDERS[chosen].name}`;
+  const send = h('button', { class: 'ask-go', type: 'button' }, sendLabel());
 
   // Like Dia's @tabs: pick open tabs to send along as context.
   const openTabs = (await ext.tabs.query({ currentWindow: true }).catch(() => [] as chrome.tabs.Tab[])).filter((t) => /^https?:/.test(t.url ?? '')).slice(0, 10);
@@ -270,46 +282,14 @@ export async function aiView(ctx: Ctx, onHome: () => void): Promise<HTMLElement>
         )
       : null;
 
-  const hint = h(
-    'div',
-    { class: 'ai-hint' },
-    h('span', {}, h('kbd', {}, '↵'), ' ask here'),
-    h('span', {}, h('kbd', {}, isMac ? '⌘↵' : 'Ctrl+↵'), ' in the sidebar'),
-    h('span', {}, h('kbd', {}, '⇧↵'), ' new line'),
-    h('span', {}, h('kbd', {}, '⇥'), ' home'),
-  );
-
-  const root = h(
+  const below = h(
     'section',
     { class: 'nt-ai' },
-    h(
-      'div',
-      { class: 'ai-head' },
-      h('div', { class: 'ai-title' }, 'Ask'),
-      h(
-        'div',
-        { class: 'ai-sub' },
-        !native.provider
-          ? `Any assistant, from ${native.browser}`
-          : PROVIDERS[native.provider].name === native.browser
-            ? `${native.browser}’s own AI, plus every assistant`
-            : `${PROVIDERS[native.provider].name}, built into ${native.browser}, plus every assistant`,
-      ),
-    ),
-    h('div', { class: 'ai-box' }, h('span', { class: 'nt-field-tag' }, 'ask'), box, voiceButton(box, grow), send),
     keysRow,
     contextRow,
-    hint,
-    starters,
+    starters.childElementCount ? starters : null,
     asideRow,
-    h(
-      'section',
-      { class: 'ed-sec ai-sec' },
-      h('div', { class: 'ed-sec-h' }, h('span', { class: 'sec-no' }), h('span', { class: 'sec-dot', style: { '--c': 'var(--c-signal)' } }), h('span', { class: 'sec-name' }, 'Chats'), h('span', { class: 'sec-rule' }), chips),
-      list,
-    ),
+    h('section', { class: 'nt-card ai-sec', 'aria-label': 'Chats' }, h('header', { class: 'nt-card-h' }, h('h2', {}, 'Chats'), h('div', { class: 'nt-card-a' }, chips)), list),
   );
-  requestAnimationFrame(() => box.focus());
-  return root;
+  return { box, send, voice: voiceButton(box, grow), below };
 }
-
