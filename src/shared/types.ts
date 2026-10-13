@@ -1,5 +1,6 @@
 export type Side = 'left' | 'right';
-export type RailMode = 'hover' | 'pinned' | 'off';
+/** docked = always visible and the page makes room (like Opera); hover = slides over the page. */
+export type RailMode = 'docked' | 'hover' | 'off';
 /** Where an app opens. `panel` = the browser's own sidebar (logins work there). */
 export type OpenIn = 'panel' | 'window' | 'tab' | 'drawer';
 export type ThemeMode = 'system' | 'light' | 'dark' | 'page';
@@ -37,6 +38,8 @@ export interface Settings {
     delay: number;
     size: 'compact' | 'comfortable';
     excluded: string[];
+    /** Sites where the rail floats on hover instead of docking. */
+    floatOn: string[];
     hideInFullscreen: boolean;
   };
   drawer: { width: number };

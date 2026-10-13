@@ -193,7 +193,10 @@ ext.runtime.onInstalled.addListener(async (details) => {
   await sync();
 });
 
-ext.runtime.onStartup?.addListener(() => void sync());
+ext.runtime.onStartup?.addListener(() => {
+  void setLocal('panelOpen', {});
+  void sync();
+});
 onSettingsChanged(() => void sync());
 (ext as any).permissions?.onAdded?.addListener(() => setupLinkRules());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));

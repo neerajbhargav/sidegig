@@ -28,8 +28,11 @@ export function migrate(stored: unknown): unknown {
   if (!isObj(stored)) return stored;
   const v = typeof stored.version === 'number' ? stored.version : 0;
   if (v >= SETTINGS_VERSION) return stored;
-  // v0 -> v1: nothing to transform yet; future migrations go here in order.
-  return { ...stored, version: SETTINGS_VERSION };
+  const next: Plain = { ...stored };
+  // v1 -> v2: the floating "pinned" rail became the Opera-style docked rail.
+  if (v < 2 && isObj(next.rail) && next.rail.mode === 'pinned') next.rail = { ...next.rail, mode: 'docked' };
+  next.version = SETTINGS_VERSION;
+  return next;
 }
 
 const syncArea = () => ext?.storage?.sync ?? ext?.storage?.local;

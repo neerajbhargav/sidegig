@@ -314,7 +314,7 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
     const [badges] = await Promise.all([getLocal<Record<string, number>>('badges', {})]);
     const pad = h('div', { class: 'pad' });
     // In the drawer the rail already shows your apps right next to it.
-    if (ctx.kind !== 'drawer') {
+    if (ctx.kind === 'newtab') {
       pad.append(
         h(
           'div',

@@ -47,8 +47,8 @@ function commands(ctx: Ctx): Result[] {
     );
   }
   list.push(
-    c(s.rail.mode === 'pinned' ? 'Show the rail only on hover' : 'Keep the rail visible', 'Rail', 'pin', () =>
-      updateSettings((st) => void (st.rail.mode = st.rail.mode === 'pinned' ? 'hover' : 'pinned')),
+    c(s.rail.mode === 'docked' ? 'Undock the rail (show on hover)' : 'Dock the rail to the side', 'Rail', 'sidebar', () =>
+      updateSettings((st) => void (st.rail.mode = st.rail.mode === 'docked' ? 'hover' : 'docked')),
     ),
     c('Add this page to stacks', 'Bookmarks', 'bookmark', async () => {
       const tab = await activeTab(ctx);

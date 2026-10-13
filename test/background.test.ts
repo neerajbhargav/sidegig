@@ -7,39 +7,34 @@ import { appFromCatalog } from '../src/shared/defaults.ts';
 
 const EXT = 'abcdefghijklmnopabcdefghijklmnop';
 
-test('frame rules only touch requests outside normal tabs', () => {
+test('frame rules only cover frames sidegig opens and their own navigations', () => {
   const rules = buildRules([appFromCatalog('claude'), appFromCatalog('whatsapp')], EXT);
-  assert.ok(rules.length >= 2);
+  assert.equal(rules.length, 2);
   for (const r of rules) {
-    assert.deepEqual(r.condition.resourceTypes, ['sub_frame']);
-    // Never main_frame: normal browsing of these sites keeps its protections.
-    assert.ok(!(r.condition.resourceTypes as string[]).includes('main_frame'));
+    assert.deepEqual(r.condition.resourceTypes, ['sub_frame'], 'never top-level pages');
+    assert.ok(r.condition.initiatorDomains?.length, 'always limited by who started the request');
   }
-  const [byInitiator, byHost] = rules;
-  assert.deepEqual(byInitiator.condition.tabIds, [-1]);
-  assert.deepEqual(byInitiator.condition.initiatorDomains, [EXT]);
-  assert.deepEqual(byHost.condition.tabIds, [-1]);
-  assert.ok(byHost.condition.requestDomains!.includes('claude.ai'));
-  assert.ok(byHost.condition.requestDomains!.includes('web.whatsapp.com'));
-  for (const h of AUTH_HOSTS) assert.ok(byHost.condition.requestDomains!.includes(h));
-  const removed = byHost.action.responseHeaders!.map((h) => h.header);
+  const [mine, nav] = rules;
+  assert.deepEqual(mine.condition.initiatorDomains, [EXT]);
+  assert.ok(nav.condition.requestDomains!.includes('claude.ai'));
+  assert.ok(nav.condition.requestDomains!.includes('web.whatsapp.com'));
+  for (const h of AUTH_HOSTS) assert.ok(nav.condition.requestDomains!.includes(h));
+  assert.ok(!nav.condition.initiatorDomains!.includes('evil.example'), 'other sites embedding an app get no change');
+  assert.ok(nav.condition.initiatorDomains!.includes(EXT));
+  const removed = nav.action.responseHeaders!.map((h) => h.header);
   assert.ok(removed.includes('x-frame-options') && removed.includes('content-security-policy'));
   const ids = rules.map((r) => r.id);
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test('drawer and mobile rules appear only when needed', () => {
-  const plain = buildRules([appFromCatalog('gmail')], EXT);
-  assert.equal(plain.length, 2);
-  const drawer = { ...appFromCatalog('translate'), openIn: 'drawer' as const };
+test('mobile rule appears only when an app asks for it', () => {
+  assert.equal(buildRules([appFromCatalog('gmail')], EXT).length, 2);
   const mobile = { ...appFromCatalog('x'), mobile: true };
-  const rules = buildRules([drawer, mobile], EXT);
-  const drawerRule = rules.find((r) => !r.condition.tabIds && r.condition.initiatorDomains);
-  assert.deepEqual(drawerRule?.condition.requestDomains, ['translate.google.com']);
+  const rules = buildRules([mobile], EXT);
   const mobileRule = rules.find((r) => r.action.requestHeaders?.some((h) => h.header === 'user-agent'));
   assert.equal(mobileRule?.action.requestHeaders?.find((h) => h.header === 'user-agent')?.value, MOBILE_UA);
   assert.deepEqual(mobileRule?.condition.requestDomains, ['x.com']);
-  assert.deepEqual(mobileRule?.condition.tabIds, [-1]);
+  assert.deepEqual(mobileRule?.condition.resourceTypes, ['sub_frame']);
 });
 
 test('no apps still lets sidegig frame its own pages', () => {

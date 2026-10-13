@@ -43,6 +43,7 @@ const ICONS = {
   addSite: 'add_circle',
   globe: 'language',
   sidebar: 'dock_to_left',
+  sidebarRight: 'dock_to_right',
 };
 
 async function fetchIcon(name) {
@@ -76,6 +77,32 @@ export function icon(name: string, size = 20): string {
   }
   const paths = P[name] ?? P.grid;
   return \`<svg xmlns="http://www.w3.org/2000/svg" width="\${size}" height="\${size}" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">\${paths.map((d) => \`<path d="\${d}"/>\`).join('')}</svg>\`;
+}
+
+/** Same icon built with DOM calls (no HTML strings), safe on pages that enforce Trusted Types. */
+export function iconNode(name: string, size = 20): SVGSVGElement {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  if (name === 'logo') {
+    svg.setAttribute('viewBox', '0 0 24 24');
+    const frame = document.createElementNS(NS, 'rect');
+    for (const [k, v] of Object.entries({ x: '2.5', y: '2.5', width: '19', height: '19', rx: '5.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' })) frame.setAttribute(k, v);
+    const bar = document.createElementNS(NS, 'rect');
+    for (const [k, v] of Object.entries({ x: '7', y: '7', width: '2.6', height: '10', rx: '1.3', fill: 'currentColor' })) bar.setAttribute(k, v);
+    svg.append(frame, bar);
+    return svg;
+  }
+  svg.setAttribute('viewBox', '0 -960 960 960');
+  svg.setAttribute('fill', 'currentColor');
+  for (const d of P[name] ?? P.grid) {
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
+  return svg;
 }
 
 export type IconName = keyof typeof P | 'logo';

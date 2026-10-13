@@ -140,6 +140,7 @@ const mock: any = {
     },
   },
   permissions: { request: async () => true },
+  sidePanel: fx.sidePanelSide ? { getLayout: async () => ({ side: fx.sidePanelSide }), open: async () => undefined, setOptions: async () => undefined } : undefined,
   search: { query: (p: any) => log.push({ type: 'search', ...p }) },
 };
 

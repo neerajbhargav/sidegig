@@ -1,7 +1,7 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById } from './catalog.ts';
 
-export const SETTINGS_VERSION = 1;
+export const SETTINGS_VERSION = 2;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
@@ -13,12 +13,13 @@ export function defaultSettings(): Settings {
   return {
     version: SETTINGS_VERSION,
     rail: {
-      mode: 'hover',
+      mode: 'docked',
       side: 'left',
       hotZone: 6,
       delay: 120,
       size: 'comfortable',
       excluded: [],
+      floatOn: [],
       hideInFullscreen: true,
     },
     drawer: { width: 340 },
