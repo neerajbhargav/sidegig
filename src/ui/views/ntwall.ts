@@ -9,7 +9,7 @@ import { uid } from '../../shared/api.ts';
 import { getLocal, setLocal } from '../../shared/storage.ts';
 import type { BgEffect, NtBackground } from '../../shared/types.ts';
 import { pickIndex, type Palette, type RotState } from '../../shared/walls.ts';
-import { findCollection, getPool, hiddenWalls } from '../../shared/collect.ts';
+import { albumImage, findCollection, getPool, hiddenWalls } from '../../shared/collect.ts';
 import { h } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
 import { led, loadBitmap, mosaic, paletteOf } from './ntfx.ts';
@@ -108,6 +108,8 @@ export interface Picture {
   collection?: string;
   /** What to preload for next time. */
   next?: string;
+  /** Tall or square pictures: show all of it over a soft blurred copy instead of cropping. */
+  contain?: boolean;
 }
 
 async function landscapeCredit(id: number): Promise<string | undefined> {
@@ -148,13 +150,17 @@ async function collectionPicture(ctx: Ctx, bg: NtBackground): Promise<Picture | 
   const n = pickIndex(items.length, rotate, Date.now(), st);
   const it = items[n];
   const nx = items[(n + 1) % items.length];
+  // Your own pictures live on this device.
+  const url = it.src.startsWith('local:') ? await albumImage(it.src.slice(6)) : it.src;
+  if (!url) return null;
   return {
     id: it.id,
-    url: it.src,
+    url,
     credit: it.title ? `${it.title} · ${it.credit}` : `${c.name} · ${it.credit}`,
-    link: it.link,
+    link: it.link || undefined,
     collection: c.id,
-    next: nx && nx !== it ? nx.src : undefined,
+    next: nx && nx !== it && !nx.src.startsWith('local:') ? nx.src : undefined,
+    contain: it.w > 0 && it.h > 0 && it.w / it.h < 1.25,
   };
 }
 
@@ -345,6 +351,10 @@ export async function wallpaperEl(ctx: Ctx): Promise<HTMLElement | null> {
   if (pic.next) setTimeout(() => void fetch(pic.next!, { credentials: 'omit' }).catch(() => undefined), 2500);
 
   if (fx === 'photo' || fx === 'film' || fx === 'dream') {
+    if (pic.contain) {
+      wrap.dataset.fit = 'contain';
+      wrap.append(h('img', { src: pic.url, alt: '', decoding: 'async', class: 'wall-backdrop' }));
+    }
     const img = h('img', { src: pic.url, alt: '', decoding: 'async', referrerpolicy: 'no-referrer', class: 'wall-photo' });
     img.addEventListener('error', () => wrap.remove(), { once: true });
     wrap.append(img);

@@ -18,6 +18,8 @@ export interface Collection {
   animeOnly?: boolean;
   sources?: WallSource[];
   note?: string;
+  /** Made from your own pictures (kept on this device), not searched for. */
+  album?: boolean;
 }
 
 export interface WallItem {

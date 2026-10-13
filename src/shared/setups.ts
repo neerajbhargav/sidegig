@@ -28,7 +28,7 @@ const LOCAL_KEYS: Record<SetupPart, string[]> = {
   looks: ['ntWallHidden'],
   reading: ['edProfile', 'edSaved'],
   todos: ['ntTodos'],
-  pictures: ['ntUploads'],
+  pictures: ['ntUploads', 'ntAlbums', 'ntImg:*'],
 };
 
 export interface SetupBundle {
@@ -56,12 +56,15 @@ export const MAX_SETUP_BYTES = 12 * 1024 * 1024;
 /** Build a setup from the current settings and local data. */
 export function makeSetup(name: string, settings: Settings, local: Record<string, unknown>, parts: SetupPart[], from?: string): SetupBundle {
   const keep: Record<string, unknown> = {};
-  for (const p of parts) for (const k of LOCAL_KEYS[p]) if (local[k] !== undefined) keep[k] = local[k];
+  for (const p of parts) for (const k of LOCAL_KEYS[p]) for (const key of matchKeys(k, local)) keep[key] = local[key];
   return { kind: 'sidegig-setup', format: 1, name: name.trim().slice(0, 60) || 'My setup', created: Date.now(), from, parts: [...new Set(parts)], settings: JSON.parse(JSON.stringify(settings)), local: keep };
 }
 
-/** Local keys a setup can carry, for reading them before saving. */
+/** Local keys a setup can carry, for reading them before saving ("ntImg:*" = every key with that prefix). */
 export const allLocalKeys = () => [...new Set(Object.values(LOCAL_KEYS).flat())];
+export const isPrefixKey = (k: string) => k.endsWith('*');
+const matchKeys = (pattern: string, data: Record<string, unknown>) =>
+  isPrefixKey(pattern) ? Object.keys(data).filter((k) => k.startsWith(pattern.slice(0, -1))) : data[pattern] !== undefined ? [pattern] : [];
 
 /**
  * The result of applying the chosen parts of a setup on top of what you have:
@@ -74,7 +77,7 @@ export function applySetup(current: Settings, bundle: SetupBundle, parts: SetupP
   for (const p of parts) {
     if (!bundle.parts.includes(p)) continue;
     if (p in SETTING_KEYS) for (const k of SETTING_KEYS[p as keyof typeof SETTING_KEYS]) (next as unknown as Record<string, unknown>)[k] = JSON.parse(JSON.stringify(incoming[k]));
-    for (const k of LOCAL_KEYS[p]) if (bundle.local[k] !== undefined) local[k] = bundle.local[k];
+    for (const k of LOCAL_KEYS[p]) for (const key of matchKeys(k, bundle.local)) local[key] = bundle.local[key];
   }
   return { settings: next, local };
 }
@@ -129,7 +132,8 @@ async function pipe(bytes: Uint8Array, stream: CompressionStream | Decompression
 
 /** A short code to paste into another browser: compressed, URL-safe. Pictures stay out (too big). */
 export async function toCode(bundle: SetupBundle): Promise<string> {
-  const slim: SetupBundle = { ...bundle, parts: bundle.parts.filter((p) => p !== 'pictures'), local: Object.fromEntries(Object.entries(bundle.local).filter(([k]) => !LOCAL_KEYS.pictures.includes(k))) };
+  const pics = (k: string) => LOCAL_KEYS.pictures.some((p) => (isPrefixKey(p) ? k.startsWith(p.slice(0, -1)) : k === p));
+  const slim: SetupBundle = { ...bundle, parts: bundle.parts.filter((p) => p !== 'pictures'), local: Object.fromEntries(Object.entries(bundle.local).filter(([k]) => !pics(k))) };
   const bytes = new TextEncoder().encode(JSON.stringify(slim));
   return CODE_PREFIX + b64.enc(await pipe(bytes, new CompressionStream('deflate-raw')));
 }

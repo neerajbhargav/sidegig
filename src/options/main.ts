@@ -13,7 +13,7 @@ import { findPlace } from '../ui/views/ntwidgets.ts';
 import { addUpload, prepareImage } from '../ui/views/ntwall.ts';
 import { THEMES } from '../ui/views/ntcustom.ts';
 import { PACKS } from '../shared/walls.ts';
-import { PARTS, allLocalKeys, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
+import { PARTS, allLocalKeys, isPrefixKey, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -581,7 +581,12 @@ const browserLabel = () => {
   return /Edg/.test(ua) ? 'Edge' : /Opera|OPR/.test(ua) ? 'Opera' : /Brave/.test(ua) ? 'Brave' : /Vivaldi/.test(ua) ? 'Vivaldi' : /Firefox/.test(navigator.userAgent) ? 'Firefox' : /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) ? 'Safari' : 'Chrome';
 };
 async function readLocalParts(): Promise<Record<string, unknown>> {
-  return (await ext.storage.local.get(allLocalKeys())) as Record<string, unknown>;
+  const keys = allLocalKeys();
+  const exact = (await ext.storage.local.get(keys.filter((k) => !isPrefixKey(k)))) as Record<string, unknown>;
+  // Prefix keys (your album pictures): read everything once and keep the matches.
+  const all = (await ext.storage.local.get(null)) as Record<string, unknown>;
+  for (const p of keys.filter(isPrefixKey)) for (const [k, v] of Object.entries(all)) if (k.startsWith(p.slice(0, -1))) exact[k] = v;
+  return exact;
 }
 /** The browser's own name as sidegig detected it (Aside, Arc, Dia...), else a best guess. */
 async function detectedBrowser(): Promise<string> {

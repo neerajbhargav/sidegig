@@ -2,7 +2,7 @@
 // Slides in from the right, like Chrome's own Customize panel.
 import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
 import { PACKS, collectionFromKeywords, parseWallhaven, parseNasa, parseBing, wallhavenUrl, nasaUrl, bingUrl, type Collection } from '../../shared/walls.ts';
-import { readPool, refreshPool } from '../../shared/collect.ts';
+import { readPool, refreshPool, listAlbums, albumImage, saveAlbum, removeAlbum } from '../../shared/collect.ts';
 import type { NtBackground, NtLook, Settings } from '../../shared/types.ts';
 import { h, ico, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
@@ -37,6 +37,10 @@ function pictureSwatch(): [string, string, string] | null {
 
 /** A preview for a pack: its pool's best picture, or one quick search. Cached. */
 async function packThumb(c: Collection): Promise<string> {
+  if (c.album || c.id.startsWith('album:')) {
+    const a = (await listAlbums()).find((x) => x.id === c.id);
+    return a?.items[0] ? albumImage(a.items[0].id) : '';
+  }
   const pool = await readPool(c.id);
   if (pool?.items[0]) return pool.items[0].thumb;
   const cache = await getLocal<Record<string, string>>('ntPackThumbs', {});
@@ -212,11 +216,14 @@ async function collectionsSection(ctx: Ctx, bg: NtBackground, is: (k: NtBackgrou
               type: 'button',
               class: 'cz-remove',
               'aria-label': `Remove ${c.name}`,
-              onclick: () =>
+              onclick: async () => {
+                if (c.album && !confirm(`Remove “${c.name}” and its pictures from this device?`)) return;
+                if (c.album) await removeAlbum(c.id);
                 set((s) => {
                   s.newtab.collections = s.newtab.collections.filter((x) => x.id !== c.id);
                   if (s.newtab.background.kind === 'collection' && s.newtab.background.ref === c.id) s.newtab.background = { ...s.newtab.background, kind: 'none', ref: '' };
-                }),
+                });
+              },
             },
             '×',
           )
@@ -243,6 +250,59 @@ async function collectionsSection(ctx: Ctx, bg: NtBackground, is: (k: NtBackgrou
     input,
     h('button', { class: 'btn', type: 'submit' }, 'Collect'),
   );
+  // A collection from your own pictures: pick several (or a whole folder), name it.
+  const pics = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true });
+  const folder = h('input', { type: 'file', multiple: true, hidden: true });
+  folder.setAttribute('webkitdirectory', '');
+  const albumName = h('input', { class: 'text-input', type: 'text', placeholder: 'Name it, like NS', maxlength: 40, 'aria-label': 'Collection name' });
+  const albumForm = h('div', { class: 'cz-album', hidden: true });
+  let chosen: File[] = [];
+  const makeAlbum = async () => {
+    const files = chosen.filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|heic)$/i.test(f.name));
+    if (!files.length) return toast('Those weren’t pictures');
+    toast(`Adding ${files.length} picture${files.length === 1 ? '' : 's'}…`);
+    const images: { url: string; w: number; h: number; name?: string }[] = [];
+    for (const f of files.slice(0, 60)) {
+      try {
+        const url = await prepareImage(f);
+        const bmp = await createImageBitmap(await (await fetch(url)).blob());
+        images.push({ url, w: bmp.width, h: bmp.height, name: f.name });
+      } catch {
+        /* skip what can't be read */
+      }
+    }
+    if (!images.length) return toast('Couldn’t read those pictures');
+    const a = await saveAlbum(albumName.value || 'My pictures', images);
+    play('confirm');
+    set((s) => {
+      s.newtab.collections = [{ id: a.id, name: a.name, terms: [], album: true }, ...s.newtab.collections.filter((x) => x.id !== a.id)];
+      s.newtab.background = { ...s.newtab.background, kind: 'collection', ref: a.id };
+    });
+  };
+  const onPick = (input: HTMLInputElement) => {
+    chosen = [...(input.files ?? [])];
+    input.value = '';
+    if (!chosen.length) return;
+    const dir = (chosen[0] as File & { webkitRelativePath?: string }).webkitRelativePath?.split('/')[0];
+    if (dir && !albumName.value) albumName.value = dir;
+    albumForm.hidden = false;
+    albumName.focus();
+    albumForm.querySelector('.cz-album-count')!.textContent = `${chosen.length} picture${chosen.length === 1 ? '' : 's'} chosen`;
+  };
+  pics.addEventListener('change', () => onPick(pics));
+  folder.addEventListener('change', () => onPick(folder));
+  albumForm.append(
+    h('span', { class: 'cz-album-count' }),
+    h('div', { class: 'cz-link' }, albumName, h('button', { class: 'btn', type: 'button', onclick: makeAlbum }, 'Create')),
+  );
+  const yours = h(
+    'div',
+    { class: 'cz-yours' },
+    h('div', { class: 'cz-actions' }, h('button', { class: 'btn', type: 'button', onclick: () => pics.click() }, 'From your pictures'), h('button', { class: 'btn', type: 'button', onclick: () => folder.click() }, 'From a folder')),
+    albumForm,
+    pics,
+    folder,
+  );
   const current = bg.kind === 'collection' ? [...PACKS, ...mine].find((c) => c.id === bg.ref) : null;
   return h(
     'section',
@@ -250,6 +310,7 @@ async function collectionsSection(ctx: Ctx, bg: NtBackground, is: (k: NtBackgrou
     h('div', { class: 'cz-sec-h' }, 'Collections'),
     h('p', { class: 'cz-hint cz-hint-top' }, 'Pick what you’re into. sidegig collects the wallpapers people loved most, keeps the ones that look great behind a new tab, and refreshes them on its own.'),
     form,
+    yours,
     mine.length ? h('div', { class: 'cz-grid cz-grid-packs' }, mine.map((c) => packTile(c as Collection, true))) : null,
     h('div', { class: 'cz-grid cz-grid-packs' }, PACKS.map((c) => packTile(c, false))),
     current

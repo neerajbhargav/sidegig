@@ -121,7 +121,7 @@ export interface Settings {
     /** Your own theme: page, ink and accent colours. */
     custom: { bg: string; ink: string; accent: string };
     /** Wallpaper collections you made from your own keywords. */
-    collections: { id: string; name: string; terms: string[]; anime?: boolean }[];
+    collections: { id: string; name: string; terms: string[]; anime?: boolean; album?: boolean }[];
     /** Quiet interface sounds (opt-in). */
     sounds: boolean;
     weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };
