@@ -1,7 +1,7 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById } from './catalog.ts';
 
-export const SETTINGS_VERSION = 4;
+export const SETTINGS_VERSION = 5;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
@@ -51,6 +51,8 @@ export function defaultSettings(): Settings {
       aiTab: true,
       clockStyle: 'digital',
       name: '',
+      title: '',
+      tag: '',
       message: '',
       engine: 'default',
       accent: '',

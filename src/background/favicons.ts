@@ -5,6 +5,7 @@
 import { ext, faviconFor } from '../shared/api.ts';
 import { getLocal, setLocal } from '../shared/storage.ts';
 import type { AppEntry } from '../shared/types.ts';
+import { PROVIDERS } from '../shared/browserai.ts';
 
 async function bytes(url: string): Promise<Uint8Array | null> {
   try {
@@ -16,8 +17,11 @@ async function bytes(url: string): Promise<Uint8Array | null> {
 }
 const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((v, i) => v === b[i]);
 
-export async function checkFavicons(apps: AppEntry[]): Promise<void> {
+export async function checkFavicons(appList: AppEntry[]): Promise<void> {
   if (!ext?.runtime?.getURL) return;
+  // The AI switch on the new tab shows providers too.
+  const ids = new Set(appList.map((a) => a.id));
+  const apps: { id: string; url: string }[] = [...appList, ...Object.values(PROVIDERS).filter((p) => p.home.startsWith('http') && !ids.has(p.id)).map((p) => ({ id: p.id, url: p.home }))];
   const blank = await bytes(faviconFor('https://sidegig-blank.invalid/', 32));
   if (!blank) return;
   const missing: string[] = [];

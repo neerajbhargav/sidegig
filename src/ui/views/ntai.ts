@@ -11,7 +11,7 @@ import { PROVIDERS, providerOrder, chatsFromHistory, editionPrompt, type AiProvi
 import { detectBrowser } from '../browser.ts';
 import { voiceButton } from './ntwidgets.ts';
 import { play } from '../sound.ts';
-import { h, favicon, toast, ago, isMac, hostOf } from '../dom.ts';
+import { h, favicon, toast, ago, isMac, hostOf, appFavicon } from '../dom.ts';
 import { type Ctx, openApp } from '../ctx.ts';
 
 async function loadChats(): Promise<Chat[]> {
@@ -96,7 +96,7 @@ export async function aiView(ctx: Ctx, onHome: () => void): Promise<HTMLElement>
             },
           },
           h('b', { class: 'ai-led' }),
-          favicon(p.home.startsWith('http') ? p.home : 'https://aside.com', p.name, 'fav xs'),
+          appFavicon({ id: p.id, catalogId: p.id, url: p.home.startsWith('http') ? p.home : 'https://aside.com', name: p.name }, 'fav xs'),
           p.name,
           p.native ? h('span', { class: 'ai-native' }, 'built in') : null,
         ),

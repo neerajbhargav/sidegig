@@ -109,3 +109,15 @@ test('settings v4: the old wallpaper choice becomes a background', () => {
   const u = mergeSettings(defaultSettings(), migrate({ version: 3, newtab: { wallpaper: 'custom' } }));
   assert.deepEqual([u.newtab.background.kind, u.newtab.background.ref], ['upload', 'legacy']);
 });
+
+test('v5: the new tab has your own name and no decorative tag', () => {
+  const fresh = mergeSettings(defaultSettings(), {});
+  assert.equal(fresh.newtab.title, '');
+  assert.equal(fresh.newtab.tag, '');
+  // An old install that saved the "ntp–1" tag loses it; a tag you wrote stays.
+  const old = mergeSettings(defaultSettings(), migrate({ version: 4, newtab: { tag: 'ntp–1', title: 'Neeraj’s desk' } }));
+  assert.equal(old.newtab.tag, '');
+  assert.equal(old.newtab.title, 'Neeraj’s desk');
+  const mine = mergeSettings(defaultSettings(), migrate({ version: 4, newtab: { tag: 'home' } }));
+  assert.equal(mine.newtab.tag, 'home');
+});

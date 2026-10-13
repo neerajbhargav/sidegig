@@ -13,6 +13,7 @@ import { findCollection, getPool, hiddenWalls } from '../../shared/collect.ts';
 import { h } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
 import { led, loadBitmap, mosaic, paletteOf } from './ntfx.ts';
+import { fitOnSignal } from './newtab.ts';
 
 /** Picsum ids picked for open sky and room for text: sea, fog, hills, piers, desert. */
 export const LANDSCAPES = [10, 11, 12, 13, 14, 16, 17, 28, 29, 37, 38, 44, 46, 47, 49, 51, 52, 53, 54, 62, 66, 70, 71, 74, 77, 79, 83, 87, 93, 95];
@@ -284,6 +285,7 @@ export function applyPalette(pal: Palette) {
   if (!root.style.getPropertyValue('--c-signal') || root.dataset.accent !== 'user') root.style.setProperty('--c-signal', pal.accent);
   root.dataset.scheme = pal.dark ? 'dark' : 'light';
   root.dataset.pal = pal.dark ? 'dark' : 'light';
+  fitOnSignal();
   try {
     localStorage.setItem('sidegig.ntPicture', JSON.stringify(pal));
   } catch {

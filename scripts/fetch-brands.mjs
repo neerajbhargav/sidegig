@@ -14,6 +14,8 @@ const SLUGS = {
   calendar: 'googlecalendar', keep: 'googlekeep', translate: 'googletranslate', ytmusic: 'youtubemusic',
   spotify: 'spotify', x: 'x', grok: 'x', linkedin: 'linkedin', reddit: 'reddit', instagram: 'instagram', notion: 'notion',
   linear: 'linear', github: 'github', todoist: 'todoist',
+  // AI providers on the new tab's AI switch
+  aimode: 'google', lechat: 'mistralai', leo: 'brave',
 };
 const CDN = 'https://cdn.jsdelivr.net/npm/simple-icons@15';
 const meta = await (await fetch(`${CDN}/data/simple-icons.json`)).json();

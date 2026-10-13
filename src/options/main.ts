@@ -503,6 +503,16 @@ function newtabSection(): HTMLElement {
       opt('Home | AI switch', 'Your browser’s own AI and your chats with every assistant, one tab away (press Tab in the empty search box).', toggle(n.aiTab, (v) => commit((x) => void (x.newtab.aiTab = v)), 'Home and AI switch')),
       opt('Clock', null, toggle(n.clock, (v) => commit((x) => void (x.newtab.clock = v)), 'Clock')),
       opt('Clock style', null, seg(n.clockStyle, [['digital', 'Digital'], ['analog', 'Analog']], (v) => commit((x) => void (x.newtab.clockStyle = v)))),
+      opt(
+        'Name on the page',
+        'What the new tab calls itself in the corner, instead of “sidegig”. You can also click the name on the new tab to change it.',
+        h(
+          'div',
+          { style: { display: 'flex', gap: '8px' } },
+          textField(n.title, 'sidegig', (v) => commit((x) => void (x.newtab.title = v.trim().slice(0, 32)))),
+          textField(n.tag, 'Tag (optional)', (v) => commit((x) => void (x.newtab.tag = v.trim().slice(0, 16)))),
+        ),
+      ),
       opt('Your name', 'For the greeting: “Good morning, …”', textField(n.name, 'Name', (v) => commit((x) => void (x.newtab.name = v)))),
       opt('Custom message', 'Shown instead of the greeting.', textField(n.message, 'Optional', (v) => commit((x) => void (x.newtab.message = v)))),
       opt(

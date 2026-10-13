@@ -50,6 +50,27 @@ function isoWeek(d: Date): number {
 const dayOfYear = (d: Date) => Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86_400_000);
 
 /** "auto" = match the browser (native); the others are sidegig's own studio looks. */
+/** Text on the accent colour: whichever of near-black or white reads better on it. */
+export function fitOnSignal() {
+  const root = document.documentElement;
+  root.style.removeProperty('--c-on-signal');
+  if (!document.body) return;
+  const probe = document.createElement('i');
+  probe.style.cssText = 'position:absolute;width:0;height:0;color:var(--c-signal)';
+  document.body.append(probe);
+  const m = getComputedStyle(probe).color.match(/[\d.]+/g);
+  probe.remove();
+  if (!m) return;
+  const lin = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const L = 0.2126 * lin(+m[0]) + 0.7152 * lin(+m[1]) + 0.0722 * lin(+m[2]);
+  const onDark = (L + 0.05) / (0.0056 + 0.05); // against #111
+  const onWhite = 1.05 / (L + 0.05);
+  root.style.setProperty('--c-on-signal', onWhite >= onDark ? '#ffffff' : '#111111');
+}
+
 export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }) {
   const root = document.documentElement;
   root.dataset.look = look === 'auto' ? 'native' : look;
@@ -87,11 +108,7 @@ export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', 
   else root.style.removeProperty('--c-signal');
   if (accent) root.dataset.accent = 'user';
   else delete root.dataset.accent;
-  // Text on the accent colour: dark on light accents, white on dark ones.
-  if (sig && /^#[0-9a-f]{6}$/i.test(sig)) {
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(sig.slice(i, i + 2), 16) / 255);
-    root.style.setProperty('--c-on-signal', 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? '#111111' : '#ffffff');
-  } else root.style.removeProperty('--c-on-signal');
+  fitOnSignal();
   root.dataset.scheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   if (browser) {
     root.dataset.browser = browser.id;
@@ -151,13 +168,62 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
   return h('p', { class: 'nt-brief' }, 'Today: ', ...parts, '.');
 }
 
+export const brandName = (ctx: Ctx) => ctx.settings.newtab.title.trim() || 'sidegig';
+/** Your name for the page if you set one; otherwise a quiet credit. */
+const footLine = (ctx: Ctx) => (ctx.settings.newtab.title.trim() ? ctx.settings.newtab.title.trim() : 'sidegig · free and open source');
+
+/** The name in the corner. Click it to rename (Enter saves, Esc cancels); clear it to go back to sidegig. */
+function brandEl(ctx: Ctx): HTMLElement {
+  const word = h('span', { class: 'nt-word', title: 'Click to rename', role: 'button', tabindex: 0, 'aria-label': `${brandName(ctx)}. Click to rename`, dataset: { default: String(!ctx.settings.newtab.title.trim()) } }, brandName(ctx));
+  const tag = ctx.settings.newtab.tag.trim();
+  const start = () => {
+    if (word.isContentEditable) return;
+    word.contentEditable = 'plaintext-only';
+    word.dataset.editing = 'true';
+    word.focus();
+    getSelection()?.selectAllChildren(word);
+  };
+  const finish = (save: boolean) => {
+    if (!word.isContentEditable) return;
+    word.contentEditable = 'false';
+    delete word.dataset.editing;
+    const next = (word.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 32);
+    if (!save) return void (word.textContent = brandName(ctx));
+    word.textContent = next || 'sidegig';
+    if (next !== ctx.settings.newtab.title.trim() && !(next === 'sidegig' && !ctx.settings.newtab.title)) {
+      play('confirm');
+      void updateSettings((s) => void (s.newtab.title = next === 'sidegig' ? '' : next));
+    }
+  };
+  word.addEventListener('click', start);
+  word.addEventListener('keydown', (e) => {
+    if (!word.isContentEditable) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        start();
+      }
+      return;
+    }
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finish(true);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      finish(false);
+    }
+  });
+  word.addEventListener('blur', () => finish(true));
+  return h('div', { class: 'nt-brand' }, word, tag ? h('span', { class: 'nt-tag' }, tag) : null);
+}
+
 function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null = null): HTMLElement {
   const d = new Date();
   const code = `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}  ·  W${pad(isoWeek(d))}  ·  D${String(dayOfYear(d)).padStart(3, '0')}`;
   return h(
     'header',
     { class: 'nt-top' },
-    h('div', { class: 'nt-brand' }, h('span', { class: 'nt-word' }, 'sidegig'), h('span', { class: 'nt-tag' }, 'ntp–1')),
+    brandEl(ctx),
     // With a picture, the strip carries its credit and next/hide; otherwise it's decoration.
     wall?.dataset.credit || wall?.dataset.collection ? h('div', { class: 'nt-ascii nt-wallslot' }, wallCredit(ctx, wall)) : h('div', { class: 'nt-ascii', 'aria-hidden': 'true' }, '/\\-_=+|<  -/=  ~:*-/  ·  ·  ·'),
     h(
@@ -384,7 +450,7 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
 
 /** Wallpaper credit (linked to its source) and, for collections, next and hide. */
 function wallCredit(ctx: Ctx, wall: HTMLElement | null): HTMLElement {
-  if (!wall?.dataset.credit && !wall?.dataset.collection) return h('span', {}, 'sidegig · free and open source');
+  if (!wall?.dataset.credit && !wall?.dataset.collection) return h('span', {}, footLine(ctx));
   const credit = wall.dataset.credit ?? '';
   const label = wall.dataset.link ? h('a', { href: wall.dataset.link, target: '_blank', rel: 'noopener noreferrer', class: 'nt-credit' }, credit) : h('span', { class: 'nt-credit' }, credit);
   const col = wall.dataset.collection;
@@ -539,7 +605,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       { class: 'nt-foot' },
       h('span', {}, h('kbd', {}, '/'), ' search   ', h('kbd', {}, '1–9'), ' apps   ', h('kbd', {}, keys('K')), ' anywhere'),
       h('span', { class: 'nt-ascii' }, '~:*-/  =+|<  /\\-_'),
-      h('span', {}, 'sidegig · free and open source'),
+      h('span', {}, footLine(ctx)),
     ),
   );
 

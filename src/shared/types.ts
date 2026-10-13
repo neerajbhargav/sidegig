@@ -107,6 +107,10 @@ export interface Settings {
     clockStyle: 'digital' | 'analog';
     /** Your name for the greeting. */
     name: string;
+    /** What the new tab calls itself in the top corner (empty = sidegig). */
+    title: string;
+    /** The small tag next to it (empty = none). */
+    tag: string;
     /** Shown instead of the time-of-day greeting when set. */
     message: string;
     /** Search engine for the search box ("default" = the browser's own). */

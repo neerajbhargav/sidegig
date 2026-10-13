@@ -224,7 +224,8 @@ class Rail {
     // The browser shows a blank globe for sites you haven't visited yet, and black
     // logos vanish on dark pages: use the bundled brand icon in those cases.
     const brand = BRAND_ICONS.has(cat) && (this.favMissing.has(app.id) || DARK_BRANDS.has(cat));
-    const src = brand ? ext.runtime.getURL(`icons/brands/${cat}.svg`) : faviconFor(app.url, 32);
+    // Unknown icon and nothing bundled: the letter tile below beats a blank globe.
+    const src = brand ? ext.runtime.getURL(`icons/brands/${cat}.svg`) : this.favMissing.has(app.id) ? '' : faviconFor(app.url, 32);
     const letter = (app.name.trim()[0] ?? '?').toUpperCase();
     const badge = document.createElement('span');
     badge.className = 'badge';
