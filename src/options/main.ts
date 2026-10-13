@@ -4,6 +4,7 @@ import { loadSettings, saveSettings, onSettingsChanged, loadSecrets, saveSecrets
 import { defaultSettings, appFromCatalog } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
+import { applyScale, clampScale, SCALE_MIN, SCALE_MAX } from '../shared/scale.ts';
 import type { AppEntry, OpenIn, Settings, StatusCard } from '../shared/types.ts';
 import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
 import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
@@ -19,8 +20,8 @@ let s: Settings;
 const themeStyle = h('style');
 const page = h('div', { class: 'opts' });
 const NAV: [string, string][] = [
-  ['rail', 'Rail'],
   ['appearance', 'Appearance'],
+  ['rail', 'Rail'],
   ['apps', 'Apps'],
   ['stacks', 'Stacks and spaces'],
   ['ai', 'Ask AI'],
@@ -33,19 +34,42 @@ const NAV: [string, string][] = [
   ['privacy', 'Privacy'],
 ];
 
+const saved = h('span', { class: 'opts-saved', role: 'status', 'aria-live': 'polite' });
+let savedTimer: ReturnType<typeof setTimeout> | undefined;
 const commit = async (fn: (x: Settings) => void) => {
   fn(s);
   await saveSettings(s);
+  saved.textContent = 'Saved';
+  saved.classList.add('on');
+  clearTimeout(savedTimer);
+  savedTimer = setTimeout(() => saved.classList.remove('on'), 1600);
 };
 
+/** A slider row: the value reads out as you drag, and saves when you let go. */
+function rangeOpt(title: string, describe: (v: number) => string, value: number, range: { min: number; max: number; step?: number }, onCommit: (v: number) => void, onLive?: (v: number) => void): HTMLElement {
+  const meta = h('div', { class: 'm' }, describe(value));
+  const out = h('output', { class: 'opt-val' }, describe(value).split(' ')[0]);
+  const input = h('input', {
+    class: 'range',
+    type: 'range',
+    min: String(range.min),
+    max: String(range.max),
+    step: String(range.step ?? 1),
+    value: String(value),
+    'aria-label': title,
+    oninput: (e: Event) => {
+      const v = Number((e.target as HTMLInputElement).value);
+      meta.textContent = describe(v);
+      out.textContent = describe(v).split(' ')[0];
+      onLive?.(v);
+    },
+    onchange: (e: Event) => onCommit(Number((e.target as HTMLInputElement).value)),
+  });
+  return h('div', { class: 'opt' }, h('div', { class: 'text' }, h('div', { class: 't' }, title), meta), h('div', { class: 'opt-range' }, input, out));
+}
+
 const section = (id: string, title: string, intro: string | null, ...kids: (HTMLElement | null)[]) =>
-  h(
-    'section',
-    { id, style: { marginTop: '36px' } },
-    h('h2', { style: { fontSize: '16px', fontWeight: '600', letterSpacing: '-0.01em', margin: '0 0 4px' } }, title),
-    intro ? h('p', { class: 'muted', style: { margin: '0 0 12px' } }, intro) : null,
-    ...kids,
-  );
+  h('section', { id, class: 'opt-sec' }, h('h2', {}, title), intro ? h('p', { class: 'opt-intro' }, intro) : null, ...kids);
 
 const textInput = (value: string, onCommit: (v: string) => void, props: Record<string, unknown> = {}) =>
   h('input', { class: 'text-input', value, onchange: (e: Event) => onCommit((e.target as HTMLInputElement).value), ...props });
@@ -297,6 +321,21 @@ function rulesSection(): HTMLElement {
   return section('rules', 'Link rules', 'Decide where links to certain sites open, like Arc’s Air Traffic Control. Applies to links that would open a new tab.', list, h('div', { style: { marginTop: '10px' } }, add));
 }
 
+/** Size of everything: a slider with presets, previewed live on this page as you drag. */
+function sizeControl(): HTMLElement {
+  const describe = (v: number) => `${v}% across the new tab, sidebar, rail and this page`;
+  const row = rangeOpt('Size', describe, clampScale(s.theme.scale), { min: SCALE_MIN, max: SCALE_MAX, step: 5 }, (v) => void commit((x) => void (x.theme.scale = clampScale(v))), (v) => applyScale(document.documentElement, v));
+  const presets = h(
+    'div',
+    { class: 'opt-presets', role: 'group', 'aria-label': 'Size presets' },
+    ([[90, 'Smaller'], [100, 'Default'], [115, 'Larger'], [130, 'Largest']] as const).map(([v, label]) =>
+      h('button', { type: 'button', class: 'chip', 'aria-pressed': String(clampScale(s.theme.scale) === v), onclick: () => void commit((x) => void (x.theme.scale = v)) }, label),
+    ),
+  );
+  row.querySelector('.text')!.append(presets);
+  return row;
+}
+
 function appearanceSection(): HTMLElement {
   const color = (value: string, onCommit: (v: string) => void) =>
     h('input', { type: 'color', value, style: { width: '36px', height: '28px', border: '0', background: 'transparent', padding: '0' }, onchange: (e: Event) => onCommit((e.target as HTMLInputElement).value) });
@@ -307,12 +346,13 @@ function appearanceSection(): HTMLElement {
     h(
       'div',
       { class: 'group' },
+      sizeControl(),
       opt('Theme', 'Page = match each website’s light or dark look', seg(s.theme.mode, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['page', 'Page']], (v) => commit((x) => void (x.theme.mode = v)))),
       opt('Accent', null, h('div', { class: 'swatches', style: { alignItems: 'center' } }, ACCENTS.map((c) => h('button', { class: 'swatch', type: 'button', title: c, style: { background: c }, 'aria-pressed': String(c === s.theme.accent), onclick: () => commit((x) => void (x.theme.accent = c)) })), color(s.theme.accent, (v) => commit((x) => void (x.theme.accent = v))))),
       opt('Icons', 'Themed draws known logos in your theme’s ink and greys the rest', seg(s.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => commit((x) => void (x.theme.icons = v)))),
       opt('Base tint', 'A whisper of color in the surfaces', color(s.theme.base, (v) => commit((x) => void (x.theme.base = v)))),
-      opt('Contrast', `${s.theme.contrast}`, h('input', { class: 'range', type: 'range', min: '0', max: '100', step: '5', value: String(s.theme.contrast), onchange: (e: Event) => commit((x) => void (x.theme.contrast = Number((e.target as HTMLInputElement).value))) })),
-      opt('Corner radius', `${s.theme.radius}px`, h('input', { class: 'range', type: 'range', min: '4', max: '16', step: '1', value: String(s.theme.radius), onchange: (e: Event) => commit((x) => void (x.theme.radius = Number((e.target as HTMLInputElement).value))) })),
+      rangeOpt('Contrast', (v) => `${v} out of 100`, s.theme.contrast, { min: 0, max: 100, step: 5 }, (v) => void commit((x) => void (x.theme.contrast = v))),
+      rangeOpt('Corner radius', (v) => `${v}px corners`, s.theme.radius, { min: 4, max: 16 }, (v) => void commit((x) => void (x.theme.radius = v))),
     ),
     h('div', { class: 'label' }, 'Custom CSS (applies to the rail and sidegig’s pages)'),
     h('textarea', { class: 'text-input', rows: '4', style: { width: '100%' }, placeholder: '.rail { border-radius: 0 }', onchange: (e: Event) => commit((x) => void (x.theme.customCss = (e.target as HTMLTextAreaElement).value)) }, s.theme.customCss),
@@ -330,8 +370,8 @@ function railSection(): HTMLElement {
       opt('Show', null, seg(s.rail.mode, [['docked', 'Docked'], ['hover', 'On hover'], ['off', 'Off']], (v) => commit((x) => void (x.rail.mode = v)))),
       opt('Side', null, seg(s.rail.side, [['left', 'Left'], ['right', 'Right']], (v) => commit((x) => void (x.rail.side = v)))),
       opt('Size', null, seg(s.rail.size, [['compact', 'Compact'], ['comfortable', 'Comfortable']], (v) => commit((x) => void (x.rail.size = v)))),
-      opt('Edge sensitivity', `${s.rail.hotZone}px from the edge`, h('input', { class: 'range', type: 'range', min: '2', max: '24', value: String(s.rail.hotZone), onchange: (e: Event) => commit((x) => void (x.rail.hotZone = Number((e.target as HTMLInputElement).value))) })),
-      opt('Delay', `${s.rail.delay}ms before it appears`, h('input', { class: 'range', type: 'range', min: '0', max: '600', step: '20', value: String(s.rail.delay), onchange: (e: Event) => commit((x) => void (x.rail.delay = Number((e.target as HTMLInputElement).value))) })),
+      rangeOpt('Edge sensitivity', (v) => `${v}px from the edge`, s.rail.hotZone, { min: 2, max: 24 }, (v) => void commit((x) => void (x.rail.hotZone = v))),
+      rangeOpt('Delay', (v) => `${v}ms before it appears`, s.rail.delay, { min: 0, max: 600, step: 20 }, (v) => void commit((x) => void (x.rail.delay = v))),
       opt('Hide in fullscreen', 'Videos and presentations', toggle(s.rail.hideInFullscreen, (v) => commit((x) => void (x.rail.hideInFullscreen = v)), 'Hide in fullscreen')),
       opt('Float instead of docking on', 'Comma separated. The rail slides over these sites instead of making room', textInput(s.rail.floatOn.join(', '), (v) => commit((x) => void (x.rail.floatOn = v.split(',').map((e) => e.trim()).filter(Boolean))), { style: { width: '260px' }, placeholder: 'docs.google.com' })),
       opt('Hidden on these sites', 'Comma separated', textInput(s.rail.excluded.join(', '), (v) => commit((x) => void (x.rail.excluded = v.split(',').map((e) => e.trim()).filter(Boolean))), { style: { width: '260px' }, placeholder: 'docs.google.com, figma.com' })),
@@ -782,14 +822,51 @@ async function setupsSection(): Promise<HTMLElement> {
   );
 }
 
+const search = h('input', { class: 'opts-search', type: 'search', placeholder: 'Search settings', 'aria-label': 'Search settings', autocomplete: 'off', spellcheck: 'false' });
+const head = h('header', { class: 'opts-head' }, h('h1', {}, 'Settings'), h('div', { class: 'opts-find' }, search, h('kbd', {}, '/')), saved);
+const none = h('p', { class: 'opt-none', hidden: true }, 'No settings match. Try another word.');
+
+/** Show only the settings that match what you typed (rows, and whole sections by name). */
+function filter() {
+  const q = search.value.trim().toLowerCase();
+  let any = false;
+  document.querySelectorAll<HTMLElement>('main section.opt-sec').forEach((sec) => {
+    const title = (sec.querySelector('h2')?.textContent ?? '').toLowerCase();
+    const rows = [...sec.querySelectorAll<HTMLElement>('.opt')];
+    const byTitle = !q || title.includes(q);
+    let shown = 0;
+    for (const r of rows) {
+      const hit = byTitle || (r.textContent ?? '').toLowerCase().includes(q);
+      r.hidden = !hit;
+      if (hit) shown++;
+    }
+    const visible = byTitle || shown > 0;
+    sec.hidden = !visible;
+    sec.classList.toggle('filtered', !!q && !byTitle);
+    document.querySelector<HTMLElement>(`.opts nav a[data-id="${sec.id}"]`)?.classList.toggle('dim', !visible);
+    any ||= visible;
+  });
+  none.hidden = any;
+}
+search.addEventListener('input', filter);
+search.addEventListener('keydown', (e) => e.key === 'Escape' && ((search.value = ''), filter(), search.blur()));
+addEventListener('keydown', (e) => {
+  const t = e.target as HTMLElement;
+  if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(t.tagName) && !t.isContentEditable) {
+    e.preventDefault();
+    search.focus();
+  }
+});
+
 async function render() {
   const t = s.theme;
   themeStyle.textContent = themeCss(':root', t.mode === 'page' ? 'system' : t.mode, t, t.radius) + 'body{overflow:auto}' + (t.customCss || '');
+  applyScale(document.documentElement, t.scale);
   const y = window.scrollY;
   const welcome = location.hash === '#welcome';
   const parts: (HTMLElement | null)[] = [
-    h('h1', { style: { fontSize: '24px', margin: '0', letterSpacing: '-0.02em' } }, 'Settings'),
-    h('div', { class: 'muted', style: { marginTop: '4px' } }, 'Everything here is optional. sidegig works out of the box.'),
+    head,
+    h('p', { class: 'opt-lede' }, 'Everything here is optional. sidegig works out of the box.'),
     welcome
       ? h(
           'div',
@@ -798,8 +875,8 @@ async function render() {
           h('div', { class: 'card-detail', style: { marginTop: '6px', lineHeight: '1.6' } }, `Move your pointer to the left edge of any web page and the rail slides in. Click an app to open it in the sidebar, or press ${keys('K')} to search everything.`),
         )
       : null,
-    railSection(),
     appearanceSection(),
+    railSection(),
     appsSection(),
     await stacksSection(),
     aiSection(),
@@ -827,7 +904,9 @@ async function render() {
     h('div', { class: 'brand' }, h('img', { src: 'icons/32.png', width: '24', height: '24', alt: '' }), h('b', {}, 'sidegig')),
     NAV.map(([id, label]) => h('a', { href: `#${id}`, 'data-id': id }, label)),
   );
+  main.append(none);
   page.replaceChildren(nav, main);
+  if (search.value) filter();
   highlightNav();
   window.scrollTo(0, y);
 }

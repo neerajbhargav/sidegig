@@ -29,6 +29,7 @@ export function defaultSettings(): Settings {
       accent: '#0b57d0',
       contrast: 50,
       radius: 10,
+      scale: 100,
       icons: 'original',
       customCss: '',
     },

@@ -74,6 +74,8 @@ export interface Settings {
     /** 0 (soft) to 100 (maximum contrast). */
     contrast: number;
     radius: number;
+    /** Size of everything sidegig draws (new tab, sidebar, rail, settings), in percent. */
+    scale: number;
     /** Site icons: each site's own (fitted to one size), or logos drawn in the theme's ink. */
     icons: 'original' | 'themed';
     customCss: string;

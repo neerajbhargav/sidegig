@@ -12,6 +12,35 @@ import { spacesFor } from './home.ts';
 import { analogClockEl, findPlace } from './ntwidgets.ts';
 import { play } from '../sound.ts';
 import { TIMER } from '../figures/timer.ts';
+import { WATCH } from '../figures/watch.ts';
+import { STATION } from '../figures/station.ts';
+import { CUBES } from '../figures/cubes.ts';
+import { faceText, figureSvg, hand, line, poly, ring as ringPath } from '../figures/iso.ts';
+import { PAD } from '../figures/pad.ts';
+
+const stillMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** Run `frame` about `fps` times a second while the element is on the page and the tab is visible. */
+function animate(el: Element, fps: number, frame: (now: number) => void) {
+  let last = 0;
+  let seen = false;
+  let waited = 0;
+  const step = (now: number) => {
+    // Cards are built before they're put on the page: wait for that, stop once it's removed.
+    if (!el.isConnected) {
+      if (seen || ++waited > 600) return;
+      requestAnimationFrame(step);
+      return;
+    }
+    seen = true;
+    if (document.visibilityState === 'visible' && now - last >= 1000 / fps) {
+      last = now;
+      frame(Date.now());
+    }
+    requestAnimationFrame(step);
+  };
+  frame(Date.now());
+  requestAnimationFrame(step);
+}
 
 const locale = navigator.language || 'en-US';
 
@@ -31,12 +60,17 @@ export function rollText(el: HTMLElement, text: string) {
   const prev = el.dataset.text;
   if (prev === text) return;
   el.dataset.text = text;
-  const kids = [...text].map((ch, i) => {
-    const old = el.children[i] as HTMLElement | undefined;
-    if (old && prev && prev.length === text.length && prev[i] === ch) return old;
-    return h('span', { class: prev ? 'roll in' : 'roll' }, ch);
-  });
-  el.replaceChildren(...kids);
+  const chars = [...text];
+  const was = prev ? [...prev] : [];
+  // Same length: swap only the characters that changed, leaving the rest in place
+  // (re-inserting a node would replay its animation).
+  if (prev && was.length === chars.length && el.children.length === chars.length) {
+    chars.forEach((ch, i) => {
+      if (was[i] !== ch) el.children[i].replaceWith(h('span', { class: 'roll in' }, ch));
+    });
+    return;
+  }
+  el.replaceChildren(...chars.map((ch, i) => h('span', { class: prev && was[i] !== ch ? 'roll in' : 'roll' }, ch)));
 }
 
 /** Swap a placeholder for content with a soft fade up through a blur. */
@@ -68,6 +102,20 @@ export function timeBlock(ctx: Ctx): HTMLElement {
   const digits = h('span', { class: 'nt-hm' });
   const ampmEl = h('span', { class: 'nt-ampm' });
   const time = h('div', { class: 'nt-time' }, digits, ampmEl);
+  // A pocket watch on a stand keeps the same time, with a small seconds hand that sweeps.
+  const watch = h('div', {
+    class: 'fig fig-watch iso',
+    html: figureSvg(WATCH.width, WATCH.height, `${WATCH.below}<path class="iso-line" data-tone="hi" data-hand="h" style="stroke-width:2.4px" d=""/><path class="iso-line" data-tone="hi" data-hand="m" style="stroke-width:1.5px" d=""/><path class="iso-line" data-tone="lit" data-hand="s" style="stroke-width:1px" d=""/>${WATCH.above}`),
+  });
+  const [hh, mm, ss] = (['h', 'm', 's'] as const).map((k) => watch.querySelector<SVGPathElement>(`[data-hand="${k}"]`)!);
+  animate(watch, stillMotion() ? 1 : 8, (now) => {
+    const d = new Date(now);
+    const sec = d.getSeconds() + (stillMotion() ? 0 : d.getMilliseconds() / 1000);
+    const min = d.getMinutes() + sec / 60;
+    hh.setAttribute('d', hand(WATCH.projection, 0, 0, WATCH.face, ((d.getHours() % 12) + min / 60) / 12, WATCH.hour));
+    mm.setAttribute('d', hand(WATCH.projection, 0, 0, WATCH.face, min / 60, WATCH.minute));
+    ss.setAttribute('d', hand(WATCH.projection, WATCH.sub[0], WATCH.sub[1], WATCH.face, sec / 60, WATCH.second));
+  });
   const paint = () => {
     const parts = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).formatToParts(new Date());
     const hm = parts.filter((p) => p.type === 'hour' || p.type === 'minute' || p.type === 'literal').map((p) => p.value).join('').trim();
@@ -78,7 +126,7 @@ export function timeBlock(ctx: Ctx): HTMLElement {
   paint();
   const tick = () => setTimeout(() => (time.isConnected ? (paint(), tick()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
   tick();
-  return h('section', { class: 'nt-timeblock nt-card' }, time, date);
+  return h('section', { class: 'nt-timeblock nt-card has-fig' }, watch, h('div', { class: 'nt-timetext' }, time, date));
 }
 
 // ---------------------------------------------------------------- weather
@@ -86,7 +134,7 @@ export function timeBlock(ctx: Ctx): HTMLElement {
 async function loadWeather(ctx: Ctx): Promise<WeatherNow | null> {
   const w = ctx.settings.newtab.weather;
   const cached = await getLocal<WeatherNow | null>('ntWeather', null);
-  if (cached && cached.place === w.place && cached.units === w.units && cached.days && Date.now() - cached.at < 30 * 60_000) return cached;
+  if (cached && cached.place === w.place && cached.units === w.units && cached.days && cached.wind && Date.now() - cached.at < 30 * 60_000) return cached;
   try {
     const r = await fetch(weatherUrl(w.lat, w.lon, w.units), { credentials: 'omit' });
     const now = parseWeather(await r.json(), w.units, w.place);
@@ -123,9 +171,62 @@ export function weatherCard(ctx: Ctx): HTMLElement {
     return card('nt-wx', 'Weather', [], h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, h('button', { class: 'btn', type: 'submit' }, 'Find')), list);
   }
   const body = h('div', { class: 'wx-body', 'aria-live': 'polite' }, skel('60%', '90%', '75%'));
+  // A small weather station: the cups spin with the wind, the vane points into it,
+  // the thermometer reads the temperature.
+  const live = { temp: 60, units: w.units as 'f' | 'c', wind: 4, dir: 225 };
+  const S = STATION;
+  const station = h('div', {
+    class: 'fig fig-station iso',
+    html: figureSvg(
+      S.width,
+      S.height,
+      `${S.back}<path class="iso-line" data-tone="hi" data-part="vane" style="stroke-width:1.5px" d=""/><path class="iso-fill" data-part="fin" d=""/><path class="iso-line" data-tone="mid" data-part="fin-edge" d=""/>${S.mastUpper}<path class="iso-line" data-tone="mid" data-part="arms" d=""/><path class="iso-fill" data-part="cups" d=""/><path class="iso-line" data-tone="lo" data-part="cups-edge" d=""/>${S.gauge}${S.thermoSvg}<path class="iso-line" data-tone="red" data-part="mercury" style="stroke-width:1.6px" d=""/>`,
+    ),
+  });
+  const part = (n: string) => station.querySelector<SVGPathElement>(`[data-part="${n}"]`)!;
+  let spin = 0;
+  let lastFrame = Date.now();
+  animate(station, stillMotion() ? 1 : 30, (now) => {
+    const P = S.projection;
+    const [mx, my] = S.mast;
+    // Cups: about one turn a second at 10 mph; never quite still.
+    spin += (stillMotion() ? 0 : (now - lastFrame) / 1000) * (0.6 + live.wind * 0.55);
+    lastFrame = now;
+    const arms: string[] = [];
+    const cups: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const t = spin + (i * Math.PI * 2) / 3;
+      const ex = mx + Math.cos(t) * 13;
+      const ey = my + Math.sin(t) * 13;
+      arms.push(line(P, [mx, my, S.cupZ], [ex, ey, S.cupZ]));
+      cups.push(ringPath(P, ex, ey, 3, S.cupZ, 14));
+    }
+    part('arms').setAttribute('d', arms.join(''));
+    part('cups').setAttribute('d', cups.join(''));
+    part('cups-edge').setAttribute('d', cups.join(''));
+    // Vane: the arrow points where the wind comes from (north is -y here).
+    const a = ((live.dir - 90) * Math.PI) / 180;
+    const head: [number, number, number] = [mx + Math.cos(a) * 15, my + Math.sin(a) * 15, S.vaneZ];
+    const tail: [number, number, number] = [mx - Math.cos(a) * 12, my - Math.sin(a) * 12, S.vaneZ];
+    part('vane').setAttribute('d', line(P, tail, head));
+    const n = [-Math.sin(a) * 4, Math.cos(a) * 4];
+    const back: [number, number, number] = [mx - Math.cos(a) * 7, my - Math.sin(a) * 7, S.vaneZ];
+    const fin = poly(P, [tail, [back[0] + n[0], back[1] + n[1], S.vaneZ], [back[0] - n[0], back[1] - n[1], S.vaneZ]]);
+    part('fin').setAttribute('d', fin);
+    part('fin-edge').setAttribute('d', fin);
+    // Mercury: -20..120 °F (or -30..50 °C) along the tube.
+    const [lo, hi] = live.units === 'c' ? [-30, 50] : [-20, 120];
+    const f = Math.max(0, Math.min(1, (live.temp - lo) / (hi - lo)));
+    part('mercury').setAttribute('d', line(P, [S.thermo.x, S.thermo.y, S.thermo.bulb], [S.thermo.x, S.thermo.y, S.thermo.low + (S.thermo.high - S.thermo.low) * f]));
+  });
   void loadWeather(ctx).then((now) => {
     if (!now) return void reveal(body, h('span', { class: 'muted' }, 'Weather is unavailable right now'));
     const { label, icon } = weatherLabel(now.code, now.isDay);
+    station.dataset.ready = '';
+    live.temp = now.temp;
+    live.units = now.units;
+    live.wind = now.wind?.speed ?? 4;
+    live.dir = now.wind?.dir ?? 225;
     reveal(
       body,
       h(
@@ -152,7 +253,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
         : '',
     );
   });
-  return card('nt-wx', w.place.split(',')[0], [], body);
+  return card('nt-wx has-fig', w.place.split(',')[0], [], h('div', { class: 'wx-scene' }, station, body));
 }
 
 // ---------------------------------------------------------------- calendar
@@ -279,7 +380,28 @@ export function calendarCard(ctx: Ctx): HTMLElement {
       iconBtn('plus', `New event in ${app.name}`, () => newEvent(picked !== null ? new Date(picked) : new Date())),
     ),
   );
-  return h('section', { class: 'nt-card nt-cal', 'aria-label': 'Calendar' }, head, grid, dayPanel);
+  // A two-cube desk calendar shows today; click it to come back to this month.
+  const C = CUBES;
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const cubes = h('button', {
+    type: 'button',
+    class: 'fig fig-cubes iso',
+    title: 'Back to today',
+    'aria-label': `Today is ${now.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}. Back to this month`,
+    html: figureSvg(
+      C.width,
+      C.height,
+      `${C.art}${faceText(C.dayFaces[0], dd[0], 10)}${faceText(C.dayFaces[1], dd[1], 10)}${faceText(C.monthFace, now.toLocaleDateString('en', { month: 'short' }).toUpperCase(), 5.6)}${faceText(C.weekdayFace, now.toLocaleDateString('en', { weekday: 'short' }).toUpperCase(), 3.4, 'lo')}`,
+    ),
+    onclick: () => {
+      play('key');
+      view = { y: now.getFullYear(), m: now.getMonth() };
+      picked = now.getTime();
+      paint();
+    },
+  });
+  return h('section', { class: 'nt-card nt-cal has-fig', 'aria-label': 'Calendar' }, cubes, head, grid, dayPanel);
 }
 
 // ---------------------------------------------------------------- pomodoro
@@ -311,9 +433,17 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
   const fig = h('button', {
     type: 'button',
     class: 'pomo-figbtn',
-    html: `<svg class="iso-svg" viewBox="0 0 ${TIMER.width} ${TIMER.height}" aria-hidden="true">${TIMER.below}<path class="iso-line pomo-needle" data-tone="lit" d=""/><g class="pomo-lever">${TIMER.lever}</g>${TIMER.above}</svg>`,
+    html: `<svg class="iso-svg" viewBox="0 0 ${TIMER.width} ${TIMER.height}" aria-hidden="true">${TIMER.below}<g class="pomo-bell">${TIMER.bell}</g>${TIMER.drum}<path class="iso-line pomo-sweep" data-tone="mid" d=""/><path class="iso-line pomo-needle" data-tone="lit" d=""/><g class="pomo-lever">${TIMER.lever}</g>${TIMER.above}</svg>`,
   });
   const needle = fig.querySelector<SVGPathElement>('.pomo-needle')!;
+  const sweep = fig.querySelector<SVGPathElement>('.pomo-sweep')!;
+  // While it runs, the needle glides and a thin seconds hand sweeps round, so it visibly works.
+  const hands = (now: number) => {
+    const left = msLeft(st, now);
+    needle.setAttribute('d', needlePath(left / 60_000));
+    sweep.setAttribute('d', st.running ? hand(TIMER.projection, TIMER.dial.x, TIMER.dial.y, TIMER.dial.z + 0.1, ((left / 1000) % 60) / 60, [2, TIMER.dial.tip - 2]) : '');
+  };
+  animate(fig, stillMotion() ? 1 : 24, (now) => st.running && hands(now));
   const lever = fig.querySelector<SVGGElement>('.pomo-lever')!;
   const time = h('div', { class: 'pomo-time', role: 'timer' });
   const phase = h('div', { class: 'pomo-phase' });
@@ -329,13 +459,18 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     if (done.finished) {
       void save(done.state);
       play('arrive');
+      // The bell rings: it shakes for a moment.
+      fig.classList.remove('ringing');
+      void fig.getBoundingClientRect();
+      fig.classList.add('ringing');
+      setTimeout(() => fig.classList.remove('ringing'), 1600);
       toast(done.finished === 'focus' ? 'Focus done. Take a break.' : 'Break over. Back to it.');
     }
     const left = msLeft(st, now);
     const total = phaseMs(st.phase, cfg);
     rollText(time, clockText(left));
     phase.textContent = PHASE_NAME[st.phase];
-    needle.setAttribute('d', needlePath(left / 60_000));
+    hands(now);
     lever.style.transform = st.running ? `translate(${TIMER.leverShift[0]}px, ${TIMER.leverShift[1]}px)` : '';
     fig.setAttribute('aria-label', `${st.running ? 'Pause' : 'Start'}: ${clockText(left)} of ${PHASE_NAME[st.phase].toLowerCase()} left`);
     void total;
@@ -388,7 +523,7 @@ export async function notesCard(): Promise<HTMLElement> {
     clearTimeout(timer);
     timer = setTimeout(() => void setLocal('ntNotes', notes), 350);
   };
-  const paint = () => {
+  let paint = () => {
     grid.replaceChildren(
       ...notes.map((n) => {
         const ta = h('textarea', { class: 'note-t', rows: 3, placeholder: 'Write something', 'aria-label': 'Note', maxlength: 600 });
@@ -435,7 +570,13 @@ export async function notesCard(): Promise<HTMLElement> {
     grid.querySelector<HTMLTextAreaElement>('textarea')?.focus();
   };
   const empty = () => (notes.length ? null : h('button', { type: 'button', class: 'notes-empty', onclick: add }, 'Add a note'));
-  const root = card('nt-notes', 'Notes', [iconBtn('plus', 'New note', add)], grid);
+  // A sticky-note pad with a pen: the top sheet shows how many notes you have; tap it for a new one.
+  const pad = h('button', { type: 'button', class: 'fig fig-pad iso', title: 'New note', 'aria-label': 'New note', onclick: () => add() });
+  const paintPad = () => (pad.innerHTML = figureSvg(PAD.width, PAD.height, `${PAD.art}${faceText(PAD.countFace, String(notes.length), 11)}`));
+  paintPad();
+  const repaint = paint;
+  paint = () => (repaint(), paintPad());
+  const root = card('nt-notes has-fig', 'Notes', [iconBtn('plus', 'New note', add)], pad, grid);
   const e = empty();
   if (e) root.append(e);
   return root;

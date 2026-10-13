@@ -8,6 +8,7 @@ import { send } from './ctx.ts';
 import { panelRail } from './views/prail.ts';
 import { updateSettings, setLocal } from '../shared/storage.ts';
 import { iconButton, setFavMissing, setIconStyle } from './dom.ts';
+import { applyScale } from '../shared/scale.ts';
 import { h } from './dom.ts';
 import { homeView } from './views/home.ts';
 import { searchView } from './views/search.ts';
@@ -101,6 +102,7 @@ async function boot() {
     const mode = t.mode === 'page' ? pageMode ?? 'system' : t.mode;
     themeStyle.textContent = themeCss(':root', mode, t, t.radius) + (t.customCss || '');
     document.documentElement.dataset.icons = t.icons;
+    applyScale(document.documentElement, t.scale);
     setIconStyle(t.icons);
     if (kind !== 'newtab') document.documentElement.dataset.ui = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
   };

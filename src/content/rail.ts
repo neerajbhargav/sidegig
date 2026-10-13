@@ -10,6 +10,7 @@ import { ASIDE_EXTENSION } from '../shared/browserai.ts';
 import { themeCss, modeForBackground } from '../shared/theme.ts';
 import { glyphFor, iconPixels } from '../shared/siteicon.ts';
 import { fitTransform, type IconFit } from '../shared/iconfit.ts';
+import { scaleFactor } from '../shared/scale.ts';
 import { iconNode } from '../shared/icons.ts';
 import { hostExcluded } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
@@ -26,7 +27,7 @@ type DrawerView = View | 'app' | 'add';
 const send = (msg: ToBackground) => ext.runtime.sendMessage(msg).catch(() => undefined);
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const keys = (k: string) => (isMac ? `\u2325\u21e7${k}` : `Alt+Shift+${k}`);
-const railWidth = (s: Settings) => (s.rail.size === 'compact' ? 48 : 56);
+const railWidth = (s: Settings) => Math.round((s.rail.size === 'compact' ? 48 : 56) * scaleFactor(s.theme.scale));
 
 /** Should the rail dock (make room) on this site, per settings? */
 function dockedHere(s: Settings): boolean {
@@ -185,6 +186,7 @@ class Rail {
     this.mode = mode;
     this.host.dataset.scheme = mode;
     this.host.dataset.icons = t.icons;
+    this.host.style.setProperty('--ui-s', String(scaleFactor(t.scale)));
     this.style.textContent = css + themeCss(':host', mode, t, t.radius) + (t.customCss || '');
     this.post({ type: 'theme', mode });
   }

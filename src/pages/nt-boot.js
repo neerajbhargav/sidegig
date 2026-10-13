@@ -26,6 +26,9 @@
     }
     return;
   }
+  // Your size, before the first paint.
+  var size = parseFloat(ls('sidegig.uiScale') || '');
+  if (size >= 0.6 && size <= 1.6) root.style.setProperty('--ui-s', String(size));
   var look = ls('sidegig.ntLook') || 'auto';
   var dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
   root.dataset.look = look === 'auto' ? 'native' : look;

@@ -9,6 +9,14 @@ import type { Ctx } from '../ctx.ts';
 import { seg, toggle } from './quick.ts';
 import { findPlace } from './ntwidgets.ts';
 import { CAL_APPS, type CalApp } from '../../shared/ntcal.ts';
+import { icon } from '../../shared/icons.ts';
+import { figureSvg } from '../figures/iso.ts';
+import { TIMER } from '../figures/timer.ts';
+import { WATCH } from '../figures/watch.ts';
+import { STATION } from '../figures/station.ts';
+import { CUBES } from '../figures/cubes.ts';
+import { SPIKE } from '../figures/spike.ts';
+import { PAD } from '../figures/pad.ts';
 import { play } from '../sound.ts';
 import { GRADIENTS, PATTERNS, LANDSCAPES, MONUMENTS, RISO, effectFor, landscapeUrl, monumentUrl, listUploads, addUpload, removeUpload, prepareImage } from './ntwall.ts';
 
@@ -627,13 +635,65 @@ function pomodoroSettings(ctx: Ctx): HTMLElement {
   return h('div', { class: 'cz-nums' }, num('Focus, min', 'focus', 1, 120), num('Short break', 'short', 1, 30), num('Long break', 'long', 1, 60), num('Long break every', 'every', 2, 8));
 }
 
+// Widgets as a list you add from (each with its little object), grouped, searchable.
+type WidgetItem = { group: string; title: string; note: string; thumb: () => string; get: (s: Settings) => boolean; put: (s: Settings, v: boolean) => void };
+const figThumb = (w: number, hgt: number, art: string) => figureSvg(w, hgt, art);
+const glyphThumb = (name: string) => `<span class="cz-w-ico">${icon(name, 22)}</span>`;
+const WIDGETS: WidgetItem[] = [
+  { group: 'Your day', title: 'Clock', note: 'A pocket watch and the date', thumb: () => figThumb(WATCH.width, WATCH.height, WATCH.below + WATCH.above), get: (s) => s.newtab.clock, put: (s, v) => void (s.newtab.clock = v) },
+  { group: 'Your day', title: 'Weather', note: 'A weather station: now and four days', thumb: () => figThumb(STATION.width, STATION.height, STATION.back + STATION.mastUpper + STATION.gauge + STATION.thermoSvg), get: (s) => s.newtab.widgets.weather, put: (s, v) => void (s.newtab.widgets.weather = v) },
+  { group: 'Your day', title: 'Calendar', note: 'This month; opens your calendar app', thumb: () => figThumb(CUBES.width, CUBES.height, CUBES.art), get: (s) => s.newtab.widgets.calendar, put: (s, v) => void (s.newtab.widgets.calendar = v) },
+  { group: 'Focus', title: 'Pomodoro', note: 'A kitchen timer for focus and breaks', thumb: () => figThumb(TIMER.width, TIMER.height, TIMER.below + TIMER.bell + TIMER.drum + TIMER.lever + TIMER.above), get: (s) => s.newtab.widgets.pomodoro, put: (s, v) => void (s.newtab.widgets.pomodoro = v) },
+  { group: 'Focus', title: 'To-do', note: 'Done tasks go on the spike; it clears each morning', thumb: () => figThumb(SPIKE.width, SPIKE.height, SPIKE.base + SPIKE.segs.join('') + SPIKE.slips.slice(0, 3).join('') + SPIKE.tip), get: (s) => s.newtab.todo, put: (s, v) => void (s.newtab.todo = v) },
+  { group: 'Focus', title: 'Notes', note: 'Sticky notes, kept on this device', thumb: () => figThumb(PAD.width, PAD.height, PAD.art), get: (s) => s.newtab.widgets.notes, put: (s, v) => void (s.newtab.widgets.notes = v) },
+  { group: 'Browse', title: 'Bookmarks', note: 'Your sites and folders under the search box', thumb: () => glyphThumb('bookmark'), get: (s) => s.newtab.widgets.bookmarks, put: (s, v) => void (s.newtab.widgets.bookmarks = v) },
+  { group: 'Browse', title: 'For you', note: 'Your edition: a short, finite set of picks', thumb: () => glyphThumb('edition'), get: (s) => s.newtab.widgets.feed, put: (s, v) => void (s.newtab.widgets.feed = v) },
+  { group: 'Browse', title: 'Greeting', note: 'Good morning, at the top of the search box', thumb: () => glyphThumb('home'), get: (s) => s.newtab.widgets.greeting, put: (s, v) => void (s.newtab.widgets.greeting = v) },
+  { group: 'Browse', title: 'Search and Ask switch', note: 'Ask any assistant from the same box', thumb: () => glyphThumb('ask'), get: (s) => s.newtab.aiTab, put: (s, v) => void (s.newtab.aiTab = v) },
+];
+
+function addWidgets(ctx: Ctx): HTMLElement {
+  const st = ctx.settings;
+  const find = h('input', { class: 'text-input cz-w-find', type: 'search', placeholder: 'Search widgets', 'aria-label': 'Search widgets' });
+  const list = h('div', { class: 'cz-w-list' });
+  const paint = () => {
+    const q = find.value.trim().toLowerCase();
+    const groups = [...new Set(WIDGETS.map((w) => w.group))];
+    list.replaceChildren(
+      ...groups.flatMap((g) => {
+        const items = WIDGETS.filter((w) => w.group === g && (!q || `${w.title} ${w.note} ${g}`.toLowerCase().includes(q)));
+        if (!items.length) return [];
+        return [
+          h('div', { class: 'cz-w-group' }, g),
+          ...items.map((w) => {
+            const on = w.get(st);
+            return h(
+              'div',
+              { class: 'cz-w', dataset: { on: String(on) } },
+              h('span', { class: 'cz-w-thumb iso', html: w.thumb() }),
+              h('span', { class: 'cz-w-text' }, h('b', {}, w.title), h('span', {}, w.note)),
+              on
+                ? h('button', { type: 'button', class: 'cz-w-on', title: `Remove ${w.title} from the page`, 'aria-label': `${w.title} is on the page. Remove it`, onclick: () => (play('off'), set((s) => w.put(s, false))) }, ico('check', 18), 'On page')
+                : h('button', { type: 'button', class: 'cz-w-add', title: `Add ${w.title}`, 'aria-label': `Add ${w.title}`, onclick: () => (play('on'), set((s) => w.put(s, true))) }, ico('plus', 20)),
+            );
+          }),
+        ];
+      }),
+    );
+    if (!list.childElementCount) list.append(h('p', { class: 'cz-hint' }, 'No widget by that name.'));
+  };
+  find.addEventListener('input', paint);
+  paint();
+  return h('section', { class: 'cz-sec' }, find, list);
+}
+
 function widgetsTab(ctx: Ctx): HTMLElement {
   const st = ctx.settings;
   return h(
     'div',
     { class: 'cz-themes-wrap' },
+    addWidgets(ctx),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Cards'), seg(st.newtab.panels, [['frosted', 'Frosted'], ['clear', 'Clear'], ['solid', 'Solid']], (v) => set((s) => void (s.newtab.panels = v))), h('p', { class: 'cz-hint' }, 'Frosted and clear let the wallpaper show through.')),
-    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Show'), h('div', { class: 'cz-opts' }, SHOW.map(([t, m, get, put]) => row(t, m, toggle(get(st), (v) => (play(v ? 'on' : 'off'), set((s) => put(s, v))), t))))),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Weather'), weatherPlace(ctx)),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Calendar'), calendarSettings(ctx)),
     h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Pomodoro'), pomodoroSettings(ctx)),

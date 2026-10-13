@@ -5,6 +5,9 @@ import { uid } from '../../shared/api.ts';
 import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
 import { greetingFor, dailyReset, dayKey, sortTodos, weatherLabel, weatherUrl, parseWeather, type Todo, type WeatherNow } from '../../shared/ntdata.ts';
 import { h, ico, iconButton, favicon, toast } from '../dom.ts';
+import { SPIKE } from '../figures/spike.ts';
+import { rollText } from './ntdash.ts';
+import { figureSvg } from '../figures/iso.ts';
 import type { Ctx } from '../ctx.ts';
 import { play } from '../sound.ts';
 
@@ -111,6 +114,21 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
   const list = h('div', { class: 'todo-list' });
   const count = h('span', { class: 'nt-card-note' });
   let just = '';
+  // A receipt spike: every task you finish today is a slip on it; a new one drops down the spike.
+  const spike = h('div', {
+    class: 'fig fig-spike iso',
+    html: figureSvg(SPIKE.width, SPIKE.height, `${SPIKE.base}${SPIKE.segs.map((seg, i) => `${seg}<g class="slip" data-i="${i}" style="display:none">${SPIKE.slips[i]}</g>`).join('')}${SPIKE.tip}`),
+  });
+  const slips = [...spike.querySelectorAll<SVGGElement>('.slip')];
+  let shown = -1;
+  const paintSpike = () => {
+    const done = Math.min(slips.length, todos.filter((t) => t.done).length);
+    slips.forEach((g, i) => {
+      g.style.display = i < done ? '' : 'none';
+      g.classList.toggle('drop', shown >= 0 && i >= shown && i < done);
+    });
+    shown = done;
+  };
   const save = async (next: Todo[]) => {
     todos = next;
     await setLocal('ntTodos', todos);
@@ -118,8 +136,9 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
     just = '';
   };
   const paint = () => {
+    paintSpike();
     const open = todos.filter((t) => !t.done).length;
-    count.textContent = todos.length ? `${open} open` : '';
+    rollText(count, todos.length ? `${open} open` : '');
     list.replaceChildren(
       ...sortTodos(todos).map((t) =>
         h(
@@ -159,7 +178,7 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
       input.value = '';
     }
   });
-  const sec = h('section', { class: 'nt-card nt-todo', 'aria-label': 'To-do' }, h('header', { class: 'nt-card-h' }, h('h2', {}, 'To-do'), h('div', { class: 'nt-card-a' }, count)), list, input);
+  const sec = h('section', { class: 'nt-card nt-todo has-fig', 'aria-label': 'To-do' }, spike, h('header', { class: 'nt-card-h' }, h('h2', {}, 'To-do'), h('div', { class: 'nt-card-a' }, count)), list, input);
   paint();
   just = '';
   return sec;
