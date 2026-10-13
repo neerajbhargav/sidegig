@@ -1,4 +1,5 @@
 // Command palette: one box for tabs, apps, bookmarks, history and commands.
+import { engineUrl } from '../../shared/ntdata.ts';
 import { ext, TARGET } from '../../shared/api.ts';
 import { rank } from '../../shared/fuzzy.ts';
 import { updateSettings } from '../../shared/storage.ts';
@@ -24,6 +25,9 @@ async function loadData(): Promise<Data> {
 }
 
 function webSearch(ctx: Ctx, q: string) {
+  // Your pick of engine, if you made one; otherwise the browser's own default.
+  const picked = engineUrl(ctx.settings.newtab.engine, q);
+  if (picked) return openUrl(ctx, picked);
   const s = (ext as any).search;
   if (TARGET === 'firefox' && s?.search) return s.search({ query: q });
   if (s?.query) return s.query({ text: q, disposition: ctx.kind === 'newtab' ? 'CURRENT_TAB' : 'NEW_TAB' });

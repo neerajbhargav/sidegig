@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>New Tab</title>
+<style>
+  html { background: #efefea; color: #121212; }
+  @media (prefers-color-scheme: dark) { html { background: #0f0f0e; color: #ececE6; } }
+  html[data-look="paper"] { background: #efefea; color: #121212; }
+  html[data-look="night"] { background: #0f0f0e; color: #ececE6; }
+  html[data-look="ultramarine"] { background: #0a12e6; color: #f2f2ee; }
+  html[data-look="native"][data-scheme="light"] { background: #ffffff; color: #1f1f1f; }
+  html[data-look="native"][data-scheme="dark"] { background: #1f1f1f; color: #e3e3e3; }
+  html[data-look="native"][data-browser="edge"][data-scheme="light"] { background: #f3f3f3; }
+  html[data-look="native"][data-browser="edge"][data-scheme="dark"] { background: #202020; }
+  html[data-off] { background: transparent; }
+</style>
+<script src="nt-boot.js"></script>
+<link rel="preload" href="fonts/BarlowCondensed-200.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/IBMPlexMono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="ui.css">
 </head>
 <body data-ctx="newtab">

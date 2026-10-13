@@ -74,6 +74,8 @@ export interface EdItem {
 
 export interface Edition {
   id: string;
+  /** Running issue number on this device. */
+  no?: number;
   built: number;
   items: EdItem[];
   /** Next-best picks, used to fill gaps when you dismiss something. */
