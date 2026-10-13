@@ -86,6 +86,12 @@ const ICONS = {
   feed: 'newspaper',
   ai: 'chat_bubble',
   ask: 'chat_bubble',
+  arrange: 'dashboard_customize',
+  expand: 'open_in_full',
+  collapse: 'close_fullscreen',
+  resize: 'aspect_ratio',
+  drag: 'drag_indicator',
+  undo: 'undo',
 };
 
 async function fetchIcon(name) {

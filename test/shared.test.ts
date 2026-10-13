@@ -139,9 +139,20 @@ test('v7: the dashboard arrives with every widget on; weather you turned off sta
   const fresh = mergeSettings(defaultSettings(), migrate({ version: 6, newtab: { weather: { enabled: false, place: '', lat: 0, lon: 0, units: 'f' } } }));
   assert.equal(fresh.newtab.widgets.weather, true, 'never set up: show the inline city picker');
   assert.equal(fresh.newtab.widgets.calendar, true);
-  assert.equal(fresh.newtab.panels, 'frosted');
+  assert.equal(fresh.newtab.panels, 'clear', 'v8 moves everyone to Clear');
   assert.equal(fresh.newtab.background.inks, 'theme');
   const off = mergeSettings(defaultSettings(), migrate({ version: 6, newtab: { weather: { enabled: false, place: 'Jersey City', lat: 40.7, lon: -74, units: 'f' } } }));
   assert.equal(off.newtab.widgets.weather, false);
   assert.equal(off.newtab.widgets.notes, true);
+});
+
+test('v8: everyone moves to Clear once; the auto effect becomes what it showed', () => {
+  const night = mergeSettings(defaultSettings(), migrate({ version: 7, newtab: { look: 'night', panels: 'frosted', background: { kind: 'monuments', ref: 'm:3', treatment: 'auto', inks: 'theme', dim: 0, blur: 0 } } }));
+  assert.equal(night.newtab.panels, 'clear');
+  assert.equal(night.newtab.background.treatment, 'print');
+  const pic = mergeSettings(defaultSettings(), migrate({ version: 7, newtab: { look: 'picture', background: { kind: 'collection', ref: 'album:ns', treatment: 'auto', inks: 'theme', dim: 0, blur: 0 } } }));
+  assert.equal(pic.newtab.background.treatment, 'photo');
+  const film = mergeSettings(defaultSettings(), migrate({ version: 7, newtab: { look: 'paper', background: { kind: 'upload', ref: 'u1', treatment: 'led', inks: 'theme', dim: 0, blur: 0 } } }));
+  assert.equal(film.newtab.background.treatment, 'led');
+  assert.deepEqual(pic.newtab.layout, {});
 });

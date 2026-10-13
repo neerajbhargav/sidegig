@@ -50,9 +50,27 @@ export function migrate(stored: unknown): unknown {
   if (v < 7 && isObj(next.newtab) && isObj(next.newtab.weather) && next.newtab.weather.place && next.newtab.weather.enabled === false) {
     next.newtab = { ...next.newtab, widgets: { ...(isObj(next.newtab.widgets) ? next.newtab.widgets : {}), weather: false } };
   }
+  // v7 -> v8: widgets sit on a grid and Clear became readable on its own, so
+  // everyone moves to it once. The wallpaper effect stops depending on the
+  // colours: "auto" becomes whatever it showed, and changing colours no longer
+  // changes the picture.
+  if (v < 8 && isObj(next.newtab)) {
+    const nt = next.newtab as Plain;
+    nt.panels = 'clear';
+    const bg = isObj(nt.background) ? (nt.background as Plain) : null;
+    if (bg && (bg.treatment === 'auto' || !bg.treatment)) bg.treatment = autoEffect(String(bg.kind ?? ''), String(bg.ref ?? ''), String(nt.look ?? 'auto'));
+  }
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;
+}
+
+/** What the old "auto" wallpaper effect resolved to (kept so a migrated page looks the same). */
+export function autoEffect(kind: string, ref: string, look: string): 'photo' | 'print' | 'film' {
+  if (kind === 'monuments' || ref.startsWith('m:')) return 'print';
+  if (look === 'auto' || look === 'picture') return 'photo';
+  if (kind === 'collection' || kind === 'upload' || kind === 'url') return 'film';
+  return 'print';
 }
 
 const syncArea = () => ext?.storage?.sync ?? ext?.storage?.local;

@@ -1,3 +1,4 @@
+import type { Layout } from './layout.ts';
 import type { EdKind } from './edition/types.ts';
 
 export type Side = 'left' | 'right';
@@ -136,8 +137,12 @@ export interface Settings {
     todo: boolean;
     /** Which parts of the page show (each one can be turned off). */
     widgets: { greeting: boolean; brief: boolean; weather: boolean; calendar: boolean; pomodoro: boolean; notes: boolean; apps: boolean; bookmarks: boolean; feed: boolean };
-    /** Cards over the wallpaper: frosted glass, clear, or solid. */
+    /** How widgets sit on the wallpaper: clear (readable on its own, dimming only where needed), glass, or solid. */
     panels: 'frosted' | 'clear' | 'solid';
+    /** Where each widget sits on the 12 × 8 grid (missing ones use their usual spot). */
+    layout: Layout;
+    /** A colour per bookmark folder (folder id -> tone name). */
+    folderTones: Record<string, string>;
     /** The calendar app clicks open, plus private calendar addresses to show events from. */
     calendar: { app: 'google' | 'outlook' | 'office' | 'notion' | 'apple' | 'proton'; feeds: string[] };
     /** Pomodoro lengths in minutes; a long break after `every` focus rounds. */

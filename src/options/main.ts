@@ -453,8 +453,7 @@ function backgroundControl(): HTMLElement {
       { class: 'text-input', 'aria-label': 'Effect', onchange: (e: Event) => void commit((x) => void (x.newtab.background.treatment = (e.target as HTMLSelectElement).value as typeof b.treatment)) },
       (
         [
-          ['auto', 'Effect: Auto'],
-          ['photo', 'Photo'],
+          ['photo', 'Effect: Photo'],
           ['film', 'Film'],
           ['dream', 'Dream'],
           ['led', 'LED'],
@@ -462,7 +461,7 @@ function backgroundControl(): HTMLElement {
           ['print', 'Print'],
           ['ascii', 'ASCII'],
         ] as const
-      ).map(([v, label]) => h('option', { value: v, selected: v === b.treatment }, label)),
+      ).map(([v, label]) => h('option', { value: v, selected: v === (b.treatment === 'auto' ? 'photo' : b.treatment) }, label)),
     ),
     file,
   );
