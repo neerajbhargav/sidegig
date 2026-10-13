@@ -388,6 +388,9 @@ html[data-look] body.ctx-newtab {
   background: var(--c-bg); color: var(--c-ink); font-family: var(--f-text);
 }
 html[data-look] { background: var(--c-bg); }
+/* The sidebar is a fixed-height app; the new tab is a page that scrolls. */
+body.ctx-newtab { overflow: visible; height: auto; min-height: 100%; }
+body.ctx-newtab > .app, body.ctx-newtab .view { height: auto; min-height: 100%; }
 .ctx-newtab ::selection { background: var(--c-signal); color: #fff; }
 .ctx-newtab kbd { font-family: var(--f-mono); font-size: 10px; line-height: 16px; border: 1px solid var(--c-line2); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--c-ink); background: var(--c-card); }
 
