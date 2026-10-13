@@ -194,7 +194,7 @@ async function tabsSection(ctx: Ctx): Promise<HTMLElement> {
       'button',
       { class: `row${t.active ? ' current' : ''}`, type: 'button', title: url, onclick: () => switchTo(t) },
       fav,
-      h('span', { class: 'text' }, h('span', { class: 't' }, t.title || hostOf(url)), h('span', { class: 'm' }, `${t.pinned ? 'pinned · ' : ''}${t.discarded ? 'asleep · ' : ''}${hostOf(url)}`)),
+      h('span', { class: 'text' }, h('span', { class: 't' }, t.title || hostOf(url)), h('span', { class: 'm' }, `${t.pinned ? 'pinned, ' : ''}${t.discarded ? 'asleep, ' : ''}${hostOf(url)}`)),
       h(
         'span',
         { class: 'end' },
@@ -290,7 +290,7 @@ async function workspacesSection(ctx: Ctx, rerender: () => void): Promise<HTMLEl
         'button',
         { class: 'row', type: 'button', onclick: () => void send({ type: 'restore-workspace', id: ws.id }) },
         ico('window', 16),
-        h('span', { class: 'text' }, h('span', { class: 't' }, ws.name), h('span', { class: 'm' }, `${ws.tabs.length} tabs · ${ago(ws.created)}`)),
+        h('span', { class: 'text' }, h('span', { class: 't' }, ws.name), h('span', { class: 'm' }, `${ws.tabs.length} tabs, ${ago(ws.created)}`)),
         h(
           'span',
           { class: 'end' },

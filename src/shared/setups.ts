@@ -178,5 +178,5 @@ export function describe(bundle: SetupBundle): string {
   if (bundle.parts.includes('todos') && todos) bits.push(`${todos} to-do${todos === 1 ? '' : 's'}`);
   const pics = (bundle.local.ntUploads as unknown[] | undefined)?.length;
   if (bundle.parts.includes('pictures') && pics) bits.push(`${pics} picture${pics === 1 ? '' : 's'}`);
-  return bits.join(' · ');
+  return bits.join(', ');
 }

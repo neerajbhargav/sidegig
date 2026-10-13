@@ -6,6 +6,22 @@ import { ext, faviconFor } from '../shared/api.ts';
 import { getLocal, setLocal } from '../shared/storage.ts';
 import type { AppEntry } from '../shared/types.ts';
 import { PROVIDERS } from '../shared/browserai.ts';
+import { measureIcon, type IconFit } from '../shared/iconfit.ts';
+
+/** Measure an icon so every one can be drawn at the same visual size (the rail can't read pixels itself). */
+async function fitOf(url: string): Promise<IconFit | null> {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const bmp = await createImageBitmap(await r.blob());
+    const c = new OffscreenCanvas(64, 64);
+    const x = c.getContext('2d')!;
+    x.drawImage(bmp, 0, 0, 64, 64);
+    return measureIcon(x.getImageData(0, 0, 64, 64).data, 64, 64);
+  } catch {
+    return null;
+  }
+}
 
 async function bytes(url: string): Promise<Uint8Array | null> {
   try {
@@ -25,12 +41,17 @@ export async function checkFavicons(appList: AppEntry[]): Promise<void> {
   const blank = await bytes(faviconFor('https://sidegig-blank.invalid/', 32));
   if (!blank) return;
   const missing: string[] = [];
+  const fit: Record<string, IconFit> = {};
   await Promise.all(
     apps.map(async (a) => {
       const b = await bytes(faviconFor(a.url, 32));
-      if (!b || same(b, blank)) missing.push(a.id);
+      if (!b || same(b, blank)) return void missing.push(a.id);
+      const f = await fitOf(faviconFor(a.url, 64));
+      if (f) fit[a.id] = f;
     }),
   );
   const prev = await getLocal<string[]>('favMissing', []);
   if (prev.slice().sort().join() !== missing.slice().sort().join()) await setLocal('favMissing', missing);
+  const prevFit = await getLocal<Record<string, IconFit>>('iconFit', {});
+  if (JSON.stringify(prevFit) !== JSON.stringify(fit)) await setLocal('iconFit', fit);
 }

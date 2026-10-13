@@ -33,7 +33,7 @@
   color: var(--m-fg);
   border: 1px solid var(--m-border);
   border-radius: calc(var(--m-radius) + 4px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px -8px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
 }
 .rail {
   width: var(--rail-w);
@@ -87,7 +87,7 @@ button.item.add:hover { color: var(--m-fg); }
 .badge.dot { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 6px; right: 6px; }
 .glow::after {
   content: ""; position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%;
-  background: var(--m-accent); box-shadow: 0 0 0 2px var(--m-bg), 0 0 10px var(--m-accent);
+  background: var(--m-accent); box-shadow: 0 0 0 2px var(--m-bg);
 }
 
 .tip {
@@ -139,7 +139,7 @@ button.item.add:hover { color: var(--m-fg); }
 .flyout {
   position: fixed; transform: translateY(-50%) scale(0.97); opacity: 0; pointer-events: none;
   background: var(--m-bg); color: var(--m-fg); border: 1px solid var(--m-border); border-radius: calc(var(--m-radius) + 4px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px -8px rgba(0, 0, 0, 0.24);
+  box-shadow: none;
   padding: 8px; transition: opacity 120ms ease, transform 120ms var(--ease);
 }
 .flyout.show { opacity: 1; transform: translateY(-50%) scale(1); pointer-events: auto; }
@@ -164,3 +164,16 @@ button.item.add:hover { color: var(--m-fg); }
 :host([data-scheme="dark"]) img.brandmark-dark { filter: invert(1); }
 @media (prefers-color-scheme: dark) { :host([data-scheme="system"]) img.brandmark-dark { filter: invert(1); } }
 img.brandmark { padding: 1px; box-sizing: border-box; }
+
+/* Icons: the sites' own, fitted to the same size (measured by the background); bundled
+   logos only when the browser has none, in the brand's colour. */
+button.item img { object-fit: contain; transform-origin: 50% 50%; }
+button.item img[data-sq] { border-radius: 24%; }
+:host([data-icons="themed"]) .glyph { background: currentColor; }
+:host([data-icons="themed"]) button.item img { filter: grayscale(1) contrast(1.05); }
+:host([data-scheme="dark"]) button.item img[data-ink] { filter: invert(1); }
+@media (prefers-color-scheme: dark) { :host([data-scheme="system"]) button.item img[data-ink] { filter: invert(1); } }
+.glyph { display: block; width: 20px; height: 20px; background: var(--brand, currentColor); -webkit-mask: var(--glyph) center / 16px no-repeat; mask: var(--glyph) center / 16px no-repeat; }
+.glyph.glyph-dark { background: currentColor; }
+:host([data-size="compact"]) .glyph { width: 18px; height: 18px; -webkit-mask-size: 14px; mask-size: 14px; }
+.mono { background: color-mix(in oklch, var(--m-fg) 9%, var(--m-surface)); color: var(--m-fg); border-radius: 24%; transform: scale(0.9); }

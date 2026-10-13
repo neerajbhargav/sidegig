@@ -21,7 +21,7 @@ test('a setup carries settings and only the local data for its parts', () => {
   assert.equal(b.from, 'Chrome');
   assert.ok(b.local.edProfile && b.local.ntTodos);
   assert.equal(b.local.ntUploads, undefined, 'pictures not chosen');
-  assert.equal(describe(b), '3 apps · Night theme · 2 interests · 1 to-do');
+  assert.equal(describe(b), '3 apps, Night theme, 2 interests, 1 to-do');
   assert.equal(fileName(b), 'sidegig-work.json');
 });
 

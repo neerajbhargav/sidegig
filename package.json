@@ -16,7 +16,8 @@
     "check": "tsc --noEmit -p .",
     "edition:dry-run": "node scripts/edition-dry-run.ts",
     "test": "node --test \"test/**/*.test.ts\"",
-    "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name sidegig --bundle-identifier com.neerajbhargav.sidegig --macos-only --no-prompt --force"
+    "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name sidegig --bundle-identifier com.neerajbhargav.sidegig --macos-only --no-prompt --force",
+    "figures": "node scripts/build-figures.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.5",

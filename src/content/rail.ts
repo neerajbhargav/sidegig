@@ -8,7 +8,8 @@ import { ext, faviconFor, TARGET } from '../shared/api.ts';
 import { loadSettings, onSettingsChanged, getLocal, setLocal, onLocalChanged, updateSettings } from '../shared/storage.ts';
 import { ASIDE_EXTENSION } from '../shared/browserai.ts';
 import { themeCss, modeForBackground } from '../shared/theme.ts';
-import { BRAND_ICONS, DARK_BRANDS } from '../shared/brands.ts';
+import { glyphFor, iconPixels } from '../shared/siteicon.ts';
+import { fitTransform, type IconFit } from '../shared/iconfit.ts';
 import { iconNode } from '../shared/icons.ts';
 import { hostExcluded } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
@@ -73,6 +74,7 @@ class Rail {
   private drawerApp: string | null = null;
   /** Apps whose site icon the browser doesn't have yet. */
   private favMissing = new Set<string>();
+  private iconFit: Record<string, IconFit> = {};
   private windowId: number | null = null;
 
   constructor(
@@ -182,6 +184,7 @@ class Rail {
     }
     this.mode = mode;
     this.host.dataset.scheme = mode;
+    this.host.dataset.icons = t.icons;
     this.style.textContent = css + themeCss(':host', mode, t, t.radius) + (t.customCss || '');
     this.post({ type: 'theme', mode });
   }
@@ -193,9 +196,10 @@ class Rail {
     this.built = true;
     this.renderRail();
     void getLocal<Record<string, number>>('badges', {}).then((b) => this.setBadges(b));
-    void getLocal<string[]>('favMissing', []).then((m) => {
+    void Promise.all([getLocal<string[]>('favMissing', []), getLocal<Record<string, IconFit>>('iconFit', {})]).then(([m, f]) => {
       this.favMissing = new Set(m);
-      if (m.length) this.renderRail();
+      this.iconFit = f;
+      if (m.length || Object.keys(f).length) this.renderRail();
     });
     void this.refreshNews();
   }
@@ -220,28 +224,37 @@ class Rail {
   }
 
   private appIcon(app: AppEntry): Node[] {
-    const cat = app.catalogId ?? app.id;
-    // The browser shows a blank globe for sites you haven't visited yet, and black
-    // logos vanish on dark pages: use the bundled brand icon in those cases.
-    const brand = BRAND_ICONS.has(cat) && (this.favMissing.has(app.id) || DARK_BRANDS.has(cat));
-    // Unknown icon and nothing bundled: the letter tile below beats a blank globe.
-    const src = brand ? ext.runtime.getURL(`icons/brands/${cat}.svg`) : this.favMissing.has(app.id) ? '' : faviconFor(app.url, 32);
+    // The site's own icon, sharp and fitted to the same size as the others; the
+    // bundled logo (in the brand's colour) only while the browser has none.
+    const g = this.favMissing.has(app.id) || this.s.theme.icons === 'themed' ? glyphFor(app.url, app.catalogId ?? app.id) : null;
     const letter = (app.name.trim()[0] ?? '?').toUpperCase();
     const badge = document.createElement('span');
     badge.className = 'badge';
     badge.hidden = true;
+    if (g) {
+      const glyph = document.createElement('span');
+      glyph.className = g.dark ? 'glyph glyph-dark' : 'glyph';
+      glyph.style.setProperty('--glyph', `url("${ext.runtime.getURL(`icons/brands/${g.file}.svg`)}")`);
+      glyph.style.setProperty('--brand', g.hex);
+      return [glyph, badge];
+    }
+    const src = this.favMissing.has(app.id) ? '' : faviconFor(app.url, iconPixels(20));
     if (src) {
       const img = document.createElement('img');
       img.alt = '';
       img.src = src;
       img.dataset.letter = letter;
-      if (brand) img.className = DARK_BRANDS.has(cat) ? 'brandmark brandmark-dark' : 'brandmark';
+      const f = this.iconFit[app.id];
+      if (f) {
+        img.style.transform = fitTransform(f);
+        img.toggleAttribute('data-sq', f.q);
+        img.toggleAttribute('data-ink', f.d);
+      }
       return [img, badge];
     }
     const mono = document.createElement('span');
     mono.className = 'mono';
     mono.textContent = letter;
-    mono.style.setProperty('--h', String(hueOf(app.url)));
     return [mono, badge];
   }
 
@@ -274,7 +287,7 @@ class Rail {
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
     this.rail.append(this.tool('search', `Search  ${keys('K')}`, iconNode('search')));
     this.rail.append(this.tool('status', 'Status', iconNode('pulse'), this.statusNews ? 'glow status' : 'status'));
-    const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, iconNode('sparkle'), () => this.askAi(), 'ai');
+    const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, iconNode('ask'), () => this.askAi(), 'ai');
     ai.addEventListener('pointerenter', () => this.showFlyout(ai, 450));
     ai.addEventListener('pointerleave', () => this.hideFlyout(300));
     ai.addEventListener('contextmenu', (e) => {
@@ -683,6 +696,10 @@ class Rail {
     onLocalChanged('panelOpen', () => void this.checkPanel());
     onLocalChanged('favMissing', (m) => {
       this.favMissing = new Set((m as string[] | undefined) ?? []);
+      if (this.built) this.renderRail();
+    });
+    onLocalChanged('iconFit', (f) => {
+      this.iconFit = (f as Record<string, IconFit> | undefined) ?? {};
       if (this.built) this.renderRail();
     });
     if (this.s.theme.mode === 'page') {

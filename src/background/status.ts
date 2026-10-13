@@ -27,8 +27,8 @@ export async function githubCard(token?: string): Promise<StatusCard> {
   const notes = (await nRes.json()) as any[];
   const reviews = rRes.ok ? (((await rRes.json()) as any).items as any[]) : [];
   const items = [
-    ...reviews.map((r) => ({ title: r.title, meta: `Review requested · ${r.repository_url.split('/').slice(-2).join('/')}`, url: r.html_url, state: 'warn' as const })),
-    ...notes.map((n) => ({ title: n.subject?.title ?? 'Notification', meta: `${n.repository?.full_name ?? ''} · ${n.reason}`, url, state: 'ok' as const })),
+    ...reviews.map((r) => ({ title: r.title, meta: `Review requested, ${r.repository_url.split('/').slice(-2).join('/')}`, url: r.html_url, state: 'warn' as const })),
+    ...notes.map((n) => ({ title: n.subject?.title ?? 'Notification', meta: `${n.repository?.full_name ?? ''}, ${n.reason}`, url, state: 'ok' as const })),
   ].slice(0, 8);
   return {
     id: 'github',
@@ -56,11 +56,11 @@ export async function vercelCard(token?: string, teamId?: string): Promise<Statu
     id: 'vercel',
     title: 'Vercel',
     value: latest ? latest.state?.toLowerCase() ?? '' : 'none',
-    detail: latest ? `${latest.name} · ${ago(latest.created)}` : 'no deployments yet',
+    detail: latest ? `${latest.name}, ${ago(latest.created)}` : 'no deployments yet',
     url,
     items: deployments.map((d) => ({
       title: d.name,
-      meta: `${(d.state ?? '').toLowerCase()} · ${ago(d.created)}${d.meta?.githubCommitMessage ? ' · ' + d.meta.githubCommitMessage : ''}`,
+      meta: `${(d.state ?? '').toLowerCase()}, ${ago(d.created)}${d.meta?.githubCommitMessage ? ', ' + d.meta.githubCommitMessage : ''}`,
       url: d.inspectorUrl ?? `https://${d.url}`,
       state: stateOf(d.state),
     })),
