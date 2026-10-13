@@ -7,7 +7,7 @@
 //      narrowed with a tagged stylesheet rule;
 //   3. the page is watched for new or changed fixed elements.
 // Everything is undone when the rail undocks, goes fullscreen or is removed.
-import { intrudes, firstGuess, correct, type DockSide, type Box } from '../shared/dockmath.ts';
+import { intrudes, needsFix, firstGuess, correct, type DockSide, type Box } from '../shared/dockmath.ts';
 
 const ATTR = 'data-sidegig-dock';
 
@@ -23,6 +23,8 @@ export class Dock {
   private lastScan = 0;
   private clipX = false;
   private suspended = false;
+  /** Decided once, before our own rules exist, so our rule can't feed back into the check. */
+  private relative: boolean | null = null;
 
   constructor() {
     this.style.id = 'sidegig-dock';
@@ -73,6 +75,7 @@ export class Dock {
     this.fixes.clear();
     this.clipX = false;
     this.style.remove();
+    this.relative = null;
     if (forget) this.width = this.suspended ? this.width : 0;
   }
 
@@ -103,7 +106,8 @@ export class Dock {
       `min-width:0!important`,
     ];
     // Absolutely positioned page layers (no positioned ancestor) should move with the page.
-    if (getComputedStyle(html).position === 'static') parts.push('position:relative!important');
+    if (this.relative === null) this.relative = getComputedStyle(html).position === 'static';
+    if (this.relative) parts.push('position:relative!important');
     if (this.clipX) parts.push('overflow-x:clip!important');
     return `html{${parts.join(';')}}`;
   }
@@ -166,11 +170,22 @@ export class Dock {
     }
     const recheck: Element[] = [];
     for (const el of current) {
-      if (!this.fixes.has(el)) recheck.push(el);
-      else if (intrudes(this.box(el), vw, this.width, this.side)) {
+      const f = this.fixes.get(el);
+      if (!f) {
+        recheck.push(el);
+        continue;
+      }
+      const r = this.box(el);
+      // Pages move things after load (new containing blocks, JS layout). Release a
+      // shift that's no longer needed, and redo one that left the element under
+      // the rail or past the window edge.
+      const natural = { left: r.left - f.tx, right: r.right - f.tx, width: r.width };
+      const stale = f.maxWidth === null && !needsFix(natural, vw, this.width, this.side);
+      const wrong = needsFix(r, vw, this.width, this.side) || r.left < -1;
+      if (stale || wrong) {
         el.removeAttribute(ATTR);
         this.fixes.delete(el);
-        recheck.push(el);
+        if (wrong && !stale) recheck.push(el);
       }
     }
     this.write();
@@ -185,7 +200,7 @@ export class Dock {
     const natural = els.map((el) => [el, this.box(el)] as const);
     const placed: { el: Element; target: number | null }[] = [];
     for (const [el, r] of natural) {
-      if (!intrudes(r, vw, w, this.side)) continue;
+      if (!needsFix(r, vw, w, this.side)) continue;
       const guess = firstGuess(r, vw, w, this.side);
       // max-width applies to the content box unless the page uses border-box sizing.
       let maxWidth = guess.maxWidth;
