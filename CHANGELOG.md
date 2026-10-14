@@ -5,6 +5,7 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-14
 
+- `c2b0ed3` Shared pre-commit hook keeps CHANGELOG.md current and reminds about status and screenshots
 - `e5f0059` AGENTS.md: do not pin the test count
 - `d354617` Project history: milestone screenshots, changelog, and a snap command
 - `7d83c55` WIP: run Gmail and X inside sidegig frames; agent guide and status handoff
