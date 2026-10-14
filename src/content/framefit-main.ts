@@ -2,6 +2,8 @@
 // world at document_start; see framefit.ts for the other half). Only inside
 // sidegig's app frames: a frame named "sidegig-app…" whose outermost page is an
 // extension page. Normal pages and other sites' frames are untouched.
+import { rewriteFrameChecks, rewriteTopRefs, TOP_REWRITE_HOSTS } from '../shared/framecheck.ts';
+
 (() => {
   let anc = '';
   try {
@@ -50,52 +52,38 @@
   } catch {
     /* leave cookies alone */
   }
+  // Gmail loads its code as <script src> from its own origin, written for a
+  // top-level page (`top` is its own window). Load those scripts rewritten, in
+  // the order the page added them; if a fetch fails, the original loads instead.
+  if (TOP_REWRITE_HOSTS.has(location.hostname)) {
+    // `x.top` reads in rewritten code: the app's own window when x is that window.
+    Object.defineProperty(window, '__sidegigTop', { value: (o: { top: unknown }) => (o === (window as unknown) ? window : o.top) });
+    const get = fetch.bind(window);
+    let queue = Promise.resolve();
+    const ownScript = (n: unknown): n is HTMLScriptElement => n instanceof HTMLScriptElement && !!n.src && n.src.startsWith(`${location.origin}/`);
+    const proto = Node.prototype as unknown as Record<string, (this: Node, ...a: unknown[]) => Node>;
+    for (const key of ['appendChild', 'insertBefore']) {
+      const orig = proto[key];
+      proto[key] = function (this: Node, ...a: unknown[]) {
+        const n = a[0];
+        if (!ownScript(n)) return orig.apply(this, a);
+        const code = get(n.src, { credentials: 'include' }).then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))));
+        queue = queue
+          .then(() => code)
+          .then((c) => void (n.src = URL.createObjectURL(new Blob([rewriteTopRefs(rewriteFrameChecks(c))], { type: 'text/javascript' }))))
+          .catch(() => undefined)
+          .then(() => void orig.apply(this, a))
+          .catch(() => undefined); // a failed insert must not stop the scripts after it
+        return n;
+      };
+    }
+  }
   // A service worker registered from here would later answer with "don't frame me".
   try {
     const sw = navigator.serviceWorker;
     if (sw) Object.defineProperty(sw, 'register', { configurable: true, value: () => Promise.reject(new DOMException('Not in the sidebar', 'SecurityError')) });
   } catch {
     /* fine */
-  }
-  // DIAGNOSTIC (temporary): report uncaught errors and Gmail's error-page reasons to sidegig.
-  const report = (kind: string, msg: string) => {
-    try {
-      window.top?.postMessage({ ns: 'sidegig-frame', type: 'diag', kind, msg: msg.slice(0, 600), url: location.href }, '*');
-    } catch {
-      /* fine */
-    }
-  };
-  addEventListener('error', (e) => report('error', `${e.message} @ ${e.filename}:${e.lineno}:${e.colno} ${e.error?.stack ?? ''}`), true);
-  // DIAGNOSTIC (temporary): Google's modules catch their own errors and pass them to
-  // _._DumpException; keep the first few in sessionStorage ("sidegig-dump").
-  try {
-    Object.defineProperty(Object.prototype, '_DumpException', {
-      configurable: true,
-      set(this: Record<string, unknown>, fn: (e: unknown) => unknown) {
-        const wrapped = function (this: unknown, e: unknown) {
-          try {
-            const list = JSON.parse(sessionStorage.getItem('sidegig-dump') || '[]') as string[];
-            if (list.length < 8) list.push(String((e as Error)?.stack ?? e).slice(0, 700));
-            sessionStorage.setItem('sidegig-dump', JSON.stringify(list));
-          } catch {
-            /* fine */
-          }
-          return fn.call(this, e);
-        };
-        Object.defineProperty(this, '_DumpException', { value: wrapped, writable: true, configurable: true, enumerable: true });
-      },
-    });
-  } catch {
-    /* fine */
-  }
-  addEventListener('unhandledrejection', (e) => report('rejection', String(e.reason?.stack ?? e.reason)));
-  for (const k of ['error', 'warn', 'log', 'info'] as const) {
-    const orig = console[k].bind(console);
-    console[k] = (...a: unknown[]) => {
-      const text = a.map((x) => (x instanceof Error ? `${x.message} ${x.stack}` : typeof x === 'string' ? x : '')).join(' ');
-      if (/error page|exception|errorPageCause|SecurityError|denied|blocked/i.test(text)) report(`console.${k}`, text);
-      orig(...a);
-    };
   }
   const ready = () => document.dispatchEvent(new Event('sidegig-shim-ready'));
   ready();

@@ -1,25 +1,27 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-14 (Aside session "Opera-style sidebar extension for Chromium").
+Last updated: 2026-10-14 16:15 EDT (Claude Code session: Gmail in a frame fixed).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (every commit) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
 
-Branch `wip/in-panel-apps`. Goal: open Gmail and X inside sidegig's own sidebar frame instead of a side window.
+Branch `wip/in-panel-apps`. Goal: open Gmail and X inside sidegig's own sidebar frame instead of a side window. **Both now load signed in, in the frame** (checked live in the owner's Aside, 2026-10-14: Gmail stays in the inbox for 30 s and more, X shows the timeline).
 
-- **X works in a frame.** `src/content/framefit-main.ts` (MAIN world) adds `SameSite=None; Secure` to cookie writes and merges same-site cookies into reads. It also blocks service-worker registration. `src/background/framecookies.ts` adds session DNR rules (ids 500-699) that append the site's same-site cookies to requests made from inside sidegig frames. The frame's first load is excluded (the browser already sends those cookies, and sending them twice caused Google's CookieMismatch page).
-- **Gmail no longer breaks out of the frame.** `src/shared/framecheck.ts` (`rewriteFrameChecks`) turns `window!=top` style checks into constants. `src/content/framefit.ts` (isolated world, document_start, only frames named `sidegig-app-*` under the extension) rewrites inline scripts as they stream in and posts a `sidegig-frame` hello to the parent.
-- **Gmail still shows "Temporary Error", numeric code 9.** Code 9 is Gmail's "Uncaught exception" error page (`Hb` calls `GM_showErrorPage(9, ...)`). The captured exception is:
-  `TypeError: Cannot read properties of undefined (reading 'Kc')` at line 5668:13 of the Gmail module `m=ebdd,sps,l,spit,t,it,anc`, called from the page's inline script at line 38.
-- **Next step:** open that module (fetch it from a normal Gmail tab, or use REA on a saved copy) and find what is undefined at 5668:13. Likely candidates: a cross-frame `top`/`parent` property read that the rewrite missed, or storage/cookie state the shim reports differently. Fix the shim or the rewrite, then reload the extension and re-test.
-- **Temporary diagnostics are in the code.** Search for `DIAGNOSTIC (temporary)` in `src/content/framefit.ts` and `src/content/framefit-main.ts`. They record Gmail's error-page reason in sessionStorage (`sidegig-err`) and forward errors to the parent. Remove them before merging to `main`.
-- Settings are at v10 (Gmail, X and the other `NO_FRAME` apps move to `openIn: 'panel'`). If Gmail cannot be fixed, revert Gmail to `'window'` in the migration and defaults.
+- **X:** `src/content/framefit-main.ts` (MAIN world) adds `SameSite=None; Secure` to cookie writes, merges the site's same-site cookies into `document.cookie` reads (from `pageCookies` in `src/background/framecookies.ts`), and blocks service-worker registration.
+- **Gmail, three layers, all fixed:**
+  1. Frame-busting: `rewriteFrameChecks` (`src/shared/framecheck.ts`) turns `window!=top` checks in inline scripts into constants (`src/content/framefit.ts`).
+  2. "Temporary Error" code 9: Gmail's code uses `top` as its own window (`_.pu(top, …)` for the gmonkey API, `top.document`, `top.js`, `win.top`). In the frame `top` is sidegig's cross-origin page, so module "a" threw a SecurityError and stopped before defining `_.gbg`; the `reading 'Kc'` crash was only the knock-on. Fix: `rewriteTopRefs` turns bare `top` into `self` and `x.top` reads into `__sidegigTop(x)` (the frame's window when x is that window). Inline scripts are rewritten as they stream in; Gmail's own-origin `<script src>` modules are fetched, rewritten and loaded from a blob, in order (`framefit-main.ts`). Only for hosts in `TOP_REWRITE_HOSTS` (Gmail).
+  3. CookieMismatch about 4 s after the inbox showed: the DNR rules that appended same-site cookies to the frame's requests (ids 500-699) duplicated cookies the browser already sends. Deleted; X works without them too.
+- **The phone layout is never applied to Gmail** (`dnr.ts` skips mail.google.com, and the app bar hides the phone button for Gmail): the owner's Aside had `mobile: true` on Gmail, which sent mobile Gmail into a reload loop and risks Google's re-sign-in prompt.
+- No `DIAGNOSTIC (temporary)` code is left. Commit `c2b0ed3` (already on origin) still carries a `_DumpException` diagnostic that another agent's commit swept in; the working tree removes it.
+- How it was found (repeatable loop, about 10 s per run): open `panel.html` in an Aside tab, set `chrome.storage.local.panelRequest = {appId:'gmail', ts:Date.now()}`, poll the `sidegig-app-gmail` frame's title and path. Gmail swallows its own errors (`_._DumpException`), so a temporary trap on that setter is how the first error was found.
+- Settings are at v10 (Gmail, X and the other `NO_FRAME` apps open in the panel).
 
 ## Open work, in priority order
 
-1. Gmail in a frame (above). Then phone layouts in the side panel and a live check of X, Calendar, Instagram.
+1. Phone layouts in the side panel and a live check of Calendar, Instagram, Grok and Messenger in frames (Gmail and X done). Watch Gmail for other `top` uses in modules it loads later (compose, settings, chat); `TOP_REWRITE_HOSTS` covers mail.google.com only.
 2. Sharp icons: each site's best icon source, fitted (see `src/shared/iconfit.ts`, `src/background/favicons.ts`).
 3. AI settings section in `src/options/main.ts`: keys, local server address, browser model status, ChatGPT plan (Codex) toggle, OpenRouter sign-in, custom instructions, MCP servers add/remove (`mcpServers` is read but nothing writes it), bridge status, agent access off/read/full.
 4. Agent bridge: run `bridge/sidegig-bridge.mjs` end to end (WebSocket handshake, a `codex.run` prompt). Build the extension side that answers the bridge's `browser_*` tool calls, with an agent-access setting and a visible banner while an agent controls a tab.
@@ -34,7 +36,7 @@ Branch `wip/in-panel-apps`. Goal: open Gmail and X inside sidegig's own sidebar 
 - Chrome's side panel shows only extension pages. Sites that refuse frames need the frame work above, or the docked side window.
 - Safari project generation needs a Mac: `npm run safari`.
 - macOS full screen: a side window gets its own space, so apps open as a tab beside the current one.
-- Switching Gmail to a mobile user agent made Google ask for the password again. Do not spoof Gmail's user agent.
+- Switching Gmail to a mobile user agent made Google ask for the password again. Do not spoof Gmail's user agent. The code now enforces this.
 
 ## Key decisions (keep unless the owner changes them)
 
