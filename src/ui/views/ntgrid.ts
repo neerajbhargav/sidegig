@@ -204,12 +204,8 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     setBox(it.id, boxes[it.id]);
     if (!boxes[it.id]) w.hidden = true;
 
-    // Click an empty part of a small widget to open it.
-    w.addEventListener('click', (e) => {
-      if (editing || !it.expandable || openId || w.dataset.size === 'l') return;
-      if ((e.target as Element).closest('button, a, input, textarea, select, label, [contenteditable="true"], [role="button"], [role="checkbox"]')) return;
-      open(it.id);
-    });
+    // Opening to full size is only ever the expand button (never a stray click on
+    // the widget), so nothing appears on top of what you meant to click.
 
     // Drag to move.
     w.addEventListener('pointerdown', (e) => {

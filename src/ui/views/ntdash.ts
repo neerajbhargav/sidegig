@@ -833,6 +833,17 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
   );
   form.addEventListener('submit', (e) => (e.preventDefault(), void (urlIn.value.trim() ? addSite() : addFolder())));
   form.addEventListener('keydown', (e) => e.key === 'Escape' && ((form.hidden = true), void paint()));
+  // A click anywhere else puts the form away, so it never sits over the tiles you reach for.
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (form.hidden || !root.isConnected) return;
+      const t = e.target as Element;
+      if (form.contains(t) || t.closest('.shelf-addkey')) return;
+      form.hidden = true;
+    },
+    true,
+  );
 
   await paint();
   // Keep in step with changes made elsewhere (the sidebar, the bookmarks manager).

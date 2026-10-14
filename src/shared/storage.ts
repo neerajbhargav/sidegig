@@ -54,6 +54,18 @@ export function migrate(stored: unknown): unknown {
   // everyone moves to it once. The wallpaper effect stops depending on the
   // colours: "auto" becomes whatever it showed, and changing colours no longer
   // changes the picture.
+  // v8 -> v9: sites with a good phone layout use it in the narrow sidebar and
+  // side window, so they fit.
+  if (v < 9 && Array.isArray(next.apps)) {
+    next.apps = (next.apps as Plain[]).map((a) => {
+      const cat = String(a.catalogId ?? '');
+      const out = { ...a };
+      if (['x', 'calendar', 'instagram', 'reddit', 'linkedin', 'ytmusic', 'grok'].includes(cat)) out.mobile = true;
+      if (cat === 'gmail') out.mobile = false;
+      return out;
+    });
+    if (isObj(next.drawer) && Number(next.drawer.width) < 400) next.drawer = { ...next.drawer, width: 400 };
+  }
   if (v < 8 && isObj(next.newtab)) {
     const nt = next.newtab as Plain;
     nt.panels = 'clear';

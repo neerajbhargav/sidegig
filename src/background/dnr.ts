@@ -51,7 +51,7 @@ const stripFrameHeaders: chrome.declarativeNetRequest.RuleAction = {
   ],
 };
 
-export function buildRules(apps: AppEntry[], extensionHost: string): Rule[] {
+export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: number[] = []): Rule[] {
   const rules: Rule[] = [];
   let id = 1;
   const appHosts = [...new Set(apps.map((a) => hostOf(a.url)).filter(Boolean))];
@@ -88,17 +88,35 @@ export function buildRules(apps: AppEntry[], extensionHost: string): Rule[] {
       },
       condition: { resourceTypes: sub, requestDomains: mobileHosts, initiatorDomains: [extensionHost, ...trusted] },
     });
+    // 4. sidegig's docked side windows (Gmail, X): the whole window is narrow, so the phone layout fits it.
+    if (sideTabs.length) {
+      rules.push({
+        id: id++,
+        priority: 2,
+        action: rules[rules.length - 1].action,
+        condition: { resourceTypes: ['main_frame' as chrome.declarativeNetRequest.ResourceType, 'sub_frame' as chrome.declarativeNetRequest.ResourceType], tabIds: sideTabs, requestDomains: mobileHosts },
+      });
+    }
   }
   return rules;
 }
 
+let lastApps: AppEntry[] = [];
+let sideTabs: number[] = [];
+/** A docked side window's tab (or none): its pages get the phone layout. */
+export async function setSideTabs(ids: number[]): Promise<void> {
+  sideTabs = [...new Set(ids)];
+  await applyRules(lastApps);
+}
+
 export async function applyRules(apps: AppEntry[]): Promise<void> {
+  lastApps = apps;
   const dnr = (ext as any).declarativeNetRequest;
   if (!dnr?.updateSessionRules) return;
   const host = new URL(ext.runtime.getURL('/')).hostname;
   const existing = await dnr.getSessionRules();
   await dnr.updateSessionRules({
     removeRuleIds: existing.map((r: Rule) => r.id),
-    addRules: buildRules(apps, host),
+    addRules: buildRules(apps, host, sideTabs),
   });
 }

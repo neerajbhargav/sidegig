@@ -177,3 +177,25 @@ button.item img[data-sq] { border-radius: 24%; }
 .glyph.glyph-dark { background: currentColor; }
 :host([data-size="compact"]) .glyph { width: calc(18px * var(--ui-s, 1)); height: calc(18px * var(--ui-s, 1)); -webkit-mask-size: calc(14px * var(--ui-s, 1)); mask-size: calc(14px * var(--ui-s, 1)); }
 .mono { background: color-mix(in oklch, var(--m-fg) 9%, var(--m-surface)); color: var(--m-fg); border-radius: 24%; transform: scale(0.9); }
+
+/* App icons sit on plates, Arc-style: one rounded-square shape and size for
+   every app, the site's own logo fitted inside, a hairline edge, no shadow. */
+button.item.app {
+  width: calc(36px * var(--ui-s, 1)); height: calc(36px * var(--ui-s, 1));
+  margin: calc(1px * var(--ui-s, 1)) auto;
+  border-radius: calc(11px * var(--ui-s, 1));
+  background: var(--m-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--m-border) 70%, transparent);
+}
+:host([data-size="compact"]) button.item.app { width: calc(32px * var(--ui-s, 1)); height: calc(32px * var(--ui-s, 1)); border-radius: calc(10px * var(--ui-s, 1)); }
+button.item.app:hover { background: var(--m-hover); }
+button.item.app[aria-pressed="true"] { background: var(--m-surface); box-shadow: inset 0 0 0 1.5px var(--m-accent); }
+button.item.app img, button.item.app .glyph, button.item.app .mono { width: calc(20px * var(--ui-s, 1)); height: calc(20px * var(--ui-s, 1)); }
+:host([data-size="compact"]) button.item.app :is(img, .glyph, .mono) { width: calc(18px * var(--ui-s, 1)); height: calc(18px * var(--ui-s, 1)); }
+button.item.app img[data-sq] { border-radius: 26%; }
+/* Themed: plates take the accent's tint and logos the ink, the same as the new tab. */
+:host([data-icons="themed"]) button.item.app { background: color-mix(in oklab, var(--m-accent) 9%, var(--m-surface)); }
+/* Counts hang off the plate's top corner and never cover the logo. */
+button.item.app .badge { top: calc(-5px * var(--ui-s, 1)); right: calc(-7px * var(--ui-s, 1)); left: auto; min-width: calc(16px * var(--ui-s, 1)); height: calc(16px * var(--ui-s, 1)); padding: 0 calc(4px * var(--ui-s, 1)); font-size: calc(10px * var(--ui-s, 1)); line-height: calc(16px * var(--ui-s, 1)); border-radius: 999px; box-shadow: 0 0 0 calc(2px * var(--ui-s, 1)) var(--m-bg); }
+button.item.app .badge.dot { top: calc(-2px * var(--ui-s, 1)); right: calc(-2px * var(--ui-s, 1)); min-width: 0; width: calc(9px * var(--ui-s, 1)); height: calc(9px * var(--ui-s, 1)); padding: 0; }
+button.item.app { overflow: visible; }

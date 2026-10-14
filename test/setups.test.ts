@@ -77,6 +77,7 @@ test('an old setup is migrated when applied (Gmail moves to a side window)', () 
   const b = toBundle({ kind: 'sidegig-setup', format: 1, name: 'Old', parts: ['apps'], settings: old, local: {} });
   const { settings } = applySetup(defaultSettings(), b, ['apps']);
   assert.equal(settings.apps.find((a) => a.id === 'gmail')?.openIn, 'window');
+  assert.equal(settings.apps.find((a) => a.id === 'gmail')?.mobile, false);
   assert.equal(settings.apps.find((a) => a.id === 'claude')?.openIn, 'panel');
 });
 

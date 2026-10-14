@@ -28,13 +28,18 @@ test('frame rules only cover frames sidegig opens and their own navigations', ()
 });
 
 test('mobile rule appears only when an app asks for it', () => {
-  assert.equal(buildRules([appFromCatalog('gmail')], EXT).length, 2);
+  assert.equal(buildRules([{ ...appFromCatalog('gmail'), mobile: false }], EXT).length, 2);
   const mobile = { ...appFromCatalog('x'), mobile: true };
   const rules = buildRules([mobile], EXT);
-  const mobileRule = rules.find((r) => r.action.requestHeaders?.some((h) => h.header === 'user-agent'));
-  assert.equal(mobileRule?.action.requestHeaders?.find((h) => h.header === 'user-agent')?.value, MOBILE_UA);
-  assert.deepEqual(mobileRule?.condition.requestDomains, ['x.com']);
-  assert.deepEqual(mobileRule?.condition.resourceTypes, ['sub_frame']);
+  const ua = rules.filter((r) => r.action.requestHeaders?.some((h) => h.header === 'user-agent'));
+  assert.equal(ua.length, 1);
+  assert.equal(ua[0].action.requestHeaders?.find((h) => h.header === 'user-agent')?.value, MOBILE_UA);
+  assert.deepEqual(ua[0].condition.requestDomains, ['x.com']);
+  assert.deepEqual(ua[0].condition.resourceTypes, ['sub_frame']);
+  // A docked side window's tab gets it for its whole page.
+  const side = buildRules([mobile], EXT, [42]).filter((r) => r.condition.tabIds);
+  assert.deepEqual(side[0].condition.tabIds, [42]);
+  assert.deepEqual(side[0].condition.resourceTypes, ['main_frame', 'sub_frame']);
 });
 
 test('no apps still lets sidegig frame its own pages', () => {
