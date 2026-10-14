@@ -18,7 +18,7 @@ The session is done only when all four hold:
 
 ## Commands and their gotchas
 
-- npm scripts are in `package.json`. Typecheck: `npx tsc --noEmit -p .`. Tests: `npm test` (106 tests, `node --test` with TypeScript stripping). Build one target: `node scripts/build.mjs chrome` (output `dist/chrome`). All targets plus zips: `node scripts/build.mjs --zip`.
+- npm scripts are in `package.json`. Typecheck: `npx tsc --noEmit -p .`. Tests: `npm test` (`node --test` with TypeScript stripping; all must pass). Build one target: `node scripts/build.mjs chrome` (output `dist/chrome`). All targets plus zips: `node scripts/build.mjs --zip`.
 - If npm fails on this Mac, run it as `env -u NPM_CONFIG_PREFIX -u NPM_CONFIG_USERCONFIG -u NODE_PATH -u NPM_CONFIG_CACHE npm ...`. Node lives in `/opt/homebrew/bin`; add it to `PATH` if `node` is missing.
 - esbuild's native binary can be killed by a sandbox; the build falls back to esbuild-wasm on its own.
 - Generated files: `src/ui/figures/*.ts` come from `node scripts/build-figures.mjs` (Anatomy kit in `vendor/anatomy`). Brand icons come from `scripts/fetch-brands.mjs`; Material Symbols and fonts from `scripts/fetch-assets.mjs`. Edit the scripts, not the output.
