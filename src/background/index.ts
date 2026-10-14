@@ -10,8 +10,7 @@ import { badgeLabel } from '../shared/badge.ts';
 import type { AppEntry, PendingPrompt, Settings } from '../shared/types.ts';
 import type { ToBackground, ToContent } from '../shared/messages.ts';
 import { applyRules, setSideTabs } from './dnr.ts';
-import { pageCookies, scheduleFrameCookies, watchFrameCookies } from './framecookies.ts';
-watchFrameCookies();
+import { pageCookies } from './framecookies.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
@@ -40,7 +39,7 @@ async function sync(): Promise<void> {
   cache = await loadSettings();
   void checkFavicons(cache.apps);
   await setSideTabs(await getLocal<number[]>('sideTabs', [])).catch(() => undefined);
-  await Promise.allSettled([applyRules(cache.apps).finally(() => scheduleFrameCookies(cache?.apps)), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
+  await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
   setupActionBehavior();
   setupLinkRules();

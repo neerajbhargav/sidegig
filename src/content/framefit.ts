@@ -12,7 +12,7 @@
 //
 // Normal tabs are never touched: the check below fails and the script returns.
 import { ext } from '../shared/api.ts';
-import { rewriteFrameChecks } from '../shared/framecheck.ts';
+import { rewriteFrameChecks, rewriteTopRefs, TOP_REWRITE_HOSTS } from '../shared/framecheck.ts';
 
 const ANCESTOR = (() => {
   try {
@@ -52,9 +52,8 @@ function start() {
     if (checked.get(n) === t.length) return;
     if (!checked.has(n)) state.scripts++;
     checked.set(n, t.length);
-    if (!/\btop\b|GM_showErrorPageCalled/.test(t)) return;
-    // DIAGNOSTIC (temporary): keep the reason Gmail shows its error page.
-    const next = rewriteFrameChecks(t).replace(/(\w+)\.GM_showErrorPageCalled=!0;/, '$1.GM_showErrorPageCalled=!0;try{sessionStorage.setItem("sidegig-err",String(arguments[0])+" | "+String(arguments[1])+" | "+String(arguments[2]&&arguments[2].stack||arguments[2]||""))}catch(_e){};');
+    if (!/\btop\b/.test(t)) return;
+    const next = TOP_REWRITE_HOSTS.has(location.hostname) ? rewriteTopRefs(rewriteFrameChecks(t)) : rewriteFrameChecks(t);
     if (next !== t) {
       n.textContent = next;
       checked.set(n, next.length);
@@ -73,7 +72,7 @@ function start() {
   addEventListener('DOMContentLoaded', () => setTimeout(() => mo.disconnect(), 4000), { once: true });
   const hello = () => {
     try {
-      window.parent.postMessage({ ns: 'sidegig-frame', type: 'hello', url: location.href, title: document.title, scripts: state.scripts, rewrote: state.rewrote, shim: state.shim, err: (() => { try { return sessionStorage.getItem('sidegig-err') ?? ''; } catch { return 'no storage'; } })(), cookies: document.cookie.split(';').map((c) => c.split('=')[0].trim()).filter(Boolean) }, '*');
+      window.parent.postMessage({ ns: 'sidegig-frame', type: 'hello', url: location.href, title: document.title, scripts: state.scripts, rewrote: state.rewrote, shim: state.shim }, '*');
     } catch {
       /* fine */
     }
