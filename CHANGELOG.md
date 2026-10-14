@@ -5,6 +5,7 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-14
 
+- `a236fc2` Customize › Reset layout redraws the grid
 - `79ecde9` Saved new-tab layout, folder colours and active space survive loading
 - `51b363d` Gmail runs signed in inside the sidebar frame
 - `1bc4524` Point agents at the local full-session context folder (git-ignored)
