@@ -6,7 +6,15 @@ sidegig is a free, open-source (GPL-3.0) browser extension. It adds an Opera-sty
 
 1. Read `docs/STATUS.md`. It says where work stopped, the open work in priority order, and the decisions to keep.
 2. Run `git status` and `git branch`. Several agents (Aside, Claude Code, Codex, Cursor, Gemini, Hermes) can work in this folder. Continue on the current work branch, or make a new branch for a new task. Merge to `main` and push only when the owner asks.
-3. At the end, update "Where work stopped" in `docs/STATUS.md` and commit.
+
+## End of every session: keep the folder fresh
+
+The session is done only when all four hold:
+
+1. `docs/STATUS.md` "Where work stopped" and "Open work" describe the code as you leave it, with today's date on the "Last updated" line.
+2. Every visible change has a screenshot in `docs/evolution`: `npm run snap -- <image> "<caption>"`. It resizes the image and adds it to `docs/evolution/README.md` under the current commit. Before you add an image, crop or blur private text: to-do items, emails, inbox rows, chat titles, other people's posts. Clean shots come from the preview (fixtures, no personal data).
+3. `npm run changelog` has rewritten `CHANGELOG.md` from git history.
+4. The work is committed on its branch. Push the branch if it already tracks `origin`.
 
 ## Commands and their gotchas
 

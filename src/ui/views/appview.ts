@@ -93,19 +93,24 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   bar.append(
     h('span', { style: { flex: '1' } }),
     iconButton('refresh', 'Reload', () => reload(app)),
-    iconButton(
-      'phone',
-      app.mobile ? 'Use desktop layout' : 'Use mobile layout',
-      async () => {
-        await updateSettings((s) => {
-          const x = s.apps.find((a) => a.id === app.id);
-          if (x) x.mobile = !x.mobile;
-        });
-        // Give the background a moment to swap network rules, then reload.
-        setTimeout(() => reload(app), 300);
-      },
-      app.mobile,
-    ),
+    // No phone layout for Gmail: its user agent stays as is (see background/dnr.ts).
+    ...(app.url.startsWith('https://mail.google.com/')
+      ? []
+      : [
+          iconButton(
+            'phone',
+            app.mobile ? 'Use desktop layout' : 'Use mobile layout',
+            async () => {
+              await updateSettings((s) => {
+                const x = s.apps.find((a) => a.id === app.id);
+                if (x) x.mobile = !x.mobile;
+              });
+              // Give the background a moment to swap network rules, then reload.
+              setTimeout(() => reload(app), 300);
+            },
+            app.mobile,
+          ),
+        ]),
     iconButton('window', 'Open as mini window', () => void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'window', side: ctx.settings.rail.side })),
     iconButton('external', 'Open in a tab', () => void ext.tabs.create({ url: app.url })),
   );

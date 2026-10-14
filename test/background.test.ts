@@ -42,6 +42,11 @@ test('mobile rule appears only when an app asks for it', () => {
   assert.deepEqual(side[0].condition.resourceTypes, ['main_frame', 'sub_frame']);
 });
 
+test('Gmail never gets the phone user agent (Google then asks you to sign in again)', () => {
+  const rules = buildRules([{ ...appFromCatalog('gmail'), mobile: true }, { ...appFromCatalog('x'), mobile: true }], EXT, [42]);
+  for (const r of rules.filter((r) => r.action.requestHeaders?.some((h) => h.header === 'user-agent'))) assert.deepEqual(r.condition.requestDomains, ['x.com']);
+});
+
 test('no apps still lets sidegig frame its own pages', () => {
   const rules = buildRules([], EXT);
   assert.equal(rules.length, 1);
