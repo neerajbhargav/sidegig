@@ -34,7 +34,7 @@ export function defaultSettings(): Settings {
       customCss: '',
     },
     apps: DEFAULT_PINNED.filter((id) => CATALOG.some((c) => c.id === id)).map(appFromCatalog),
-    stacks: { spaces: [] },
+    stacks: { spaces: [], activeSpace: '' },
     ai: {
       defaultApp: 'claude',
       selectionTemplate: '{text}\n\nSource: {title}\n{url}',

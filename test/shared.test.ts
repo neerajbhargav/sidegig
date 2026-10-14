@@ -159,3 +159,15 @@ test('v8: everyone moves to Clear once; the auto effect becomes what it showed',
   assert.equal(film.newtab.background.treatment, 'led');
   assert.deepEqual(pic.newtab.layout, {});
 });
+
+test('a saved layout, folder colours and active space survive loading', () => {
+  const layout = { clock: { x: 0, y: 0, w: 3, h: 2 } };
+  const s = mergeSettings(defaultSettings(), migrate({ version: SETTINGS_VERSION, newtab: { layout, folderTones: { f1: 'sage' } }, stacks: { activeSpace: 'space-1' } }));
+  assert.deepEqual(s.newtab.layout, layout);
+  assert.deepEqual(s.newtab.folderTones, { f1: 'sage' });
+  assert.equal(s.stacks.activeSpace, 'space-1');
+  // Junk in place of a map still falls back to the default.
+  const junk = mergeSettings(defaultSettings(), { version: SETTINGS_VERSION, newtab: { layout: 'x', folderTones: [1] } });
+  assert.deepEqual(junk.newtab.layout, {});
+  assert.deepEqual(junk.newtab.folderTones, {});
+});

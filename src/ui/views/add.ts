@@ -39,7 +39,7 @@ export async function addView(ctx: Ctx): Promise<HTMLElement> {
         type: 'button',
         onclick: async () => {
           const s = ctx.settings;
-          const parentId = s.stacks.activeSpace ?? s.stacks.spaces[0] ?? (await ext.bookmarks.getTree())[0].children?.[0]?.id ?? '1';
+          const parentId = s.stacks.activeSpace || s.stacks.spaces[0] || (await ext.bookmarks.getTree())[0].children?.[0]?.id || '1';
           await ext.bookmarks.create({ parentId, title: tab?.title || url, url });
           toast('Saved to stacks');
         },

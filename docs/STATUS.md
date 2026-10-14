@@ -1,6 +1,6 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-14 16:15 EDT (Claude Code session: Gmail in a frame fixed).
+Last updated: 2026-10-14 16:30 EDT (Claude Code session: Gmail in a frame fixed; saved layout now survives loading).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (every commit) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
@@ -18,6 +18,7 @@ Branch `wip/in-panel-apps`. Goal: open Gmail and X inside sidegig's own sidebar 
 - No `DIAGNOSTIC (temporary)` code is left. Commit `c2b0ed3` (already on origin) still carries a `_DumpException` diagnostic that another agent's commit swept in; the working tree removes it.
 - How it was found (repeatable loop, about 10 s per run): open `panel.html` in an Aside tab, set `chrome.storage.local.panelRequest = {appId:'gmail', ts:Date.now()}`, poll the `sidegig-app-gmail` frame's title and path. Gmail swallows its own errors (`_._DumpException`), so a temporary trap on that setter is how the first error was found.
 - Settings are at v10 (Gmail, X and the other `NO_FRAME` apps open in the panel).
+- **Saved new-tab layout, folder colours and active space now survive loading.** `mergeSettings` (`src/shared/storage.ts`) kept only keys present in the defaults, so the `{}` defaults of `newtab.layout` and `newtab.folderTones` always came back empty, and `stacks.activeSpace` (no default) was dropped; every unrelated save then wrote the empty value back. An empty-object default now marks a map whose keys are the user's (a stored object replaces it whole; readers such as `layout.ts resolve()` check each entry), and `activeSpace` defaults to `''` (readers use `||`). Not yet checked by hand in the real extension: arrange a widget, reload, see it stay.
 
 ## Open work, in priority order
 

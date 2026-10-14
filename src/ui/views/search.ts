@@ -57,7 +57,7 @@ function commands(ctx: Ctx): Result[] {
     c('Add this page to stacks', 'Bookmarks', 'bookmark', async () => {
       const tab = await activeTab(ctx);
       if (!tab?.url || !/^https?:/.test(tab.url)) return toast('This page can’t be bookmarked');
-      const parentId = s.stacks.activeSpace ?? s.stacks.spaces[0] ?? (await ext.bookmarks.getTree())[0].children?.[0]?.id ?? '1';
+      const parentId = s.stacks.activeSpace || s.stacks.spaces[0] || (await ext.bookmarks.getTree())[0].children?.[0]?.id || '1';
       await ext.bookmarks.create({ parentId, title: tab.title || tab.url, url: tab.url });
       toast('Added to stacks');
     }),
