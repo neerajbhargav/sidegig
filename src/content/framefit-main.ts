@@ -66,6 +66,28 @@
     }
   };
   addEventListener('error', (e) => report('error', `${e.message} @ ${e.filename}:${e.lineno}:${e.colno} ${e.error?.stack ?? ''}`), true);
+  // DIAGNOSTIC (temporary): Google's modules catch their own errors and pass them to
+  // _._DumpException; keep the first few in sessionStorage ("sidegig-dump").
+  try {
+    Object.defineProperty(Object.prototype, '_DumpException', {
+      configurable: true,
+      set(this: Record<string, unknown>, fn: (e: unknown) => unknown) {
+        const wrapped = function (this: unknown, e: unknown) {
+          try {
+            const list = JSON.parse(sessionStorage.getItem('sidegig-dump') || '[]') as string[];
+            if (list.length < 8) list.push(String((e as Error)?.stack ?? e).slice(0, 700));
+            sessionStorage.setItem('sidegig-dump', JSON.stringify(list));
+          } catch {
+            /* fine */
+          }
+          return fn.call(this, e);
+        };
+        Object.defineProperty(this, '_DumpException', { value: wrapped, writable: true, configurable: true, enumerable: true });
+      },
+    });
+  } catch {
+    /* fine */
+  }
   addEventListener('unhandledrejection', (e) => report('rejection', String(e.reason?.stack ?? e.reason)));
   for (const k of ['error', 'warn', 'log', 'info'] as const) {
     const orig = console[k].bind(console);

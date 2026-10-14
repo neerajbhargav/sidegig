@@ -13,7 +13,7 @@ The session is done only when all four hold:
 
 1. `docs/STATUS.md` "Where work stopped" and "Open work" describe the code as you leave it, with today's date on the "Last updated" line.
 2. Every visible change has a screenshot in `docs/evolution`: `npm run snap -- <image> "<caption>"`. It resizes the image and adds it to `docs/evolution/README.md` under the current commit. Before you add an image, crop or blur private text: to-do items, emails, inbox rows, chat titles, other people's posts. Clean shots come from the preview (fixtures, no personal data).
-3. `npm run changelog` has rewritten `CHANGELOG.md` from git history.
+3. `CHANGELOG.md` is current. The shared pre-commit hook (`.githooks/pre-commit`) rewrites it on every commit and reminds you about steps 1 and 2. If `git config core.hooksPath` is not `.githooks`, run `npm install` or that command once.
 4. The work is committed on its branch. Push the branch if it already tracks `origin`.
 
 ## Commands and their gotchas

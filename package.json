@@ -19,7 +19,8 @@
     "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name sidegig --bundle-identifier com.neerajbhargav.sidegig --macos-only --no-prompt --force",
     "figures": "node scripts/build-figures.mjs",
     "snap": "node scripts/evolution.mjs add",
-    "changelog": "node scripts/evolution.mjs changelog"
+    "changelog": "node scripts/evolution.mjs changelog",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.5",
