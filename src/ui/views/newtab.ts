@@ -377,14 +377,14 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     : null;
   const searchVoice = voiceButton(input);
   // Which controls belong to which side of the switch.
-  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai']] as const) if (el) el.dataset.for = side;
+  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai'], [ai?.pickers, 'ai']] as const) if (el) el.dataset.for = side;
   const greet = greetingLine(ctx);
   const box = h(
     'div',
     { class: 'nt-ask nt-card' },
     greet ? h('div', { class: 'ask-head' }, greet) : null,
     h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
-    h('div', { class: 'ask-bar' }, seg?.el ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
+    h('div', { class: 'ask-bar' }, seg?.el ?? null, ai?.pickers ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
   );
 
   // ------------------------------------------------ the grid
@@ -424,6 +424,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   if (wall) root.append(wall);
   const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 18));
   root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall, arrange), dash), cz.panel);
+  if (ai) root.append(ai.chat.view);
   root.dataset.mode = mode;
   document.documentElement.dataset.mode = mode;
 

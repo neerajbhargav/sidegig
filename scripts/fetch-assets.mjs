@@ -92,6 +92,15 @@ const ICONS = {
   resize: 'aspect_ratio',
   drag: 'drag_indicator',
   undo: 'undo',
+  send: 'arrow_upward',
+  stop: 'stop',
+  chevron: 'keyboard_arrow_down',
+  effort: 'psychology',
+  tools: 'handyman',
+  link: 'link',
+  attach: 'add_circle',
+  agent: 'smart_toy',
+  key: 'key',
 };
 
 async function fetchIcon(name) {
