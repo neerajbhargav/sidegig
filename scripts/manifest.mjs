@@ -46,6 +46,10 @@ export function manifestFor(target) {
     'declarativeNetRequestWithHostAccess',
     // Your own backgrounds and the printed wallpaper live on this device.
     'unlimitedStorage',
+    // Clear a site's service worker before showing it in the sidebar (Gmail, X).
+    'browsingData',
+    // Read a sidebar app's own same-site cookies to send them from sidegig's frames (see background/framecookies.ts).
+    'cookies',
   ];
   if (chromium) permissions.push('sidePanel', 'favicon', 'tabGroups', 'search');
   if (target === 'firefox') permissions.push('search');
@@ -74,6 +78,9 @@ export function manifestFor(target) {
     chrome_url_overrides: { newtab: 'newtab.html' },
     content_scripts: [
       { matches: ['<all_urls>'], js: ['rail.js'], run_at: 'document_start', all_frames: false },
+      // Only acts inside sidegig's own app frames (see src/content/framefit.ts).
+      { matches: ['https://*/*'], js: ['framefit-main.js'], run_at: 'document_start', all_frames: true, world: 'MAIN' },
+      { matches: ['https://*/*'], js: ['framefit.js'], run_at: 'document_start', all_frames: true },
       { matches: bridgeMatches(), js: ['bridge.js'], run_at: 'document_idle', all_frames: true },
     ],
     web_accessible_resources: war,

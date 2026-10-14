@@ -70,13 +70,13 @@ test('files: new setup files and old settings exports both import; junk is refus
   assert.throws(() => toBundle({ kind: 'sidegig-setup', format: 2, settings: {} }), /newer sidegig/);
 });
 
-test('an old setup is migrated when applied (Gmail moves to a side window)', () => {
+test('an old setup is migrated when applied (Gmail opens in the sidebar)', () => {
   const old = mine();
   old.version = 5;
   old.apps = old.apps.map((a) => ({ ...a, openIn: 'panel' }));
   const b = toBundle({ kind: 'sidegig-setup', format: 1, name: 'Old', parts: ['apps'], settings: old, local: {} });
   const { settings } = applySetup(defaultSettings(), b, ['apps']);
-  assert.equal(settings.apps.find((a) => a.id === 'gmail')?.openIn, 'window');
+  assert.equal(settings.apps.find((a) => a.id === 'gmail')?.openIn, 'panel');
   assert.equal(settings.apps.find((a) => a.id === 'gmail')?.mobile, false);
   assert.equal(settings.apps.find((a) => a.id === 'claude')?.openIn, 'panel');
 });

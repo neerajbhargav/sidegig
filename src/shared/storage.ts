@@ -54,6 +54,11 @@ export function migrate(stored: unknown): unknown {
   // everyone moves to it once. The wallpaper effect stops depending on the
   // colours: "auto" becomes whatever it showed, and changing colours no longer
   // changes the picture.
+  // v9 -> v10: Gmail, X and the rest load inside the sidebar (the frame helper lets
+  // them start there), so the side window is no longer their default.
+  if (v < 10 && Array.isArray(next.apps)) {
+    next.apps = (next.apps as Plain[]).map((a) => (a.openIn === 'window' && ['gmail', 'x', 'grok', 'instagram', 'messenger'].includes(String(a.catalogId ?? '')) ? { ...a, openIn: 'panel' } : a));
+  }
   // v8 -> v9: sites with a good phone layout use it in the narrow sidebar and
   // side window, so they fit.
   if (v < 9 && Array.isArray(next.apps)) {

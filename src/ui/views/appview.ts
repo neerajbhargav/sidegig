@@ -13,20 +13,53 @@ const SLEEP_MS = 30 * 60_000;
 const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number }>();
 export const framesHost = h('div', { class: 'frames', hidden: true });
 
+/** Frames that have said hello (the frame helper runs inside them), by app id. */
+const greeted = new Set<string>();
+addEventListener('message', (e) => {
+  const d = e.data as { ns?: string; type?: string } | null;
+  if (!d || d.ns !== 'sidegig-frame' || d.type !== 'hello') return;
+  for (const [id, f] of frames) if (f.el.contentWindow === e.source) greeted.add(id);
+});
+
 function frameFor(app: AppEntry): HTMLIFrameElement {
   let f = frames.get(app.id);
   if (!f) {
     const el = h('iframe', {
-      src: app.url,
+      // The frame helper (content/framefit.ts) only acts in frames with this name.
+      name: `sidegig-app-${app.id}`,
       title: app.name,
-      allow: 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen',
+      allow: 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; storage-access',
       referrerpolicy: 'strict-origin-when-cross-origin',
     });
     f = { el, lastShown: Date.now() };
     frames.set(app.id, f);
     framesHost.append(el);
+    // Sites with service workers (Gmail, X) answer from them with "don't frame me";
+    // clear the worker first, then load. Others load straight away.
+    if (NO_FRAME.has(app.catalogId ?? '')) void send({ type: 'clear-sw', url: app.url }).catch(() => undefined).finally(() => (el.src = app.url));
+    else el.src = app.url;
   }
   return f.el;
+}
+
+/** If the frame never checks in, it was refused: offer the side window. */
+function watchFrame(ctx: Ctx, app: AppEntry, host: HTMLElement) {
+  const started = Date.now();
+  const check = () => {
+    if (!host.isConnected || greeted.has(app.id)) return;
+    if (Date.now() - started < 12_000) return void setTimeout(check, 1000);
+    host.querySelector('.frame-help')?.remove();
+    host.append(
+      h(
+        'div',
+        { class: 'frame-help' },
+        h('span', {}, `${app.name} is taking a while.`),
+        h('button', { type: 'button', class: 'btn', onclick: () => (greeted.delete(app.id), frames.get(app.id)?.el.remove(), frames.delete(app.id), void ctx.go('app', { app: app.id })) }, 'Reload'),
+        h('button', { type: 'button', class: 'btn', onclick: () => void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'window', side: ctx.settings.rail.side }) }, 'Open in a side window'),
+      ),
+    );
+  };
+  setTimeout(check, 1000);
 }
 
 function reload(app: AppEntry) {
@@ -51,9 +84,9 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   const apps = ctx.settings.apps;
   const app = apps.find((a) => a.id === appId) ?? apps.find((a) => a.openIn === 'panel') ?? apps[0];
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
-  // Sites that refuse to run inside any extension page (Gmail, X, Meta's apps):
-  // Chrome keeps its sidebar to extension pages, so they get the docked side window.
-  if (NO_FRAME.has(app.catalogId ?? '')) return sideWindowCard(ctx, app);
+  // Only the in-page drawer can't host frame-hostile sites (its top is a web page,
+  // so they'd be signed out): those get the docked side window. The sidebar loads them.
+  if (NO_FRAME.has(app.catalogId ?? '') && ctx.kind !== 'panel') return sideWindowCard(ctx, app);
   const bar = h('div', { class: 'appbar' });
   // The rail (or the panel's own buttons list) already lists the apps: just name this one.
   bar.append(appFavicon(app, 'fav sm'), h('span', { class: 'app-title' }, app.name));
@@ -115,6 +148,7 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
     return wrap;
   }
   attach(app);
+  if (ctx.kind === 'panel') watchFrame(ctx, app, bar);
   return bar;
 }
 

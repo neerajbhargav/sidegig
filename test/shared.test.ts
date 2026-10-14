@@ -122,19 +122,19 @@ test('v5: the new tab has your own name and no decorative tag', () => {
   assert.equal(mine.newtab.tag, 'home');
 });
 
-test('v6 then v9: Gmail and X open in a docked side window, X in its phone layout; other apps stay put', () => {
+test('v6 to v10: Gmail and X end up in the sidebar, X in its phone layout; other apps stay put', () => {
   const m = mergeSettings(
     defaultSettings(),
     migrate({ version: 5, apps: [{ id: 'gmail', catalogId: 'gmail', openIn: 'panel' }, { id: 'x', catalogId: 'x', openIn: 'drawer' }, { id: 'claude', catalogId: 'claude', openIn: 'panel' }, { id: 'mine', openIn: 'panel' }] }),
   );
   assert.deepEqual(
     m.apps.map((a) => `${a.id}:${a.openIn}`),
-    ['gmail:window', 'x:window', 'claude:panel', 'mine:panel'],
+    ['gmail:panel', 'x:panel', 'claude:panel', 'mine:panel'],
   );
   assert.equal(m.apps.find((a) => a.id === 'x')?.mobile, true);
   assert.equal(m.apps.find((a) => a.id === 'gmail')?.mobile, false);
   assert.equal(m.apps.find((a) => a.id === 'claude')?.mobile ?? false, false);
-  assert.equal(appFromCatalog('gmail').openIn, 'window');
+  assert.equal(appFromCatalog('gmail').openIn, 'panel');
   assert.equal(appFromCatalog('claude').openIn, 'panel');
 });
 

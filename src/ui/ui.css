@@ -2489,3 +2489,6 @@ html[data-chat] .nt2 .nt-page, html[data-chat] .nt2 .gw-scrim { visibility: hidd
 /* Menus and popovers above every widget and opened card. */
 .shelf-menu { z-index: 95; }
 .nt-pop { z-index: 95; }
+.appbar { position: relative; }
+.frame-help { position: absolute; z-index: 5; left: 0.5rem; right: 0.5rem; top: calc(100% + 0.5rem); display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.625rem 0.75rem; border-radius: 0.75rem; background: var(--c-card, #fff); border: 1px solid var(--c-line, #ddd); font-size: 0.875rem; }
+.frame-help > span { flex: 1 1 10rem; }

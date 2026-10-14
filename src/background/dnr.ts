@@ -116,7 +116,8 @@ export async function applyRules(apps: AppEntry[]): Promise<void> {
   const host = new URL(ext.runtime.getURL('/')).hostname;
   const existing = await dnr.getSessionRules();
   await dnr.updateSessionRules({
-    removeRuleIds: existing.map((r: Rule) => r.id),
+    // Its own rules only (frame cookies use ids 500 and up).
+    removeRuleIds: existing.filter((r: Rule) => r.id < 500 || r.id >= 900).map((r: Rule) => r.id),
     addRules: buildRules(apps, host, sideTabs),
   });
 }
