@@ -5,7 +5,7 @@
 // - Arrange mode: drag to move (others slide out of the way), the size button
 //   cycles sizes, arrow keys move the focused widget, Reset puts everything back.
 // - On narrow or short windows the grid becomes one column you scroll.
-import { updateSettings } from '../../shared/storage.ts';
+import { onSettingsChanged, updateSettings } from '../../shared/storage.ts';
 import { COLS, ROWS, SIZES, nearestFree, nextSize, place, resizeAround, resolve, sizeClass, sizeName, type Box, type WidgetId } from '../../shared/layout.ts';
 import { h, ico, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
@@ -82,6 +82,16 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     // After the slide settles, so widgets are measured where they land.
     setTimeout(arranged, 280);
   };
+
+  // A layout saved somewhere else (Customize's Reset, another new tab) is drawn here
+  // too: main.ts doesn't rebuild the page for layout-only saves. Our own saves match.
+  const stop = onSettingsChanged((s) => {
+    if (!el.isConnected) return stop();
+    const next = resolve(s.newtab.layout, ids).boxes;
+    if (ids.every((id) => ['x', 'y', 'w', 'h'].every((k) => next[id]?.[k as keyof Box] === boxes[id]?.[k as keyof Box]))) return;
+    boxes = next;
+    layoutTo(boxes);
+  });
 
   /** Cell size and step in pixels, from the grid as drawn. */
   const metrics = () => {

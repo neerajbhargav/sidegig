@@ -1,6 +1,6 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-14 16:30 EDT (Claude Code session: Gmail in a frame fixed; saved layout now survives loading).
+Last updated: 2026-10-14 16:45 EDT (Claude Code session: Gmail in a frame fixed; saved layout survives loading; Reset layout redraws).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (every commit) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
@@ -19,6 +19,7 @@ Branch `wip/in-panel-apps`. Goal: open Gmail and X inside sidegig's own sidebar 
 - How it was found (repeatable loop, about 10 s per run): open `panel.html` in an Aside tab, set `chrome.storage.local.panelRequest = {appId:'gmail', ts:Date.now()}`, poll the `sidegig-app-gmail` frame's title and path. Gmail swallows its own errors (`_._DumpException`), so a temporary trap on that setter is how the first error was found.
 - Settings are at v10 (Gmail, X and the other `NO_FRAME` apps open in the panel).
 - **Saved new-tab layout, folder colours and active space now survive loading.** `mergeSettings` (`src/shared/storage.ts`) kept only keys present in the defaults, so the `{}` defaults of `newtab.layout` and `newtab.folderTones` always came back empty, and `stacks.activeSpace` (no default) was dropped; every unrelated save then wrote the empty value back. An empty-object default now marks a map whose keys are the user's (a stored object replaces it whole; readers such as `layout.ts resolve()` check each entry), and `activeSpace` defaults to `''` (readers use `||`). Not yet checked by hand in the real extension: arrange a widget, reload, see it stay.
+- **Customize › Reset layout now redraws the grid.** It saved `{}` but `main.ts` skips rebuilding the page for layout-only saves (it assumes the grid made them), so nothing moved. The grid now follows layout saves made anywhere (`onSettingsChanged` in `src/ui/views/ntgrid.ts`, which also covers a second open new tab); its own saves compare equal and do nothing. No node seam exists for this (UI wiring); it was checked in the preview: a page with fixture settings where the clock sits at x=4,y=6, click Customize › Layout › Reset layout, the clock returns to 1,1; arrange-mode moves still stick.
 
 ## Open work, in priority order
 
