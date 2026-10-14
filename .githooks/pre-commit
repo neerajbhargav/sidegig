@@ -1,14 +1,8 @@
 #!/bin/sh
-# sidegig: keep the project history fresh on every commit, whichever agent commits.
+# sidegig: remind whoever commits to keep the project history fresh (never blocks).
 # Enabled by `git config core.hooksPath .githooks` (npm install does this via "prepare").
-command -v node >/dev/null 2>&1 || PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-
-# 1. CHANGELOG.md lists every earlier commit.
-if node scripts/evolution.mjs changelog >/dev/null 2>&1; then
-  git add CHANGELOG.md
-fi
-
-# 2. Reminders (never block the commit).
+# CHANGELOG.md is regenerated on main after a merge (npm run changelog), not per
+# commit: a per-branch copy is always one commit behind and conflicts on every merge.
 staged=$(git diff --cached --name-only)
 if echo "$staged" | grep -qE '^src/(ui|content|options)/.*\.(ts|css|html)$' && ! echo "$staged" | grep -q '^docs/evolution/'; then
   echo "sidegig: this commit changes what users see. Add a screenshot: npm run snap -- <image> \"<caption>\"" >&2

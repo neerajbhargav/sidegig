@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-14 17:00 EDT (Claude Code session: Gmail in a frame fixed; saved layout survives loading; Reset layout redraws; removing a widget no longer freezes the top bar).
 Update this file when you stop work. Keep "Where work stopped" true.
-History: [CHANGELOG.md](../CHANGELOG.md) (every commit) and [evolution](evolution/README.md) (screenshots of every milestone).
+History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
