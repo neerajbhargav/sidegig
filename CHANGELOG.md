@@ -5,6 +5,8 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-14
 
+- `e5f0059` AGENTS.md: do not pin the test count
+- `d354617` Project history: milestone screenshots, changelog, and a snap command
 - `7d83c55` WIP: run Gmail and X inside sidegig frames; agent guide and status handoff
 - `11c528c` Sidebar apps that fit, Arc-style rail plates, one rail per page, nothing over what you click
 - `c3d1162` Steady rendering, and an AI chat built into the new tab
