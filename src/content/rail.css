@@ -161,9 +161,6 @@ button.item.add:hover { color: var(--m-fg); }
 :host([data-mode="docked"]) .hint { display: none; }
 
 /* Black brand logos (ChatGPT, X, GitHub, Notion) turn white on dark rails. */
-:host([data-scheme="dark"]) img.brandmark-dark { filter: invert(1); }
-@media (prefers-color-scheme: dark) { :host([data-scheme="system"]) img.brandmark-dark { filter: invert(1); } }
-img.brandmark { padding: 1px; box-sizing: border-box; }
 
 /* Icons: the sites' own, fitted to the same size (measured by the background); bundled
    logos only when the browser has none, in the brand's colour. */
