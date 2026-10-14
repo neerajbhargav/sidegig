@@ -5,6 +5,7 @@ sidegig is a free, open-source (GPL-3.0) browser extension. It adds an Opera-sty
 ## Start of every session
 
 1. Read `docs/STATUS.md`. It says where work stopped, the open work in priority order, and the decisions to keep.
+   When STATUS.md does not explain why something was built a certain way, what the owner asked for, or what was already tried, read `context/README.md`. It holds the full transcript of the build session (local only, never commit it).
 2. Run `git status` and `git branch`. Several agents (Aside, Claude Code, Codex, Cursor, Gemini, Hermes) can work in this folder. Continue on the current work branch, or make a new branch for a new task. Merge to `main` and push only when the owner asks.
 
 ## End of every session: keep the folder fresh

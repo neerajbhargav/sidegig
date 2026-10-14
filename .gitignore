@@ -6,3 +6,6 @@ safari-xcode/
 
 # Local agent memory files (Aside Projects, tools)
 /MEMORY.md
+
+# Full agent session exports (personal data, large): local only
+/context/
