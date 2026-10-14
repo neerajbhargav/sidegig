@@ -17,17 +17,8 @@ export interface AiProvider {
   appId?: string;
   /** Built into the browser: no ask URL and no page we can type into, so the question goes via the clipboard. */
   native?: boolean;
-  /** Where your chats with it live. */
-  chats?: string;
+  /** Opens a fresh chat. */
   newChat?: string;
-  /** Matches one chat's URL in history. */
-  chat?: RegExp;
-  /** History search text that finds those chats. */
-  historyText?: string;
-  /** Strip the site name from a chat's title. */
-  strip?: RegExp;
-  /** Titles that say nothing about the chat ("Google Gemini"). */
-  generic?: RegExp;
 }
 
 const enc = encodeURIComponent;
@@ -39,7 +30,6 @@ export const PROVIDERS: Record<string, AiProvider> = {
     home: asidePage('newtab.html'),
     native: true,
     newChat: asidePage('main.html#/u/0/tasks/new'),
-    chats: asidePage('main.html#/u/0/tasks'),
   },
   claude: {
     id: 'claude',
@@ -47,11 +37,6 @@ export const PROVIDERS: Record<string, AiProvider> = {
     home: 'https://claude.ai/new',
     ask: (q) => `https://claude.ai/new?q=${enc(q)}`,
     appId: 'claude',
-    chats: 'https://claude.ai/recents',
-    chat: /^https:\/\/claude\.ai\/chat\/[0-9a-f-]{36}/,
-    historyText: 'claude.ai/chat',
-    strip: /\s*[-–|]\s*Claude\s*$/,
-    generic: /^(Claude|New chat)$/i,
   },
   chatgpt: {
     id: 'chatgpt',
@@ -59,20 +44,12 @@ export const PROVIDERS: Record<string, AiProvider> = {
     home: 'https://chatgpt.com/',
     ask: (q) => `https://chatgpt.com/?q=${enc(q)}`,
     appId: 'chatgpt',
-    chat: /^https:\/\/chatgpt\.com\/(g\/[^/]+\/)?c\/[\w-]+/,
-    historyText: 'chatgpt.com/c/',
-    strip: /^ChatGPT\s*[-–|:]\s*|\s*[-–|]\s*ChatGPT\s*$/,
-    generic: /^ChatGPT$/i,
   },
   gemini: {
     id: 'gemini',
     name: 'Gemini',
     home: 'https://gemini.google.com/app',
     appId: 'gemini',
-    chat: /^https:\/\/gemini\.google\.com\/(u\/\d+\/)?app\/[0-9a-f]{8,}/,
-    historyText: 'gemini.google.com/app/',
-    strip: /\s*[-–|]\s*(Google\s+)?Gemini\s*$/,
-    generic: /^(Google\s+)?Gemini$/i,
   },
   perplexity: {
     id: 'perplexity',
@@ -80,28 +57,18 @@ export const PROVIDERS: Record<string, AiProvider> = {
     home: 'https://www.perplexity.ai/',
     ask: (q) => `https://www.perplexity.ai/search?q=${enc(q)}`,
     appId: 'perplexity',
-    chat: /^https:\/\/www\.perplexity\.ai\/search\/[\w.-]+/,
-    historyText: 'perplexity.ai/search/',
-    strip: /\s*[-–|]\s*Perplexity\s*$/,
   },
   aimode: {
     id: 'aimode',
     name: 'AI Mode',
     home: 'https://www.google.com/search?udm=50',
     ask: (q) => `https://www.google.com/search?udm=50&q=${enc(q)}`,
-    chat: /^https:\/\/www\.google\.[a-z.]+\/search\?(?=.*\budm=50\b).*\bq=/,
-    historyText: 'udm=50',
-    strip: /\s*[-–]\s*Google (Search|AI Mode)\s*$/,
   },
   copilot: {
     id: 'copilot',
     name: 'Copilot',
     home: 'https://copilot.microsoft.com/',
     ask: (q) => `https://copilot.microsoft.com/?q=${enc(q)}`,
-    chat: /^https:\/\/copilot\.microsoft\.com\/chats\/[\w-]+/,
-    historyText: 'copilot.microsoft.com/chats',
-    strip: /\s*[-–|]\s*(Microsoft\s+)?Copilot.*$/,
-    generic: /^(Microsoft\s+)?Copilot/i,
   },
   grok: {
     id: 'grok',
@@ -109,27 +76,17 @@ export const PROVIDERS: Record<string, AiProvider> = {
     home: 'https://grok.com/',
     ask: (q) => `https://grok.com/?q=${enc(q)}`,
     appId: 'grok',
-    chat: /^https:\/\/grok\.com\/c\/[\w-]+/,
-    historyText: 'grok.com/c/',
-    strip: /\s*[-–|]\s*Grok\s*$/,
-    generic: /^Grok$/i,
   },
   deepseek: {
     id: 'deepseek',
     name: 'DeepSeek',
     home: 'https://chat.deepseek.com/',
-    chat: /^https:\/\/chat\.deepseek\.com\/a?\/?chat\/s\/[\w-]+/,
-    strip: /\s*[-–|]\s*DeepSeek\s*$/,
-    generic: /^DeepSeek/i,
   },
   lechat: {
     id: 'lechat',
     name: 'Le Chat',
     home: 'https://chat.mistral.ai/chat',
     ask: (q) => `https://chat.mistral.ai/chat?q=${enc(q)}`,
-    chat: /^https:\/\/chat\.mistral\.ai\/chat\/[\w-]{8,}/,
-    strip: /\s*[-–|]\s*Le Chat\s*$/,
-    generic: /^Le Chat/i,
   },
   leo: {
     id: 'leo',
@@ -185,39 +142,4 @@ export function providerOrder(native: string | undefined, preferred: string | un
   const base = ['claude', 'chatgpt', 'gemini', 'perplexity', 'aimode', 'grok', 'copilot', 'deepseek', 'lechat'];
   const ids = [native, preferred, ...base].filter((x): x is string => !!x && !!PROVIDERS[x]);
   return [...new Set(ids)].map((id) => PROVIDERS[id]);
-}
-
-export interface Chat {
-  provider: string;
-  title: string;
-  url: string;
-  at: number;
-}
-
-/** Turn history entries into a clean, de-duplicated list of chats, newest first. */
-export function chatsFromHistory(items: { url?: string; title?: string; lastVisitTime?: number }[], limit = 30): Chat[] {
-  const seen = new Set<string>();
-  const out: Chat[] = [];
-  for (const it of [...items].sort((a, b) => (b.lastVisitTime ?? 0) - (a.lastVisitTime ?? 0))) {
-    const url = it.url ?? '';
-    const p = Object.values(PROVIDERS).find((x) => x.chat?.test(url));
-    if (!p) continue;
-    const key = p.id === 'aimode' ? `aimode:${new URL(url).searchParams.get('q') ?? url}` : url.replace(/[?#].*$/, '');
-    if (seen.has(key)) continue;
-    let title = (it.title ?? '').trim();
-    if (p.strip) title = title.replace(p.strip, '').trim();
-    if (p.generic?.test(title)) title = '';
-    if (!title && p.id === 'aimode') title = new URL(url).searchParams.get('q') ?? '';
-    if (!title) continue;
-    seen.add(key);
-    out.push({ provider: p.id, title, url, at: it.lastVisitTime ?? 0 });
-    if (out.length >= limit) break;
-  }
-  return out;
-}
-
-/** A question about today's edition, ready to paste into any assistant. */
-export function editionPrompt(items: { title: string; url: string; kind: string; by?: string }[], ask = 'Give me a two-minute briefing on these, then tell me which one to start with and why.'): string {
-  const lines = items.slice(0, 14).map((i, n) => `${n + 1}. [${i.kind}] ${i.title}${i.by ? ` (${i.by})` : ''}: ${i.url}`);
-  return `${ask}\n\n${lines.join('\n')}`;
 }

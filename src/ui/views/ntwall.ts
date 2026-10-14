@@ -327,8 +327,6 @@ export function effectFor(bg: NtBackground, look = document.documentElement.data
   if (bg.kind === 'collection' || bg.kind === 'upload' || bg.kind === 'url') return 'film';
   return 'print';
 }
-/** Kept for callers that only ask "is this printed?". */
-export const printsHere = (bg: NtBackground) => effectFor(bg) === 'print';
 
 /** Apply a palette as the "From picture" theme, and remember it so the next tab paints in it. */
 export function applyPalette(pal: Palette) {

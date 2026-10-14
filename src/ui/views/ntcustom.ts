@@ -6,7 +6,7 @@ import { readPool, refreshPool, listAlbums, albumImage, saveAlbum, removeAlbum }
 import type { NtBackground, NtLook, Settings } from '../../shared/types.ts';
 import { h, ico, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
-import { seg, toggle } from './quick.ts';
+import { seg } from './quick.ts';
 import { findPlace } from './ntwidgets.ts';
 import { CAL_APPS, type CalApp } from '../../shared/ntcal.ts';
 import { icon } from '../../shared/icons.ts';
@@ -576,26 +576,6 @@ function coloursTab(ctx: Ctx): HTMLElement {
 }
 
 // ---------------------------------------------------------------- widgets
-
-type WidgetKey = keyof Settings['newtab']['widgets'];
-const SHOW: [string, string, (s: Settings) => boolean, (s: Settings, v: boolean) => void][] = [
-  ['Greeting', 'Over the search box', (s) => s.newtab.widgets.greeting, (s, v) => void (s.newtab.widgets.greeting = v)],
-  ['Clock and date', 'Top left', (s) => s.newtab.clock, (s, v) => void (s.newtab.clock = v)],
-  ...(
-    [
-      ['weather', 'Weather', 'Now and the next four days'],
-      ['calendar', 'Calendar', 'This month; opens your calendar app'],
-      ['pomodoro', 'Pomodoro', 'Focus and break timer'],
-    ] as [WidgetKey, string, string][]
-  ).map(([k, t, m]) => [t, m, (s: Settings) => s.newtab.widgets[k], (s: Settings, v: boolean) => void (s.newtab.widgets[k] = v)] as [string, string, (s: Settings) => boolean, (s: Settings, v: boolean) => void]),
-  ['To-do', 'Done tasks clear each morning', (s) => s.newtab.todo, (s, v) => void (s.newtab.todo = v)],
-  ['Notes', 'Sticky notes, kept on this device', (s) => s.newtab.widgets.notes, (s, v) => void (s.newtab.widgets.notes = v)],
-  ['Bookmarks', 'Under the search box, with folders', (s) => s.newtab.widgets.bookmarks, (s, v) => void (s.newtab.widgets.bookmarks = v)],
-  ['For you', 'Your edition under the bookmarks', (s) => s.newtab.widgets.feed, (s, v) => void (s.newtab.widgets.feed = v)],
-  ['Search and AI switch', 'Ask any assistant from the same box', (s) => s.newtab.aiTab, (s, v) => void (s.newtab.aiTab = v)],
-];
-
-const row = (title: string, meta: string | null, control: Node) => h('div', { class: 'cz-opt' }, h('div', { class: 'cz-opt-t' }, h('b', {}, title), meta ? h('span', {}, meta) : null), control);
 
 function weatherPlace(ctx: Ctx): HTMLElement {
   const wx = ctx.settings.newtab.weather;

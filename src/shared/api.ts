@@ -14,9 +14,6 @@ export const features = {
   get sidePanel(): boolean {
     return !!(ext as any)?.sidePanel?.open;
   },
-  get sidebarAction(): boolean {
-    return !!(ext as any)?.sidebarAction?.open || !!g.opr?.sidebarAction;
-  },
   get tabGroups(): boolean {
     return !!(ext as any)?.tabGroups && !!(ext as any)?.tabs?.group;
   },

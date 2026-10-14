@@ -30,12 +30,8 @@ const OURS = (() => {
   }
 })();
 const framedByUs = window.top !== window && window.name.startsWith('sidegig-app') && !!OURS && ANCESTOR === OURS;
-/** What the helper saw and did, readable from sidegig's own scripts (same isolated world). */
-const state = { framedByUs, ancestor: ANCESTOR, name: window.name, scripts: 0, rewrote: 0, late: 0, shim: false };
-(globalThis as unknown as { __sidegigFrame: typeof state }).__sidegigFrame = state;
 
 function start() {
-  document.addEventListener('sidegig-shim-ready', () => (state.shim = true));
   // Same-site cookies the page may read but the browser hides inside a frame (X's ct0).
   void ext.runtime
     .sendMessage({ type: 'frame-cookies', url: location.href })
@@ -50,14 +46,12 @@ function start() {
     if (!(n instanceof HTMLScriptElement) || n.src) return;
     const t = n.textContent ?? '';
     if (checked.get(n) === t.length) return;
-    if (!checked.has(n)) state.scripts++;
     checked.set(n, t.length);
     if (!/\btop\b/.test(t)) return;
     const next = TOP_REWRITE_HOSTS.has(location.hostname) ? rewriteTopRefs(rewriteFrameChecks(t)) : rewriteFrameChecks(t);
     if (next !== t) {
       n.textContent = next;
       checked.set(n, next.length);
-      state.rewrote++;
     }
   };
   const mo = new MutationObserver((records) => {
@@ -72,7 +66,7 @@ function start() {
   addEventListener('DOMContentLoaded', () => setTimeout(() => mo.disconnect(), 4000), { once: true });
   const hello = () => {
     try {
-      window.parent.postMessage({ ns: 'sidegig-frame', type: 'hello', url: location.href, title: document.title, scripts: state.scripts, rewrote: state.rewrote, shim: state.shim }, '*');
+      window.parent.postMessage({ ns: 'sidegig-frame', type: 'hello', url: location.href, title: document.title }, '*');
     } catch {
       /* fine */
     }

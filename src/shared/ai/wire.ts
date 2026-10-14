@@ -2,7 +2,7 @@
 // completions (OpenAI, OpenRouter, Ollama, LM Studio and most others),
 // Anthropic messages, and Gemini. Each side is pure: build a request body,
 // decode streamed events into Deltas. Written from the public API docs.
-import type { Delta, Effort, Msg, ToolCall, TurnRequest } from './types.ts';
+import type { Delta, Effort, ToolCall, TurnRequest } from './types.ts';
 import type { SseEvent } from './sse.ts';
 
 let n = 0;
@@ -288,6 +288,3 @@ export function geminiDecoder(): Decoder {
     },
   };
 }
-
-/** Assistant text that isn't empty, for the next request. */
-export const visible = (m: Msg) => m.content.trim().length > 0 || (m.calls?.length ?? 0) > 0;

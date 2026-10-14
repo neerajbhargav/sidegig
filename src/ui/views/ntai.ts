@@ -1,12 +1,10 @@
-// The new tab's AI side: one box to ask any assistant, your browser's own AI
-// first, and your recent chats from every assistant underneath (read from your
-// local browser history; nothing leaves the device).
+// The new tab's AI side: one box to ask the built-in assistant or any AI site,
+// your browser's own AI first, with your recent sidegig chats underneath.
 import { ext, uid } from '../../shared/api.ts';
-import { getLocal, setLocal } from '../../shared/storage.ts';
+import { setLocal } from '../../shared/storage.ts';
 import { appFromCatalog } from '../../shared/defaults.ts';
 import { catalogById } from '../../shared/catalog.ts';
 import type { AppEntry, PendingPrompt } from '../../shared/types.ts';
-import type { Edition } from '../../shared/edition/types.ts';
 import { providerOrder, type AiProvider } from '../../shared/browserai.ts';
 import { detectBrowser } from '../browser.ts';
 import { voiceButton } from './ntwidgets.ts';

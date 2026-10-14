@@ -7,7 +7,7 @@
 //      narrowed with a tagged stylesheet rule;
 //   3. the page is watched for new or changed fixed elements.
 // Everything is undone when the rail undocks, goes fullscreen or is removed.
-import { intrudes, needsFix, firstGuess, correct, type DockSide, type Box } from '../shared/dockmath.ts';
+import { needsFix, firstGuess, correct, type DockSide, type Box } from '../shared/dockmath.ts';
 
 const ATTR = 'data-sidegig-dock';
 

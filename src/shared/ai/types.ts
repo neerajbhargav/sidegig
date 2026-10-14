@@ -19,11 +19,6 @@ export interface ModelInfo {
 
 /** A model is stored as "provider:modelId". */
 export const modelKey = (m: Pick<ModelInfo, 'provider' | 'id'>) => `${m.provider}:${m.id}`;
-export function parseModelKey(key: string): { provider: ProviderId; id: string } | null {
-  const i = key.indexOf(':');
-  if (i < 1) return null;
-  return { provider: key.slice(0, i) as ProviderId, id: key.slice(i + 1) };
-}
 
 export interface ToolCall {
   id: string;
