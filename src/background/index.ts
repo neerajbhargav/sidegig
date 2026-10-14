@@ -10,6 +10,8 @@ import { badgeLabel } from '../shared/badge.ts';
 import type { AppEntry, PendingPrompt, Settings } from '../shared/types.ts';
 import type { ToBackground, ToContent } from '../shared/messages.ts';
 import { applyRules, setSideTabs } from './dnr.ts';
+import { pageCookies, scheduleFrameCookies, watchFrameCookies } from './framecookies.ts';
+watchFrameCookies();
 import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
@@ -38,7 +40,7 @@ async function sync(): Promise<void> {
   cache = await loadSettings();
   void checkFavicons(cache.apps);
   await setSideTabs(await getLocal<number[]>('sideTabs', [])).catch(() => undefined);
-  await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
+  await Promise.allSettled([applyRules(cache.apps).finally(() => scheduleFrameCookies(cache?.apps)), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
   setupActionBehavior();
   setupLinkRules();
@@ -251,6 +253,31 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       // The caller (panel / new tab) opens the AI app itself; we just prepare the prompt.
       void ext.tabs.query({ active: true, lastFocusedWindow: true }).then(([t]) => t && askFromBackground(t, undefined, false));
       return false;
+    case 'frame-cookies':
+      void pageCookies(msg.url).then(sendResponse, () => sendResponse(''));
+      return true;
+    case 'clear-sw': {
+      // A site's service worker answers with "don't frame me" headers that network
+      // rules can't reach; remove it before the sidebar loads the site (it comes
+      // back the next time you use the site in a tab).
+      let origin = '';
+      try {
+        origin = new URL(msg.url).origin;
+      } catch {
+        sendResponse(false);
+        return false;
+      }
+      const bd = (ext as any).browsingData;
+      if (!bd?.remove || !/^https:/.test(origin)) {
+        sendResponse(false);
+        return false;
+      }
+      bd.remove({ origins: [origin] }, { serviceWorkers: true }).then(
+        () => sendResponse(true),
+        () => sendResponse(false),
+      );
+      return true;
+    }
     case 'tab-info': {
       const wid = sender.tab?.windowId;
       if (wid === undefined) {

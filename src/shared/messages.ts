@@ -3,6 +3,8 @@ import type { OpenIn, Side } from './types.ts';
 /** Messages sent to the background service worker. */
 export type ToBackground =
   | { type: 'open-app'; appId: string; url: string; openIn: OpenIn; side: Side }
+  | { type: 'clear-sw'; url: string }
+  | { type: 'frame-cookies'; url: string }
   | { type: 'ask-ai'; appId: string; url: string; openIn: OpenIn; side: Side; prompt: string; autoSend: boolean }
   | { type: 'badge'; host: string; count: number }
   | { type: 'ai-claim'; host: string }

@@ -14,10 +14,10 @@ export interface CatalogApp {
 }
 
 /**
- * Sites that refuse to run inside another page: they detect the frame and
- * break out, or show an error (Gmail, X, Meta's apps). In the browser's
- * sidebar these load as the sidebar's own page instead (like Opera's panels),
- * signed in and complete.
+ * Sites that refuse to run inside another page: they detect the frame and break
+ * out (Gmail), or a service worker answers with "don't frame me" (Gmail, X).
+ * In the sidebar their worker is cleared first and the frame helper lets them
+ * start; in the in-page drawer they get a docked side window.
  */
 export const NO_FRAME = new Set(['gmail', 'x', 'grok', 'instagram', 'messenger']);
 

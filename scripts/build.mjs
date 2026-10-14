@@ -31,6 +31,8 @@ async function loadEsbuild() {
 const entries = {
   background: 'src/background/index.ts',
   rail: 'src/content/rail.ts',
+  framefit: 'src/content/framefit.ts',
+  'framefit-main': 'src/content/framefit-main.ts',
   bridge: 'src/content/bridge.ts',
   ui: 'src/ui/main.ts',
   options: 'src/options/main.ts',
