@@ -85,7 +85,4 @@ import { rewriteFrameChecks, rewriteTopRefs, TOP_REWRITE_HOSTS } from '../shared
   } catch {
     /* fine */
   }
-  const ready = () => document.dispatchEvent(new Event('sidegig-shim-ready'));
-  ready();
-  document.addEventListener('DOMContentLoaded', ready, { once: true });
 })();

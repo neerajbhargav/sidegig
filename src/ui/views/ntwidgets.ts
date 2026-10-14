@@ -1,23 +1,14 @@
-// Everyday tools for the new tab, in sidegig's own look: greeting, analog or
-// digital clock, weather, to-do list, Google apps launcher, your own
-// shortcuts, voice typing and a wallpaper.
+// Everyday tools for the new tab: the analog clock, the weather place lookup,
+// the to-do list, the Google apps launcher and voice typing.
 import { uid } from '../../shared/api.ts';
-import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
-import { greetingFor, dailyReset, dayKey, sortTodos, weatherLabel, weatherUrl, parseWeather, type Todo, type WeatherNow } from '../../shared/ntdata.ts';
+import { getLocal, setLocal } from '../../shared/storage.ts';
+import { dailyReset, dayKey, sortTodos, type Todo } from '../../shared/ntdata.ts';
 import { h, ico, iconButton, favicon, toast } from '../dom.ts';
 import { SPIKE } from '../figures/spike.ts';
 import { rollText } from './ntdash.ts';
 import { figureSvg } from '../figures/iso.ts';
 import type { Ctx } from '../ctx.ts';
 import { play } from '../sound.ts';
-
-// ---------------------------------------------------------------- greeting
-
-export function greetingEl(ctx: Ctx): HTMLElement | null {
-  const n = ctx.settings.newtab;
-  const text = n.message.trim() || `${greetingFor(new Date().getHours())}${n.name.trim() ? `, ${n.name.trim()}` : ''}`;
-  return h('div', { class: 'nt-greet' }, text);
-}
 
 // ---------------------------------------------------------------- analog clock
 
@@ -56,40 +47,6 @@ export function analogClockEl(): HTMLElement {
 }
 
 // ---------------------------------------------------------------- weather
-
-async function loadWeather(ctx: Ctx): Promise<WeatherNow | null> {
-  const w = ctx.settings.newtab.weather;
-  if (!w.enabled || !w.place) return null;
-  const cached = await getLocal<WeatherNow | null>('ntWeather', null);
-  if (cached && cached.place === w.place && cached.units === w.units && Date.now() - cached.at < 30 * 60_000) return cached;
-  try {
-    const r = await fetch(weatherUrl(w.lat, w.lon, w.units), { credentials: 'omit' });
-    const now = parseWeather(await r.json(), w.units, w.place);
-    if (now) await setLocal('ntWeather', now);
-    return now ?? cached;
-  } catch {
-    return cached;
-  }
-}
-
-export function weatherEl(ctx: Ctx): HTMLElement | null {
-  if (!ctx.settings.newtab.weather.enabled || !ctx.settings.newtab.weather.place) return null;
-  const el = h('div', { class: 'nt-weather', 'aria-live': 'polite' });
-  void loadWeather(ctx).then((w) => {
-    if (!w) return void el.remove();
-    const { label, icon } = weatherLabel(w.code, w.isDay);
-    const u = w.units === 'f' ? '°F' : '°C';
-    el.replaceChildren(
-      h('span', { class: 'wx-icon' }, ico(icon, 20)),
-      h('span', { class: 'wx-temp' }, `${w.temp}°`),
-      h('span', { class: 'wx-label' }, label),
-      h('span', { class: 'wx-meta' }, `Feels ${w.feels}°, H ${w.hi}° L ${w.lo}°, ${w.humidity}% humidity`),
-      h('span', { class: 'wx-place' }, ico('place', 14), w.place),
-    );
-    el.title = `${w.temp}${u}, ${label}. Feels like ${w.feels}${u}. High ${w.hi}${u}, low ${w.lo}${u}. Humidity ${w.humidity}%. ${w.place}.`;
-  });
-  return el;
-}
 
 /** Look up a place for weather (Open-Meteo geocoding, free, no key). */
 export async function findPlace(q: string): Promise<{ name: string; lat: number; lon: number }[]> {
@@ -220,43 +177,6 @@ export function launcherEl(): HTMLElement {
   addEventListener('click', (e) => !pop.contains(e.target as Node) && close());
   addEventListener('keydown', (e) => e.key === 'Escape' && close());
   return h('div', { class: 'nt-pop-anchor' }, btn, pop);
-}
-
-// ---------------------------------------------------------------- add a shortcut
-
-export function addKey(ctx: Ctx): HTMLElement {
-  const name = h('input', { class: 'text-input', placeholder: 'Name', 'aria-label': 'Name' });
-  const url = h('input', { class: 'text-input', placeholder: 'https://…', 'aria-label': 'Address' });
-  const form = h('form', { class: 'nt-pop nt-addform', hidden: true }, h('div', { class: 'nt-pop-title' }, 'Add a shortcut'), name, url, h('button', { class: 'btn primary', type: 'submit' }, 'Add'));
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    let u: URL;
-    try {
-      u = new URL(/^https?:\/\//.test(url.value.trim()) ? url.value.trim() : `https://${url.value.trim()}`);
-    } catch {
-      return toast('That address doesn’t look right');
-    }
-    const label = name.value.trim() || u.hostname.replace(/^www\./, '');
-    void updateSettings((s) => void s.apps.push({ id: uid('app_'), name: label, url: u.toString(), openIn: 'tab', mobile: false, badge: false }));
-    toast(`Added ${label}`);
-  });
-  const btn = h(
-    'button',
-    {
-      class: 'nt-key nt-key-add',
-      type: 'button',
-      title: 'Add a shortcut',
-      onclick: (e: MouseEvent) => {
-        e.stopPropagation();
-        form.hidden = !form.hidden;
-        if (!form.hidden) name.focus();
-      },
-    },
-    h('span', { class: 'nt-cap' }, ico('plus', 22)),
-    h('span', { class: 'nt-label' }, 'Add'),
-  );
-  addEventListener('click', (e) => !form.contains(e.target as Node) && !btn.contains(e.target as Node) && (form.hidden = true));
-  return h('div', { class: 'nt-pop-anchor' }, btn, form);
 }
 
 // ---------------------------------------------------------------- voice typing

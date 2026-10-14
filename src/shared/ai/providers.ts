@@ -14,8 +14,6 @@ export interface Keys {
   openrouter?: string;
   /** Base address of a model server on this computer (Ollama, LM Studio). */
   local?: string;
-  /** Bearer tokens for MCP servers, by server id. */
-  mcp?: Record<string, string>;
   /** "1" when you've turned on your ChatGPT subscription (through the bridge). */
   codex?: string;
 }

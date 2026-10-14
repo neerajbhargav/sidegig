@@ -1,10 +1,9 @@
 // Home: apps, bookmark stacks (Dia/Arc style), tabs in this window, workspaces.
 import { ext, features } from '../../shared/api.ts';
 import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
-import { badgeLabel } from '../../shared/badge.ts';
 import type { Workspace } from '../../shared/types.ts';
-import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys, appFavicon } from '../dom.ts';
-import { type Ctx, openApp, openUrl, switchTo, activeTab, send, openOptions } from '../ctx.ts';
+import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys } from '../dom.ts';
+import { type Ctx, openUrl, switchTo, activeTab, send } from '../ctx.ts';
 
 type Node = chrome.bookmarks.BookmarkTreeNode;
 
@@ -81,23 +80,6 @@ export function stackEl(ctx: Ctx, folder: Node): HTMLElement {
     if (openStacks.has(folder.id)) setOpen(true);
   });
   return wrap;
-}
-
-export function appTiles(ctx: Ctx, badges: Record<string, number>): HTMLElement {
-  const grid = h('div', { class: 'tiles' });
-  for (const app of ctx.settings.apps) {
-    const n = app.badge ? badges[app.id] ?? 0 : 0;
-    grid.append(
-      h(
-        'button',
-        { class: 'tile', type: 'button', title: app.name, onclick: () => openApp(ctx, app) },
-        appFavicon(app),
-        h('span', { class: 'name' }, app.name),
-        n !== 0 ? h('span', { class: 'badge' }, badgeLabel(n) || ' ') : null,
-      ),
-    );
-  }
-  return grid;
 }
 
 async function spaceSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement> {
@@ -311,23 +293,9 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
   const root = h('div', { class: 'app' });
   const body = h('div', { class: 'scroll' });
   const rerender = async () => {
-    const [badges] = await Promise.all([getLocal<Record<string, number>>('badges', {})]);
     const pad = h('div', { class: 'pad' });
-    // In the drawer the rail already shows your apps right next to it.
-    if (ctx.kind === 'newtab') {
-      pad.append(
-        h(
-          'div',
-          { class: 'label', style: { marginTop: '4px' } },
-          h('span', {}, 'Apps'),
-          h('span', { class: 'grow' }),
-          h('button', { class: 'link', type: 'button', onclick: () => openOptions('apps') }, 'Edit'),
-        ),
-        appTiles(ctx, badges),
-      );
-    }
-    pad.append(await spaceSection(ctx, rerender));
-    if (ctx.kind !== 'newtab') pad.append(await tabsSection(ctx), await workspacesSection(ctx, rerender));
+    // The rail (or the panel's own buttons list) already shows your apps right next to this.
+    pad.append(await spaceSection(ctx, rerender), await tabsSection(ctx), await workspacesSection(ctx, rerender));
     body.replaceChildren(pad);
   };
   const search = h('div', { class: 'field' }, ico('search', 16), h('input', {

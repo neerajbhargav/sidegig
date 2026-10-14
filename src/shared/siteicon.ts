@@ -4,8 +4,6 @@
 // gets the browser's sharpest site icon; nothing known gets a quiet letter.
 import { BRAND_DOMAINS, BRAND_HEX, BRAND_ICONS, DARK_BRANDS } from './brands.ts';
 
-export type IconStyle = 'themed' | 'color';
-
 export interface Glyph {
   /** icons/brands/<file>.svg */
   file: string;

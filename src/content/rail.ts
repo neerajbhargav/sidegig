@@ -708,7 +708,6 @@ class Rail {
         this.show(true);
         this.openDrawer(msg.view);
       }
-      if (msg.type === 'ask-ai') this.askAi(msg.selection);
       return false;
     });
     onSettingsChanged((s) => this.applySettings(s));

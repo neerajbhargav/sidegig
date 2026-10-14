@@ -3,7 +3,7 @@
 // its own new tab. Cached so the new tab can paint the right look instantly.
 import { TARGET } from '../shared/api.ts';
 import { getLocal, setLocal } from '../shared/storage.ts';
-import { ASIDE_EXTENSION, nativeAi, type NativeInfo, type BrowserId } from '../shared/browserai.ts';
+import { ASIDE_EXTENSION, nativeAi, type NativeInfo } from '../shared/browserai.ts';
 
 export interface DetectedBrowser extends NativeInfo {
   /** Arc's current space colours, when Arc shares them. */
@@ -47,9 +47,4 @@ export function detectBrowser(): Promise<DetectedBrowser> {
     return info;
   })();
   return cached;
-}
-
-/** For pages that just need the family (panel, drawer, options): the cached answer is enough. */
-export async function browserId(): Promise<BrowserId | null> {
-  return (await getLocal<{ id?: BrowserId } | null>('browserInfo', null))?.id ?? null;
 }

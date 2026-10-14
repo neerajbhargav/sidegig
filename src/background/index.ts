@@ -290,9 +290,6 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       );
       return true;
     }
-    case 'open-options':
-      void ext.runtime.openOptionsPage();
-      return false;
     case 'save-workspace':
       saveWorkspace(msg.name).then(sendResponse, () => sendResponse(null));
       return true;

@@ -11,7 +11,7 @@ import { md } from '../../shared/ai/md.ts';
 import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter } from '../../shared/ai/providers.ts';
 import { runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
-import { McpAuthNeeded, mcpSignIn, mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
+import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
 import { bridgeStatus } from '../../shared/ai/bridge.ts';
 import { modelKey, type Effort, type ModelInfo, type Msg, type ProviderId } from '../../shared/ai/types.ts';
 
@@ -526,8 +526,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     const recents = (await loadChats()).slice(0, 5);
     // A question may have been asked while we were loading.
     if (chat.messages.length) return;
-    const starter = (label: string, prompt: string, tabs?: 'host' | 'all') =>
-      h('button', { type: 'button', class: 'cv-starter', onclick: () => void starterSend(prompt, tabs) }, label);
+    const starter = (label: string, prompt: string) => h('button', { type: 'button', class: 'cv-starter', onclick: () => void send(prompt) }, label);
     const starters =
       o.where === 'panel'
         ? [starter('Sum up this page', 'Sum up this page in a few bullet points, then tell me the one thing worth remembering.'), starter('What should I ask about this?', 'What are three good questions to ask about this page? Answer them briefly.'), starter('Explain it simply', 'Explain this page simply, as if I were new to the topic.')]
@@ -552,9 +551,6 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
           : null,
       ),
     );
-  };
-  const starterSend = async (prompt: string, _tabs?: 'host' | 'all') => {
-    await send(prompt);
   };
 
   // ---- tools: the browser's, plus your MCP servers (connected once, refreshed every ten minutes)

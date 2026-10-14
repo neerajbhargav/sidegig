@@ -10,7 +10,6 @@ export type ToBackground =
   | { type: 'ai-claim'; host: string }
   | { type: 'ask-page' }
   | { type: 'tab-info' }
-  | { type: 'open-options'; section?: string }
   | { type: 'save-workspace'; name: string }
   | { type: 'restore-workspace'; id: string }
   | { type: 'sleep-tabs' }
@@ -21,14 +20,6 @@ export type ToBackground =
 /** Messages sent from the background to a tab's rail. */
 export type ToContent =
   | { type: 'toggle-rail' }
-  | { type: 'open-view'; view: View }
-  | { type: 'ask-ai'; selection?: string };
+  | { type: 'open-view'; view: View };
 
 export type View = 'home' | 'search' | 'status' | 'settings' | 'add';
-
-/** Messages between the in-page drawer iframe and the rail (window.postMessage). */
-export type DrawerMsg =
-  | { ns: 'sidegig'; type: 'close' }
-  | { ns: 'sidegig'; type: 'pin'; pinned: boolean }
-  | { ns: 'sidegig'; type: 'navigate'; url: string; newTab: boolean }
-  | { ns: 'sidegig'; type: 'ready' };
