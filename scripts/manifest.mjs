@@ -1,10 +1,9 @@
 // Generates a browser-specific manifest.json from one description.
 // Targets: chrome (Chrome, Edge, Brave, Arc, Dia, Vivaldi, Aside), opera, firefox, safari.
 import { CATALOG } from '../src/shared/catalog.ts';
+import pkg from '../package.json' with { type: 'json' };
 
 export const TARGETS = ['chrome', 'opera', 'firefox', 'safari'];
-
-const pkg = { name: 'sidegig', version: '0.1.0' };
 
 // Hosts where the bridge script runs (unread badges, AI prompt fill).
 // User-added apps get the bridge registered at runtime via chrome.scripting.

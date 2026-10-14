@@ -4,6 +4,7 @@
   "private": true,
   "description": "A free, open-source sidebar that lives in the margin of every browser: hover the edge for your apps, AI, bookmark stacks and search.",
   "license": "GPL-3.0-or-later",
+  "engines": { "node": ">=24" },
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
