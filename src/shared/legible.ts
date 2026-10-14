@@ -112,7 +112,8 @@ export function legibilityFor(p: Patch, target = 5, cap = 0.62): Legibility {
   // Texture: a little blur from fairly busy upward, and a whisper of dim so the blur reads as a surface.
   const busy = Math.max(0, Math.min(1, (p.busy - 0.035) / 0.09));
   const blur = Math.round(busy * 14);
-  if (busy > 0 && dim < 0.12) dim = Math.max(dim, 0.12 * busy);
+  // Without a blur behind the text, busy patches get a little more dimming instead.
+  if (busy > 0) dim = Math.min(cap, Math.max(dim + 0.2 * busy, 0.32 * busy));
   dim = Math.round(dim * 100) / 100;
   const after = tone === 'light' ? dec(vHi * (1 - dim)) : dec(vLo + (1 - vLo) * dim);
   return { tone, dim, blur, ratio: Math.round(contrast(tone === 'light' ? LIGHT_INK : DARK_INK, after) * 10) / 10 };

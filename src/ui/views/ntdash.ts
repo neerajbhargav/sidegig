@@ -20,7 +20,7 @@ import { PAD } from '../figures/pad.ts';
 
 const stillMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 /** Run `frame` about `fps` times a second while the element is on the page and the tab is visible. */
-function animate(el: Element, fps: number, frame: (now: number) => void) {
+function animate(el: Element, fps: number, frame: (now: number) => void, active: () => boolean = () => true) {
   let last = 0;
   let seen = false;
   let waited = 0;
@@ -32,7 +32,7 @@ function animate(el: Element, fps: number, frame: (now: number) => void) {
       return;
     }
     seen = true;
-    if (document.visibilityState === 'visible' && now - last >= 1000 / fps) {
+    if (document.visibilityState === 'visible' && now - last >= 1000 / fps && active()) {
       last = now;
       frame(Date.now());
     }
@@ -108,7 +108,7 @@ export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLEleme
     html: figureSvg(WATCH.width, WATCH.height, `${WATCH.below}<path class="iso-line" data-tone="hi" data-hand="h" style="stroke-width:2.4px" d=""/><path class="iso-line" data-tone="hi" data-hand="m" style="stroke-width:1.5px" d=""/><path class="iso-line" data-tone="lit" data-hand="s" style="stroke-width:1px" d=""/>${WATCH.above}`),
   });
   const [hh, mm, ss] = (['h', 'm', 's'] as const).map((k) => watch.querySelector<SVGPathElement>(`[data-hand="${k}"]`)!);
-  animate(watch, stillMotion() ? 1 : 8, (now) => {
+  animate(watch, stillMotion() ? 1 : 4, (now) => {
     const d = new Date(now);
     const sec = d.getSeconds() + (stillMotion() ? 0 : d.getMilliseconds() / 1000);
     const min = d.getMinutes() + sec / 60;
@@ -186,11 +186,17 @@ export function weatherCard(ctx: Ctx): HTMLElement {
   const part = (n: string) => station.querySelector<SVGPathElement>(`[data-part="${n}"]`)!;
   let spin = 0;
   let lastFrame = Date.now();
-  animate(station, stillMotion() ? 1 : 30, (now) => {
+  // The cups spin for a few seconds when the page opens and while you point at
+  // them; the rest of the time the station stands still (nothing moves for nothing).
+  let spinUntil = Date.now() + 6000;
+  let hovering = false;
+  station.addEventListener('pointerenter', () => (hovering = true));
+  station.addEventListener('pointerleave', () => ((hovering = false), (spinUntil = Date.now() + 1500)));
+  animate(station, stillMotion() ? 1 : 24, (now) => {
     const P = S.projection;
     const [mx, my] = S.mast;
     // Cups: about one turn a second at 10 mph; never quite still.
-    spin += (stillMotion() ? 0 : (now - lastFrame) / 1000) * (0.6 + live.wind * 0.55);
+    spin += (stillMotion() ? 0 : Math.min(0.1, (now - lastFrame) / 1000)) * (0.6 + live.wind * 0.55);
     lastFrame = now;
     const arms: string[] = [];
     const cups: string[] = [];
@@ -218,7 +224,8 @@ export function weatherCard(ctx: Ctx): HTMLElement {
     const [lo, hi] = live.units === 'c' ? [-30, 50] : [-20, 120];
     const f = Math.max(0, Math.min(1, (live.temp - lo) / (hi - lo)));
     part('mercury').setAttribute('d', line(P, [S.thermo.x, S.thermo.y, S.thermo.bulb], [S.thermo.x, S.thermo.y, S.thermo.low + (S.thermo.high - S.thermo.low) * f]));
-  });
+    station.dataset.drawn = '1';
+  }, () => hovering || Date.now() < spinUntil || !station.dataset.drawn);
   void loadWeather(ctx).then((now) => {
     if (!now) return void reveal(body, h('span', { class: 'muted' }, 'Weather is unavailable right now'));
     const { label, icon } = weatherLabel(now.code, now.isDay);
@@ -227,6 +234,8 @@ export function weatherCard(ctx: Ctx): HTMLElement {
     live.units = now.units;
     live.wind = now.wind?.speed ?? 4;
     live.dir = now.wind?.dir ?? 225;
+    // New readings: let the station turn to them.
+    spinUntil = Date.now() + 4000;
     reveal(
       body,
       h(
@@ -464,7 +473,7 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     needle.setAttribute('d', needlePath(left / 60_000));
     sweep.setAttribute('d', st.running ? hand(TIMER.projection, TIMER.dial.x, TIMER.dial.y, TIMER.dial.z + 0.1, ((left / 1000) % 60) / 60, [2, TIMER.dial.tip - 2]) : '');
   };
-  animate(fig, stillMotion() ? 1 : 24, (now) => st.running && hands(now));
+  animate(fig, stillMotion() ? 1 : 4, (now) => hands(now), () => st.running);
   const lever = fig.querySelector<SVGGElement>('.pomo-lever')!;
   const time = h('div', { class: 'pomo-time', role: 'timer' });
   const phase = h('div', { class: 'pomo-phase' });
