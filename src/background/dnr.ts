@@ -72,7 +72,8 @@ export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: nu
     });
   }
   // 3. Mobile layout: ask for the phone version, only for frames sidegig shows.
-  const mobileHosts = apps.filter((a) => a.mobile).map((a) => hostOf(a.url)).filter(Boolean);
+  //    Never for Gmail: a changed user agent makes Google ask you to sign in again.
+  const mobileHosts = apps.filter((a) => a.mobile).map((a) => hostOf(a.url)).filter((h) => h && h !== 'mail.google.com');
   if (mobileHosts.length) {
     rules.push({
       id: id++,

@@ -2,6 +2,7 @@
 
 Last updated: 2026-10-14 (Aside session "Opera-style sidebar extension for Chromium").
 Update this file when you stop work. Keep "Where work stopped" true.
+History: [CHANGELOG.md](../CHANGELOG.md) (every commit) and [evolution](evolution/README.md) (screenshots of every milestone).
 
 ## Where work stopped
 

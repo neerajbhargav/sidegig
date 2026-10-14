@@ -9,6 +9,8 @@ No account. No servers. No analytics. Works in Chrome, Edge, Brave, Arc, Dia, Vi
 <img src="docs/screenshots/status-dark.jpg" width="49%" alt="Status cards on a dark site">
 </p>
 
+How it got here: [screenshots of every milestone](docs/evolution/README.md) and the [changelog](CHANGELOG.md).
+
 ## Why
 
 Opera's sidebar proved how good it is to keep messengers and tools one click away. Arc and Dia showed how calm a browser can feel. Most sidebar extensions today either open a second browser pane on the right or put features behind a subscription. sidegig is built to be:
