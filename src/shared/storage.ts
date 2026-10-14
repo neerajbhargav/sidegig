@@ -9,7 +9,9 @@ const isObj = (v: unknown): v is Plain => !!v && typeof v === 'object' && !Array
 /**
  * Merge stored settings over defaults. Only keys that exist in the defaults
  * survive (so old or corrupt keys can't leak in); arrays are replaced whole;
- * values with the wrong type fall back to the default.
+ * values with the wrong type fall back to the default. An empty object in the
+ * defaults is a map whose keys are the user's (layout, folder colours): a stored
+ * object replaces it whole, and its readers check each entry.
  */
 export function mergeSettings<T>(defaults: T, stored: unknown): T {
   if (!isObj(defaults) || !isObj(stored)) return defaults;
@@ -18,7 +20,7 @@ export function mergeSettings<T>(defaults: T, stored: unknown): T {
     const d = (defaults as Plain)[key];
     const s = stored[key];
     if (s === undefined || s === null) continue;
-    if (isObj(d)) out[key] = mergeSettings(d, s);
+    if (isObj(d)) out[key] = Object.keys(d).length ? mergeSettings(d, s) : isObj(s) ? s : d;
     else if (Array.isArray(d)) out[key] = Array.isArray(s) ? s : d;
     else if (typeof s === typeof d) out[key] = s;
   }

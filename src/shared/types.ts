@@ -85,7 +85,7 @@ export interface Settings {
   stacks: {
     /** Bookmark folder ids shown as spaces. Empty = bookmarks bar. */
     spaces: string[];
-    activeSpace?: string;
+    activeSpace: string;
   };
   ai: {
     defaultApp: string;

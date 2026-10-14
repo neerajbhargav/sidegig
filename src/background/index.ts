@@ -196,7 +196,7 @@ function setupLinkRules() {
 
 async function addToStacks(url: string, title: string) {
   const s = now();
-  const parentId = s.stacks.activeSpace ?? s.stacks.spaces[0] ?? (await defaultSpaceId());
+  const parentId = s.stacks.activeSpace || s.stacks.spaces[0] || (await defaultSpaceId());
   await ext.bookmarks.create({ parentId, url, title: title || url });
 }
 
