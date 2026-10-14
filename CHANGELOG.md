@@ -1,10 +1,11 @@
 # Changelog
 
-Generated from the git history of `wip/in-panel-apps` by `npm run changelog`. Newest first.
+Generated from the git history of `audit-fixes` by `npm run changelog`. Newest first.
 Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Current state and next steps: [docs/STATUS.md](docs/STATUS.md).
 
 ## 2026-10-14
 
+- `aae3fce` Removing a widget in arrange mode no longer freezes the top bar
 - `a236fc2` Customize › Reset layout redraws the grid
 - `79ecde9` Saved new-tab layout, folder colours and active space survive loading
 - `51b363d` Gmail runs signed in inside the sidebar frame
