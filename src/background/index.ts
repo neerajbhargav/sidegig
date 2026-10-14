@@ -9,7 +9,7 @@ import { findRule, matchPattern, isRestricted } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
 import type { AppEntry, PendingPrompt, Settings } from '../shared/types.ts';
 import type { ToBackground, ToContent } from '../shared/messages.ts';
-import { applyRules } from './dnr.ts';
+import { applyRules, setSideTabs } from './dnr.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
@@ -37,6 +37,7 @@ function aiApp(s: Settings): AppEntry | undefined {
 async function sync(): Promise<void> {
   cache = await loadSettings();
   void checkFavicons(cache.apps);
+  await setSideTabs(await getLocal<number[]>('sideTabs', [])).catch(() => undefined);
   await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
   setupActionBehavior();
@@ -253,7 +254,8 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     case 'tab-info': {
       const wid = sender.tab?.windowId;
       if (wid === undefined) {
-        sendResponse({});
+        // Not in a tab: the browser's sidebar showing a site as its own page.
+        sendResponse({ panel: true });
         return false;
       }
       ext.windows.get(wid).then(

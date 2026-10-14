@@ -51,7 +51,8 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
   const apps = ctx.settings.apps;
   const app = apps.find((a) => a.id === appId) ?? apps.find((a) => a.openIn === 'panel') ?? apps[0];
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
-    // Sites that refuse to run inside another page get a docked side window instead.
+  // Sites that refuse to run inside any extension page (Gmail, X, Meta's apps):
+  // Chrome keeps its sidebar to extension pages, so they get the docked side window.
   if (NO_FRAME.has(app.catalogId ?? '')) return sideWindowCard(ctx, app);
   const bar = h('div', { class: 'appbar' });
   // The rail (or the panel's own buttons list) already lists the apps: just name this one.
@@ -118,6 +119,7 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
 }
 
 let lastWindowed = '';
+
 
 function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
   const open = () => void send({ type: 'open-app', appId: app.id, url: app.url, openIn: 'window', side: ctx.settings.rail.side });

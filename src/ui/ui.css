@@ -2473,3 +2473,19 @@ html[data-chat] .nt2 .nt-page, html[data-chat] .nt2 .gw-scrim { visibility: hidd
   border-radius: 2.5rem;
   filter: blur(calc(16px * var(--ui-s, 1)));
 }
+
+/* ======================================================================
+   Nothing sits on top of what you click.
+   ====================================================================== */
+/* Expand: a small round button hanging off the widget's corner, outside its content. */
+.gw-more { right: -0.5rem; bottom: -0.5rem; width: 1.75rem; height: 1.75rem; background: var(--pg-card, var(--c-card)); color: var(--pg-ink, var(--c-ink)); border: 1px solid var(--pg-line, var(--c-line)); z-index: 4; }
+.gw-more:hover { background: color-mix(in oklab, var(--c-signal) 12%, var(--pg-card, var(--c-card))); color: var(--pg-ink, var(--c-ink)); }
+.gw[data-size="s"]:has(.gw-more), .gw[data-size="m"]:has(.gw-more) { cursor: auto; }
+/* Notes: the pad is the widget at small size; bigger, it gives way to the notes (the + button stays). */
+.gw[data-w="notes"]:not([data-size="s"]) .fig-pad { display: none; }
+.nt-grid[data-flow="true"] .gw[data-w="notes"] .fig-pad { display: none; }
+/* Calendar: the cubes show today at small and medium sizes; the full month already marks it. */
+.gw[data-w="calendar"][data-size="l"] .fig-cubes { display: none; }
+/* Menus and popovers above every widget and opened card. */
+.shelf-menu { z-index: 95; }
+.nt-pop { z-index: 95; }

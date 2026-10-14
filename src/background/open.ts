@@ -2,6 +2,7 @@
 // (side panel / sidebar) is called synchronously before any await.
 import { ext, features, TARGET } from '../shared/api.ts';
 import { getLocal, setLocal } from '../shared/storage.ts';
+import { setSideTabs } from './dnr.ts';
 import type { OpenIn, Side } from '../shared/types.ts';
 import type { View } from '../shared/messages.ts';
 
@@ -73,6 +74,15 @@ export async function openMiniWindow(req: OpenRequest, windowId?: number): Promi
   } catch {
     main = { left: 0, top: 0, width: 1280, height: 800, state: 'normal' } as chrome.windows.Window;
   }
+  // Full screen: a side window can't sit beside the browser (macOS gives it its own
+  // full-screen space), so open the app as a tab right next to the one you're on.
+  if (main.state === 'fullscreen') {
+    const [cur] = await ext.tabs.query({ active: true, windowId: main.id }).catch(() => [] as chrome.tabs.Tab[]);
+    const [found] = await ext.tabs.query({ windowId: main.id, url: `*://${hostOf(req.url)}/*` }).catch(() => [] as chrome.tabs.Tab[]);
+    if (found?.id !== undefined) await ext.tabs.update(found.id, { active: true });
+    else await ext.tabs.create({ url: req.url, windowId: main.id, index: cur?.index !== undefined ? cur.index + 1 : undefined, openerTabId: cur?.id });
+    return;
+  }
   // Already docked to this window: switch it to this app.
   const existing = Object.entries(docks).find(([, d]) => d.main === main.id);
   if (existing) {
@@ -102,8 +112,8 @@ export async function openMiniWindow(req: OpenRequest, windowId?: number): Promi
   const width = Math.round(Math.min(480, Math.max(380, bounds.width * 0.28)));
   const left = req.side === 'left' ? bounds.left : bounds.left + bounds.width - width;
   let dock: Dock | null = null;
-  // Make room unless the browser is full screen (then the side window floats over it).
-  if (main.id !== undefined && main.state !== 'fullscreen' && bounds.width - width >= 640) {
+  // Make room beside it (full screen was handled above).
+  if (main.id !== undefined && bounds.width - width >= 640) {
     try {
       if (main.state === 'maximized') await ext.windows.update(main.id, { state: 'normal' });
       await ext.windows.update(main.id, { left: req.side === 'left' ? bounds.left + width : bounds.left, top: bounds.top, width: bounds.width - width, height: bounds.height });
@@ -112,14 +122,30 @@ export async function openMiniWindow(req: OpenRequest, windowId?: number): Promi
       dock = null;
     }
   }
-  const win = await ext.windows.create({ url: req.url, type: 'popup', width, height: bounds.height, left, top: bounds.top, focused: true });
+  // Start blank, mark the tab for the phone layout, then load the app, so even the first page fits.
+  const win = await ext.windows.create({ url: 'about:blank', type: 'popup', width, height: bounds.height, left, top: bounds.top, focused: true });
   if (win?.id === undefined) return;
+  const tabId = win.tabs?.[0]?.id ?? (await ext.tabs.query({ windowId: win.id }))[0]?.id;
+  if (tabId !== undefined) {
+    await markSideTab(tabId);
+    await ext.tabs.update(tabId, { url: req.url });
+  }
   popups[key] = win.id;
   await setLocal('popups', popups);
   if (dock) {
     docks[win.id] = dock;
     await setLocal('docks', docks);
   }
+}
+
+/** Remember the side windows' tabs (they keep the phone layout until closed). */
+async function markSideTab(tabId: number) {
+  const ids = (await getLocal<number[]>('sideTabs', [])).filter((id) => id !== tabId);
+  const live: number[] = [];
+  for (const id of ids) if (await ext.tabs.get(id).then(() => true, () => false)) live.push(id);
+  live.push(tabId);
+  await setLocal('sideTabs', live);
+  await setSideTabs(live);
 }
 
 export async function openOrFocusTab(url: string): Promise<void> {

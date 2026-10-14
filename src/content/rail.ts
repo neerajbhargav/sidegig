@@ -103,11 +103,30 @@ class Rail {
   // ------------------------------------------------------------ lifecycle
 
   private mount() {
+    // One rail per page: a rail left by an older copy of sidegig (after an
+    // update or reload) is removed, and that copy stands down (see alive()).
+    for (const old of document.querySelectorAll('sidegig-rail')) old.remove();
+    document.documentElement.setAttribute('data-sidegig-rail', INSTANCE);
     document.documentElement.append(this.host);
     // Some apps rebuild <html> children; put the rail back if it gets removed.
-    new MutationObserver(() => {
+    const mo = new MutationObserver(() => {
+      if (!alive()) {
+        mo.disconnect();
+        this.retire();
+        return;
+      }
       if (!this.host.isConnected) document.documentElement.append(this.host);
-    }).observe(document.documentElement, { childList: true });
+    });
+    mo.observe(document.documentElement, { childList: true });
+  }
+
+  /** This copy of sidegig was replaced or unloaded: take the rail off the page and give the space back. */
+  private retired = false;
+  retire() {
+    if (this.retired) return;
+    this.retired = true;
+    this.host.remove();
+    if (document.documentElement.getAttribute('data-sidegig-rail') === INSTANCE || !document.querySelector('sidegig-rail')) this.dock.set(0, this.s.rail.side);
   }
 
   private disabled = false;
@@ -240,7 +259,7 @@ class Rail {
       glyph.style.setProperty('--brand', g.hex);
       return [glyph, badge];
     }
-    const src = this.favMissing.has(app.id) ? '' : faviconFor(app.url, iconPixels(20));
+    const src = this.favMissing.has(app.id) ? '' : faviconFor(app.url, iconPixels(24));
     if (src) {
       const img = document.createElement('img');
       img.alt = '';
@@ -279,7 +298,7 @@ class Rail {
     const apps = document.createElement('div');
     apps.className = 'scroll';
     for (const app of s.apps) {
-      const b = this.button(app.name, this.appIcon(app), () => this.openApp(app));
+      const b = this.button(app.name, this.appIcon(app), () => this.openApp(app), 'app');
       b.dataset.app = app.id;
       this.wireFallback(b, app);
       apps.append(b);
@@ -602,6 +621,7 @@ class Rail {
         if (raf) return;
         raf = requestAnimationFrame(() => {
           raf = 0;
+          if (!alive()) return this.retire();
           if (!this.enabledHere || this.open || this.docked) return;
           const near = this.atEdge(e.clientX, 28);
           if (near) this.host.dataset.near = '';
@@ -710,6 +730,18 @@ class Rail {
   }
 }
 
+/** This copy of the rail, so a newer one can tell an old one to stand down. */
+const INSTANCE = Math.random().toString(36).slice(2);
+/** Still the current copy, and the extension still loaded. */
+function alive(): boolean {
+  if (document.documentElement.getAttribute('data-sidegig-rail') !== INSTANCE) return false;
+  try {
+    return !!ext.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
   if ((window as any).__sidegigRail) return;
   (window as any).__sidegigRail = true;
@@ -722,8 +754,9 @@ async function main() {
     const rail = new Rail(settings, dock);
     // Mini windows sidegig opens for apps stay clean: no rail inside them.
     void detectBrowserAi();
-    const info = (await send({ type: 'tab-info' })) as { popup?: boolean; windowId?: number } | undefined;
-    if (info?.popup) rail.disableHere();
+    const info = (await send({ type: 'tab-info' })) as { popup?: boolean; panel?: boolean; windowId?: number } | undefined;
+    // In sidegig's mini windows and in the sidebar (a site shown as its own page) there's no rail.
+    if (info?.popup || info?.panel) rail.disableHere();
     else if (typeof info?.windowId === 'number') rail.setWindow(info.windowId);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => void start(), { once: true });

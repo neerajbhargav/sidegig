@@ -1,12 +1,12 @@
 import type { AppEntry, Settings } from './types.ts';
-import { CATALOG, DEFAULT_PINNED, catalogById, NO_FRAME } from './catalog.ts';
+import { CATALOG, DEFAULT_PINNED, catalogById, NO_FRAME, PHONE_FIT } from './catalog.ts';
 
-export const SETTINGS_VERSION = 8;
+export const SETTINGS_VERSION = 9;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
   if (!c) throw new Error(`Unknown catalog app: ${id}`);
-  return { id: c.id, name: c.name, url: c.url, openIn: NO_FRAME.has(c.id) ? 'window' : 'panel', mobile: false, badge: c.badge !== 'none', catalogId: c.id };
+  return { id: c.id, name: c.name, url: c.url, openIn: NO_FRAME.has(c.id) ? 'window' : 'panel', mobile: PHONE_FIT.has(c.id), badge: c.badge !== 'none', catalogId: c.id };
 }
 
 export function defaultSettings(): Settings {
@@ -22,7 +22,7 @@ export function defaultSettings(): Settings {
       floatOn: [],
       hideInFullscreen: true,
     },
-    drawer: { width: 340 },
+    drawer: { width: 400 },
     theme: {
       mode: 'page',
       base: '#808080',

@@ -15,10 +15,17 @@ export interface CatalogApp {
 
 /**
  * Sites that refuse to run inside another page: they detect the frame and
- * break out, or show an error (Gmail, X, Meta's apps). These open in a slim
- * side window docked next to the browser instead, signed in and complete.
+ * break out, or show an error (Gmail, X, Meta's apps). In the browser's
+ * sidebar these load as the sidebar's own page instead (like Opera's panels),
+ * signed in and complete.
  */
 export const NO_FRAME = new Set(['gmail', 'x', 'grok', 'instagram', 'messenger']);
+
+/**
+ * Sites with a good phone layout: in the narrow sidebar they ask for it, so they
+ * fit. Not Gmail: Google treats the switch as a new device and asks you to sign in again.
+ */
+export const PHONE_FIT = new Set(['x', 'calendar', 'instagram', 'reddit', 'linkedin', 'ytmusic', 'grok']);
 
 export const CATALOG: CatalogApp[] = [
   {
