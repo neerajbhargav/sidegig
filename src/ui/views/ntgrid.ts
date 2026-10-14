@@ -183,7 +183,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     h('button', { type: 'button', class: 'nt-chip primary', onclick: () => edit(false) }, 'Done'),
   );
 
-  const edit = (on: boolean) => {
+  const edit = (on: boolean, quiet = false) => {
     if (on === editing) return;
     if (on) close();
     editing = on;
@@ -194,7 +194,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
       if (on) w.tabIndex = 0;
       else w.removeAttribute('tabindex');
     }
-    play(on ? 'on' : 'off');
+    if (!quiet) play(on ? 'on' : 'off');
     if (on) wraps.get(ids[0])?.focus({ preventScroll: true });
   };
 
@@ -286,6 +286,9 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   }
 
   el.append(cells, ghost, ...wraps.values(), scrim);
+  // Rebuilt mid-arrange (removing a widget saves settings, which rebuilds the page):
+  // carry on arranging, so the page-wide flag and this grid agree.
+  if (document.documentElement.hasAttribute('data-arranging')) edit(true, true);
   addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || !el.isConnected) return;
     if (openId) close();
