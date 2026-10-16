@@ -47,8 +47,10 @@ export function manifestFor(target) {
     'unlimitedStorage',
     // Clear a site's service worker before showing it in the sidebar (Gmail, X).
     'browsingData',
-    // Read a sidebar app's own same-site cookies to send them from sidegig's frames (see background/framecookies.ts).
+    // Let a sidebar app's own scripts read its same-site cookies inside sidegig's frames (see background/framecookies.ts).
     'cookies',
+    // Sign-in windows for OpenRouter and MCP servers (launchWebAuthFlow). No install warning, no prompt.
+    'identity',
   ];
   if (chromium) permissions.push('sidePanel', 'favicon', 'tabGroups', 'search');
   if (target === 'firefox') permissions.push('search');
@@ -88,7 +90,7 @@ export function manifestFor(target) {
   if (chromium) {
     m.background = { service_worker: 'background.js' };
     m.side_panel = { default_path: 'panel.html' };
-    m.minimum_chrome_version = '116';
+    m.minimum_chrome_version = '130';
   }
   if (target === 'opera') {
     // Opera shows extension panels in its own sidebar (icon, tooltip, badge, panel).
@@ -102,7 +104,7 @@ export function manifestFor(target) {
       default_icon: 'icons/32.png',
       open_at_install: false,
     };
-    m.browser_specific_settings = { gecko: { id: 'sidegig@neerajbhargav.com', strict_min_version: '128.0' } };
+    m.browser_specific_settings = { gecko: { id: 'sidegig@neerajbhargav.com', strict_min_version: '148.0' } };
   }
   if (target === 'safari') {
     m.background = { scripts: ['background.js'], persistent: false };

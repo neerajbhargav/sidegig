@@ -46,7 +46,7 @@ async function bundle(esbuild, target, outdir, extraEntries = {}) {
     outdir,
     bundle: true,
     format: 'iife',
-    target: ['chrome116', 'firefox128', 'safari17'],
+    target: ['chrome130', 'firefox148', 'safari17'],
     loader: { '.css': 'text', '.svg': 'text' },
     define: { __TARGET__: JSON.stringify(target) },
     legalComments: 'none',
