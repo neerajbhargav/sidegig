@@ -36,6 +36,7 @@ export const onArranged = (fn: () => void, signal?: AbortSignal) => addEventList
 const arranged = () => dispatchEvent(new Event(ARRANGED));
 
 export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
+  const signal = ctx.signal;
   const ids = items.map((i) => i.id);
   const resolved = resolve(ctx.settings.newtab.layout, ids);
   let boxes = resolved.boxes;
@@ -92,6 +93,8 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     boxes = next;
     layoutTo(boxes);
   });
+  if (signal?.aborted) stop();
+  else signal?.addEventListener('abort', stop, { once: true });
 
   /** Cell size and step in pixels, from the grid as drawn. */
   const metrics = () => {
@@ -293,14 +296,14 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     if (e.key !== 'Escape' || !el.isConnected) return;
     if (openId) close();
     else if (editing) edit(false);
-  });
+  }, { signal });
   flow.addEventListener('change', () => {
     if (!el.isConnected) return;
     close();
     el.dataset.flow = String(flow.matches);
     for (const id of ids) setBox(id, boxes[id]);
     arranged();
-  });
+  }, { signal });
   if (resolved.hidden.length) {
     const names = resolved.hidden.map((id) => items.find((i) => i.id === id)?.label ?? id);
     setTimeout(() => toast(`No room for ${names.join(' and ')}. Make something smaller in Arrange.`), 600);
@@ -309,12 +312,15 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   const fit = () => {
     if (!el.isConnected) return;
     const top = el.getBoundingClientRect().top + scrollY;
-    const pad = parseFloat(getComputedStyle(document.documentElement).fontSize) * 1.25;
+    const page = el.closest('.nt-page');
+    const pad = page ? parseFloat(getComputedStyle(page).paddingBottom) : 0;
     el.style.setProperty('--nt-avail', `${Math.max(320, Math.floor(innerHeight - top - pad))}px`);
   };
   // Runs when the grid lands on the page and whenever the window changes.
-  new ResizeObserver(() => fit()).observe(el);
-  addEventListener('resize', () => requestAnimationFrame(fit));
+  const observer = new ResizeObserver(fit);
+  if (!signal?.aborted) observer.observe(el);
+  signal?.addEventListener('abort', () => observer.disconnect(), { once: true });
+  addEventListener('resize', () => requestAnimationFrame(fit), { signal });
   requestAnimationFrame(arranged);
   return { el: h('div', { class: 'nt-grid-wrap' }, el, bar), edit, editing: () => editing };
 }

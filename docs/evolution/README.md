@@ -100,3 +100,9 @@ Commit `51b363d`, branch `wip/in-panel-apps`. Code 9 fixed: Gmail's own scripts 
 Commit `77bab66` on branch `bugfix/codebase-review` (plus uncommitted work).
 
 <img src="2026-10-16-01-partial-setup-imports-show-a-complete-su.jpg" width="49%" alt="Partial setup imports show a complete summary and parts to apply">
+
+## 2026-10-16: Import partial setups safely and preserve their selected parts
+
+Commit `21559a8` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-02-the-new-tab-grid-fits-a-1280-by-720-desk.jpg" width="49%" alt="The new-tab grid fits a 1280 by 720 desktop without extra scrolling">

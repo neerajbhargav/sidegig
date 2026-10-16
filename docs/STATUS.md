@@ -9,6 +9,12 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 `main` holds the earlier work below (merged 2026-10-16 from `audit-fixes`, which was built on `wip/in-panel-apps`). Open branches: `bugfix/codebase-review` and `drawer-dynamic-url` (open work item 1). The full earlier audit report, session transcript and test scripts are in `context/claude-code-session-2026-10-14/` (local only).
 
+**UI follow-up, 2026-10-16, `bugfix/codebase-review` (merge and deployment authorized; in progress):**
+
+- Each render now has an abort signal. Replacing a new tab ends its bookmark, storage, keyboard and resize listeners, observers and timers. A browser probe across 12 redraws stays at 7 storage listeners, 1 bookmark listener, 1 resize listener, 4 keyboard listeners and 1 observer. Before the fix, bookmark listeners and observers grew from 1 to 13.
+- The grid uses the page’s actual bottom padding. The fixture dashboard fits 1280×720, 1440×900 and 1920×1080 without vertical overflow. Arrange, resizing, removing Notes and Reset layout still work in the browser.
+- Theme, Customize, chat cancellation and AI settings fixes are also present in the worktree. They are being committed separately before the authorized merge. Final validation of the combined worktree passes: 123 tests, typecheck, all four builds and zips, and 16 fixture screens. The installed extension has not yet been rebuilt.
+
 **Bug review, 2026-10-16, `bugfix/codebase-review` (not merged or deployed):**
 
 - A save that exceeds sync quota now survives loading over an older synced copy. Each save keeps a device-local backup and an embedded timestamp. Loading chooses the newer copy; a newer remote save can still win. Custom CSS remains local. Six storage regression tests cover fallback, recovery, remote updates, legacy copies, browsers without sync and clock rollback after an observed save. Legacy copies without timestamps retain sync precedence because their age is unknown.

@@ -10,6 +10,8 @@ export type Kind = 'drawer' | 'panel' | 'newtab';
 export interface Ctx {
   kind: Kind;
   settings: Settings;
+  /** Ends listeners and pending work when this view is replaced. */
+  signal?: AbortSignal;
   /** Window this page lives in (needed to open the side panel synchronously). */
   windowId?: number;
   /** The tab hosting the drawer. */
