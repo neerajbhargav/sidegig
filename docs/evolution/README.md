@@ -94,3 +94,9 @@ Commit `7d83c55`, branch `wip/in-panel-apps`. X loads inside a sidegig frame. Gm
 Commit `51b363d`, branch `wip/in-panel-apps`. Code 9 fixed: Gmail's own scripts used `top` as their window; sidegig rewrites those uses before they run. The inbox stays put, signed in, with no new sign-in prompt. (Inbox rows blurred.)
 
 <img src="2026-10-14-07-gmail-signed-in-inside-the-sidebar-frame.jpg" width="49%" alt="Gmail signed in inside the sidebar frame, inbox blurred">
+
+## 2026-10-16: Migrate older settings without crashing or changing their source
+
+Commit `77bab66` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-01-partial-setup-imports-show-a-complete-su.jpg" width="49%" alt="Partial setup imports show a complete summary and parts to apply">
