@@ -94,3 +94,29 @@ Commit `7d83c55`, branch `wip/in-panel-apps`. X loads inside a sidegig frame. Gm
 Commit `51b363d`, branch `wip/in-panel-apps`. Code 9 fixed: Gmail's own scripts used `top` as their window; sidegig rewrites those uses before they run. The inbox stays put, signed in, with no new sign-in prompt. (Inbox rows blurred.)
 
 <img src="2026-10-14-07-gmail-signed-in-inside-the-sidebar-frame.jpg" width="49%" alt="Gmail signed in inside the sidebar frame, inbox blurred">
+
+## 2026-10-16: Migrate older settings without crashing or changing their source
+
+Commit `77bab66` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-01-partial-setup-imports-show-a-complete-su.jpg" width="49%" alt="Partial setup imports show a complete summary and parts to apply">
+
+## 2026-10-16: Import partial setups safely and preserve their selected parts
+
+Commit `21559a8` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-02-the-new-tab-grid-fits-a-1280-by-720-desk.jpg" width="49%" alt="The new-tab grid fits a 1280 by 720 desktop without extra scrolling">
+
+## 2026-10-16: End new-tab listeners and observers when a render is replaced
+
+Commit `9b754ec` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-03-customize-keeps-its-close-button-visible.jpg" width="49%" alt="Customize keeps its close button visible and its widget controls match the dark theme">
+<img src="2026-10-16-04-the-narrow-new-tab-uses-one-column-witho.jpg" width="49%" alt="The narrow new tab uses one column without horizontal overflow">
+<img src="2026-10-16-05-sidebar-chat-uses-readable-themed-contro.jpg" width="49%" alt="Sidebar chat uses readable themed controls and the full panel width">
+
+## 2026-10-16: Keep stopped chat runs out of new conversations and tool calls
+
+Commit `de6a3b8` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-06-ai-settings-connect-providers-and-save-c.jpg" width="49%" alt="AI settings connect providers and save custom instructions and tool servers">

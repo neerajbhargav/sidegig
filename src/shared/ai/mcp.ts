@@ -33,8 +33,10 @@ export const mcpSignedIn = async (id: string) => !!(await getAuth(id)).token;
 
 const PROTOCOL = '2025-06-18';
 export class McpAuthNeeded extends Error {
-  constructor(public resourceMetadata: string | null) {
+  resourceMetadata: string | null;
+  constructor(resourceMetadata: string | null) {
     super('This server needs you to sign in.');
+    this.resourceMetadata = resourceMetadata;
   }
 }
 
@@ -42,7 +44,8 @@ export class McpClient {
   private session = '';
   private n = 1;
   private version = PROTOCOL;
-  constructor(public server: McpServer) {}
+  server: McpServer;
+  constructor(server: McpServer) { this.server = server; }
 
   private async headers(): Promise<Record<string, string>> {
     const a = await fresh(this.server);
@@ -230,11 +233,11 @@ export async function mcpTools(servers: McpServer[], signal?: AbortSignal): Prom
         }
       }),
   );
-  const run = async (c: ToolCall): Promise<ToolResult> => {
+  const run = async (c: ToolCall, callSignal = signal): Promise<ToolResult> => {
     const r = route.get(c.name);
     if (!r) return { content: `There's no tool called ${c.name}.`, error: true };
     try {
-      const out = await r.client.call(r.tool, c.args, signal);
+      const out = await r.client.call(r.tool, c.args, callSignal);
       return { content: resultText(out), error: !!out?.isError, label: `${r.server}: ${r.tool.replace(/_/g, ' ')}` };
     } catch (e) {
       return { content: (e as Error).message, error: true, label: `${r.server}: ${r.tool.replace(/_/g, ' ')}` };

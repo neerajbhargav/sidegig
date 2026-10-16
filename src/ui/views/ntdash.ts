@@ -20,11 +20,12 @@ import { PAD } from '../figures/pad.ts';
 
 const stillMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 /** Run `frame` about `fps` times a second while the element is on the page and the tab is visible. */
-function animate(el: Element, fps: number, frame: (now: number) => void, active: () => boolean = () => true) {
+function animate(el: Element, fps: number, frame: (now: number) => void, active: () => boolean = () => true, signal?: AbortSignal) {
   let last = 0;
   let seen = false;
   let waited = 0;
   const step = (now: number) => {
+    if (signal?.aborted) return;
     // Cards are built before they're put on the page: wait for that, stop once it's removed.
     if (!el.isConnected) {
       if (seen || ++waited > 600) return;
@@ -115,7 +116,7 @@ export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLEleme
     hh.setAttribute('d', hand(WATCH.projection, 0, 0, WATCH.face, ((d.getHours() % 12) + min / 60) / 12, WATCH.hour));
     mm.setAttribute('d', hand(WATCH.projection, 0, 0, WATCH.face, min / 60, WATCH.minute));
     ss.setAttribute('d', hand(WATCH.projection, WATCH.sub[0], WATCH.sub[1], WATCH.face, sec / 60, WATCH.second));
-  });
+  }, undefined, ctx.signal);
   const paint = () => {
     const parts = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).formatToParts(new Date());
     const hm = parts.filter((p) => p.type === 'hour' || p.type === 'minute' || p.type === 'literal').map((p) => p.value).join('').trim();
@@ -225,7 +226,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
     const f = Math.max(0, Math.min(1, (live.temp - lo) / (hi - lo)));
     part('mercury').setAttribute('d', line(P, [S.thermo.x, S.thermo.y, S.thermo.bulb], [S.thermo.x, S.thermo.y, S.thermo.low + (S.thermo.high - S.thermo.low) * f]));
     station.dataset.drawn = '1';
-  }, () => hovering || Date.now() < spinUntil || !station.dataset.drawn);
+  }, () => hovering || Date.now() < spinUntil || !station.dataset.drawn, ctx.signal);
   void loadWeather(ctx).then((now) => {
     if (!now) return void reveal(body, h('span', { class: 'muted' }, 'Weather is unavailable right now'));
     const { label, icon } = weatherLabel(now.code, now.isDay);
@@ -459,6 +460,7 @@ function needlePath(minutes: number): string {
 export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
   const cfg: PomoConfig = ctx.settings.newtab.pomodoro;
   let st = await getLocal<PomoState | null>('ntPomo', null) ?? freshPomo(cfg);
+  if (ctx.signal?.aborted) return h('div');
   // The timer is drawn as a real one (an Anatomy figure): the needle shows the minutes left.
   const fig = h('button', {
     type: 'button',
@@ -473,7 +475,7 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     needle.setAttribute('d', needlePath(left / 60_000));
     sweep.setAttribute('d', st.running ? hand(TIMER.projection, TIMER.dial.x, TIMER.dial.y, TIMER.dial.z + 0.1, ((left / 1000) % 60) / 60, [2, TIMER.dial.tip - 2]) : '');
   };
-  animate(fig, stillMotion() ? 1 : 4, (now) => hands(now), () => st.running);
+  animate(fig, stillMotion() ? 1 : 4, (now) => hands(now), () => st.running, ctx.signal);
   const lever = fig.querySelector<SVGGElement>('.pomo-lever')!;
   const time = h('div', { class: 'pomo-time', role: 'timer' });
   const phase = h('div', { class: 'pomo-phase' });
@@ -528,11 +530,14 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
   );
   paint();
   const timer = setInterval(() => (root.isConnected ? paint() : clearInterval(timer)), 1000);
-  onLocalChanged('ntPomo', (v) => {
+  const stop = onLocalChanged('ntPomo', (v) => {
     if (!root.isConnected || !v) return;
     st = v as PomoState;
     paint();
   });
+  const dispose = () => { clearInterval(timer); stop(); };
+  if (ctx.signal?.aborted) dispose();
+  else ctx.signal?.addEventListener('abort', dispose, { once: true });
   return root;
 }
 
@@ -707,8 +712,9 @@ function tileMenu(ctx: Ctx, b: Mark, at: { x: number; y: number }, after: () => 
     }),
   );
   document.body.append(menu);
-  addEventListener('pointerdown', outside, true);
-  addEventListener('keydown', esc, true);
+  addEventListener('pointerdown', outside, { capture: true, signal: ctx.signal });
+  addEventListener('keydown', esc, { capture: true, signal: ctx.signal });
+  ctx.signal?.addEventListener('abort', close, { once: true });
   (menu.querySelector('button') as HTMLButtonElement | null)?.focus();
 }
 
@@ -842,10 +848,11 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
       if (form.contains(t) || t.closest('.shelf-addkey')) return;
       form.hidden = true;
     },
-    true,
+    { capture: true, signal: ctx.signal },
   );
 
   await paint();
+  if (ctx.signal?.aborted) return root;
   // Keep in step with changes made elsewhere (the sidebar, the bookmarks manager).
   let t: ReturnType<typeof setTimeout> | undefined;
   const later = () => {
@@ -854,5 +861,9 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     t = setTimeout(() => void paint(), 150);
   };
   for (const ev of [ext.bookmarks.onCreated, ext.bookmarks.onRemoved, ext.bookmarks.onChanged, ext.bookmarks.onMoved]) ev?.addListener(later);
+  ctx.signal?.addEventListener('abort', () => {
+    clearTimeout(t);
+    for (const ev of [ext.bookmarks.onCreated, ext.bookmarks.onRemoved, ext.bookmarks.onChanged, ext.bookmarks.onMoved]) ev?.removeListener(later);
+  }, { once: true });
   return root;
 }

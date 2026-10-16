@@ -15,6 +15,10 @@ import { addUpload, prepareImage } from '../ui/views/ntwall.ts';
 import { THEMES } from '../ui/views/ntcustom.ts';
 import { PACKS } from '../shared/walls.ts';
 import { PARTS, allLocalKeys, isPrefixKey, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
+import { aiSetup } from '../ui/views/ntchat.ts';
+import { getKeys, setKeys, PROVIDERS } from '../shared/ai/providers.ts';
+import { getLocal, setLocal } from '../shared/storage.ts';
+import { mcpSignIn, mcpSignOut, mcpSignedIn, setMcpToken, type McpServer } from '../shared/ai/mcp.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -199,14 +203,19 @@ async function stacksSection(): Promise<HTMLElement> {
   );
 }
 
-function aiSection(): HTMLElement {
+async function aiSection(): Promise<HTMLElement> {
   const aiApps = [...s.apps.filter((a) => CATALOG.find((c) => c.id === a.catalogId)?.category === 'AI'), ...CATALOG.filter((c) => c.category === 'AI' && !s.apps.some((a) => a.catalogId === c.id)).map((c) => appFromCatalog(c.id))];
   const area = (value: string, onCommit: (v: string) => void) =>
     h('textarea', { class: 'text-input', rows: '4', style: { width: '100%' }, onchange: (e: Event) => onCommit((e.target as HTMLTextAreaElement).value) }, value);
   return section(
     'ai',
     'Ask AI',
-    'Uses the AI site you’re already signed in to, so there are no API keys and no extra cost. sidegig types the prompt for you; you press send.',
+    'Connect models for the built-in chat, or send a question to an AI site you already use.',
+    await modelSettings(),
+    h('label', { class: 'label', for: 'ai-instructions' }, 'Custom instructions for the built-in chat'),
+    h('textarea', { class: 'text-input', id: 'ai-instructions', rows: 4, style: { width: '100%' }, placeholder: 'How would you like the assistant to respond?', onchange: (e: Event) => commit((x) => void (x.ai.instructions = (e.target as HTMLTextAreaElement).value)) }, s.ai.instructions),
+    await mcpSettings(),
+    h('div', { class: 'label' }, 'AI sites'),
     h(
       'div',
       { class: 'group' },
@@ -227,6 +236,84 @@ function aiSection(): HTMLElement {
     h('div', { class: 'label' }, 'Prompt for a whole page'),
     area(s.ai.pageTemplate, (v) => commit((x) => void (x.ai.pageTemplate = v))),
   );
+}
+
+async function modelSettings(): Promise<HTMLElement> {
+  const host = h('div');
+  const paint = async () => {
+    const keys = await getKeys();
+    host.replaceChildren(await aiSetup(() => void paint()));
+    const connected = h('div', { class: 'actions', 'aria-label': 'Connected providers' });
+    for (const provider of Object.keys(keys) as (keyof typeof keys)[]) {
+      if (!keys[provider]) continue;
+      connected.append(h('button', { class: 'btn ghost', type: 'button', onclick: async () => {
+        await setKeys({ [provider]: '' });
+        await paint();
+      } }, `Disconnect ${PROVIDERS[provider].name}`));
+    }
+    host.append(connected);
+  };
+  await paint();
+  return host;
+}
+
+async function mcpSettings(): Promise<HTMLElement> {
+  const root = h('section', { class: 'ai-tools-settings', 'aria-label': 'MCP servers' });
+  const list = h('div');
+  const status = h('p', { class: 'muted', role: 'status' });
+  const paint = async () => {
+    const servers = await getLocal<McpServer[]>('mcpServers', []);
+    list.replaceChildren(...await Promise.all(servers.map(async (server) => {
+      const token = h('input', { class: 'text-input', type: 'password', autocomplete: 'off', placeholder: 'Access token', 'aria-label': `Access token for ${server.name}` });
+      const tokenForm = h('form', { class: 'ai-row' }, token, h('button', { class: 'btn', type: 'submit' }, 'Save token'));
+      tokenForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await setMcpToken(server.id, token.value.trim());
+        token.value = '';
+        status.textContent = 'Token saved on this device.';
+        await paint();
+      });
+      return h('div', { class: 'card' },
+        h('div', { class: 'card-title' }, server.name),
+        h('div', { class: 'card-detail' }, server.url),
+        h('div', { class: 'actions' },
+          toggle(server.enabled, async (enabled) => {
+            const all = await getLocal<McpServer[]>('mcpServers', []);
+            await setLocal('mcpServers', all.map((item) => item.id === server.id ? { ...item, enabled } : item));
+          }, `Enable ${server.name}`),
+          h('button', { class: 'btn', type: 'button', onclick: async () => {
+            try { await mcpSignIn(server, null); status.textContent = `Signed in to ${server.name}.`; await paint(); }
+            catch (e) { status.textContent = (e as Error).message; }
+          } }, await mcpSignedIn(server.id) ? 'Sign in again' : 'Sign in'),
+          h('button', { class: 'btn ghost', type: 'button', onclick: async () => {
+            await mcpSignOut(server.id);
+            const all = await getLocal<McpServer[]>('mcpServers', []);
+            await setLocal('mcpServers', all.filter((item) => item.id !== server.id));
+            await paint();
+          } }, `Remove ${server.name}`),
+        ),
+        tokenForm,
+      );
+    })));
+    if (!servers.length) list.append(h('p', { class: 'muted' }, 'No tool servers connected.'));
+  };
+  const name = h('input', { class: 'text-input', placeholder: 'Server name', 'aria-label': 'MCP server name', required: true });
+  const url = h('input', { class: 'text-input', type: 'url', placeholder: 'https://example.com/mcp', 'aria-label': 'MCP server address', required: true });
+  const form = h('form', { class: 'ai-row' }, name, url, h('button', { class: 'btn', type: 'submit' }, 'Add server'));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const address = new URL(url.value.trim());
+      if (!/^https?:$/.test(address.protocol) || address.username || address.password) throw new Error('Use an HTTP or HTTPS server address without a username or password.');
+      const servers = await getLocal<McpServer[]>('mcpServers', []);
+      await setLocal('mcpServers', [...servers, { id: uid('mcp_'), name: name.value.trim() || address.hostname, url: address.href, enabled: true }]);
+      name.value = ''; url.value = ''; status.textContent = 'Server added. Its tools are available in a new chat.';
+      await paint();
+    } catch (error) { status.textContent = (error as Error).message; }
+  });
+  root.append(h('h3', {}, 'Tool servers'), h('p', { class: 'muted' }, 'Connect an MCP server to give the assistant access to its tools. Sign in when the server requires it.'), list, form, status);
+  await paint();
+  return root;
 }
 
 async function statusSection(): Promise<HTMLElement> {
@@ -878,7 +965,7 @@ async function render() {
     railSection(),
     appsSection(),
     await stacksSection(),
-    aiSection(),
+    await aiSection(),
     await statusSection(),
     rulesSection(),
     tabsSection(),
