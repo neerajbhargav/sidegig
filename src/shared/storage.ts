@@ -32,6 +32,8 @@ export function migrate(stored: unknown): unknown {
   const v = typeof stored.version === 'number' ? stored.version : 0;
   if (v >= SETTINGS_VERSION) return stored;
   const next: Plain = { ...stored };
+  // Old imports can contain null or primitive entries. Only objects can be apps.
+  if (Array.isArray(next.apps)) next.apps = next.apps.filter(isObj);
   // v1 -> v2: the floating "pinned" rail became the Opera-style docked rail.
   if (v < 2 && isObj(next.rail) && next.rail.mode === 'pinned') next.rail = { ...next.rail, mode: 'docked' };
   // v3 -> v4: the single wallpaper choice became a background (kind, treatment, dim, blur).
@@ -74,10 +76,10 @@ export function migrate(stored: unknown): unknown {
     if (isObj(next.drawer) && Number(next.drawer.width) < 400) next.drawer = { ...next.drawer, width: 400 };
   }
   if (v < 8 && isObj(next.newtab)) {
-    const nt = next.newtab as Plain;
-    nt.panels = 'clear';
-    const bg = isObj(nt.background) ? (nt.background as Plain) : null;
-    if (bg && (bg.treatment === 'auto' || !bg.treatment)) bg.treatment = autoEffect(String(bg.kind ?? ''), String(bg.ref ?? ''), String(nt.look ?? 'auto'));
+    const nt: Plain = { ...next.newtab, panels: 'clear' };
+    const bg = isObj(next.newtab.background) ? next.newtab.background : null;
+    if (bg && (bg.treatment === 'auto' || !bg.treatment)) nt.background = { ...bg, treatment: autoEffect(String(bg.kind ?? ''), String(bg.ref ?? ''), String(next.newtab.look ?? 'auto')) };
+    next.newtab = nt;
   }
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;

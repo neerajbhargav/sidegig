@@ -171,3 +171,22 @@ test('a saved layout, folder colours and active space survive loading', () => {
   assert.deepEqual(junk.newtab.layout, {});
   assert.deepEqual(junk.newtab.folderTones, {});
 });
+
+test('migrating a setup leaves the source and its nested wallpaper unchanged', () => {
+  const stored = { version: 7, newtab: { look: 'paper', panels: 'frosted', background: { kind: 'upload', ref: 'u1', treatment: 'auto' } } };
+  const before = structuredClone(stored);
+  const first = migrate(stored);
+  assert.deepEqual(stored, before);
+  assert.deepEqual(migrate(stored), first, 'the same import always migrates the same way');
+  const frozen = Object.freeze({ ...stored, newtab: Object.freeze({ ...stored.newtab, background: Object.freeze({ ...stored.newtab.background }) }) });
+  assert.doesNotThrow(() => migrate(frozen));
+});
+
+test('null and primitive app entries do not crash old migrations', () => {
+  for (const version of [0, 5, 8, 9]) {
+    const stored = { version, apps: [null, false, 'junk', appFromCatalog('gmail')] };
+    const result = migrate(stored) as { apps: unknown[] };
+    assert.deepEqual(result.apps, [{ ...appFromCatalog('gmail'), mobile: false }]);
+    assert.equal(stored.apps.length, 4, 'the source list stays untouched');
+  }
+});
