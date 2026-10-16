@@ -114,3 +114,9 @@ Commit `9b754ec` on branch `bugfix/codebase-review` (plus uncommitted work).
 <img src="2026-10-16-03-customize-keeps-its-close-button-visible.jpg" width="49%" alt="Customize keeps its close button visible and its widget controls match the dark theme">
 <img src="2026-10-16-04-the-narrow-new-tab-uses-one-column-witho.jpg" width="49%" alt="The narrow new tab uses one column without horizontal overflow">
 <img src="2026-10-16-05-sidebar-chat-uses-readable-themed-contro.jpg" width="49%" alt="Sidebar chat uses readable themed controls and the full panel width">
+
+## 2026-10-16: Keep stopped chat runs out of new conversations and tool calls
+
+Commit `de6a3b8` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-06-ai-settings-connect-providers-and-save-c.jpg" width="49%" alt="AI settings connect providers and save custom instructions and tool servers">
