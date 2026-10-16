@@ -5,6 +5,15 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-16
 
+- `c8983ae` Merge codebase and UI fixes
+- `df9b923` Expose model connections, instructions and MCP management in settings
+- `de6a3b8` Keep stopped chat runs out of new conversations and tool calls
+- `88e6ef9` Fix themed controls, Customize navigation and narrow-screen overflow
+- `9b754ec` End new-tab listeners and observers when a render is replaced
+- `21559a8` Import partial setups safely and preserve their selected parts
+- `77bab66` Migrate older settings without crashing or changing their source
+- `ead9b01` Keep settings saves when sync storage exceeds its quota
+- `8bc9fd0` Changelog
 - `3df8cfb` STATUS: deployed to the owner's Aside and checked live
 - `a3f1ada` Changelog for the 2026-10-16 merge
 - `1ee0a8e` STATUS: audit decisions, phase plan and where work stopped; Gmail milestone screenshot
