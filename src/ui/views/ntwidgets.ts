@@ -162,7 +162,7 @@ const GOOGLE_APPS: [string, string][] = [
   ['News', 'https://news.google.com/'],
 ];
 
-export function launcherEl(): HTMLElement {
+export function launcherEl(signal?: AbortSignal): HTMLElement {
   const pop = h('div', { class: 'nt-pop nt-launch', role: 'menu', hidden: true }, GOOGLE_APPS.map(([name, url]) => h('a', { class: 'launch-item', href: url, role: 'menuitem' }, favicon(url, name, 'fav'), h('span', {}, name))));
   const btn = h('button', { class: 'nt-gear', type: 'button', title: 'Google apps', 'aria-label': 'Google apps', 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, ico('grid', 18));
   const close = () => {
@@ -174,8 +174,8 @@ export function launcherEl(): HTMLElement {
     pop.hidden = !pop.hidden;
     btn.setAttribute('aria-expanded', String(!pop.hidden));
   });
-  addEventListener('click', (e) => !pop.contains(e.target as Node) && close());
-  addEventListener('keydown', (e) => e.key === 'Escape' && close());
+  addEventListener('click', (e) => !pop.contains(e.target as Node) && close(), { signal });
+  addEventListener('keydown', (e) => e.key === 'Escape' && close(), { signal });
   return h('div', { class: 'nt-pop-anchor' }, btn, pop);
 }
 

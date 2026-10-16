@@ -75,28 +75,13 @@ async function packThumb(c: Collection): Promise<string> {
   return '';
 }
 
-const SESSION = 'sidegig.cz';
-let escListener: AbortController | undefined;
-/** Survives the page re-rendering after each change (and works where storage is blocked). */
+/** Survives settings redraws, but a fresh page always starts closed. */
 let openTab = '';
 let scrollMemo: Record<string, number> = {};
 const remember = (v: string) => {
   openTab = v;
-  try {
-    if (v) sessionStorage.setItem(SESSION, v);
-    else sessionStorage.removeItem(SESSION);
-  } catch {
-    /* fine */
-  }
 };
-const recalled = () => {
-  if (openTab) return openTab;
-  try {
-    return sessionStorage.getItem(SESSION) ?? '';
-  } catch {
-    return '';
-  }
-};
+const recalled = () => openTab;
 
 const set = (fn: (s: Settings) => void) => void updateSettings(fn);
 const setBg = (patch: Partial<NtBackground>) => set((s) => void (s.newtab.background = { ...s.newtab.background, ...patch }));
@@ -559,6 +544,7 @@ function coloursTab(ctx: Ctx): HTMLElement {
       seg(ctx.settings.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => set((s) => void (s.theme.icons = v))),
       h('p', { class: 'cz-hint' }, 'Original keeps each site’s own icon, sized to match. Themed draws known logos in your theme’s ink, here and in the sidebar.'),
     ),
+    h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Interface size'), sizeSlider(ctx)),
     h(
       'section',
       { class: 'cz-sec' },
@@ -763,53 +749,59 @@ function layoutTab(ctx: Ctx): HTMLElement {
 
 /** The panel, plus the button that opens it. Stays open across the page re-rendering after each change. */
 export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement } {
-  const body = h('div', { class: 'cz-body' });
-  const tabs = h('div', { class: 'cz-tabs', role: 'tablist' });
+  const body = h('div', { class: 'cz-body', role: 'tabpanel', id: 'customize-content' });
+  const tabs = h('div', { class: 'cz-tabs', role: 'tablist', 'aria-label': 'Customize sections' });
   const panel = h('aside', { class: 'nt-cz', role: 'dialog', 'aria-label': 'Customize', hidden: true }, h('header', { class: 'cz-head' }, h('b', {}, 'Customize'), tabs, h('button', { type: 'button', class: 'nt-gear', 'aria-label': 'Close', onclick: () => close() }, ico('close', 18))), body);
   const OLD: Record<string, string> = { theme: 'colours', background: 'wallpaper', widgets: 'layout' };
   let tab = OLD[recalled()] ?? (recalled() || 'wallpaper');
+  let showToken = 0;
   const show = async (t: string) => {
+    const token = ++showToken;
     tab = t;
     remember(t);
     tabs.replaceChildren(
       ...([['wallpaper', 'Wallpaper'], ['colours', 'Colours'], ['layout', 'Layout']] as const).map(([id, label]) =>
-        h('button', { type: 'button', role: 'tab', 'aria-selected': String(id === t), onclick: () => void show(id) }, label),
+        h('button', { type: 'button', role: 'tab', id: `customize-${id}`, tabindex: id === t ? 0 : -1, 'aria-controls': 'customize-content', 'aria-selected': String(id === t), onclick: () => void show(id) }, label),
       ),
     );
-    let scroll = scrollMemo[t] ?? 0;
-    try {
-      scroll = scrollMemo[t] ?? Number(sessionStorage.getItem(`${SESSION}.scroll.${t}`) ?? 0);
-    } catch {
-      /* storage blocked: memory only */
-    }
-    body.replaceChildren(t === 'colours' ? coloursTab(ctx) : t === 'layout' ? layoutTab(ctx) : await backgroundTab(ctx));
-    body.scrollTop = scroll;
+    const content = t === 'colours' ? coloursTab(ctx) : t === 'layout' ? layoutTab(ctx) : await backgroundTab(ctx);
+    if (token !== showToken || panel.hidden || ctx.signal?.aborted) return;
+    body.setAttribute('aria-labelledby', `customize-${t}`);
+    body.replaceChildren(content);
+    body.scrollTop = scrollMemo[t] ?? 0;
   };
   body.addEventListener('scroll', () => {
     scrollMemo = { ...scrollMemo, [tab]: body.scrollTop };
-    try {
-      sessionStorage.setItem(`${SESSION}.scroll.${tab}`, String(body.scrollTop));
-    } catch {
-      /* fine */
-    }
+  });
+  tabs.addEventListener('keydown', (e) => {
+    const ids = ['wallpaper', 'colours', 'layout'];
+    const i = ids.indexOf(tab);
+    const next = e.key === 'ArrowRight' ? (i + 1) % ids.length : e.key === 'ArrowLeft' ? (i + ids.length - 1) % ids.length : e.key === 'Home' ? 0 : e.key === 'End' ? ids.length - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    void show(ids[next]);
+    tabs.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
   });
   const open = () => {
+    if (ctx.signal?.aborted) return;
     panel.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
     document.documentElement.dataset.cz = '1';
     void show(tab);
   };
   const close = () => {
+    showToken++;
     panel.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
     delete document.documentElement.dataset.cz;
     remember('');
+    button.focus({ preventScroll: true });
   };
-  escListener?.abort();
-  escListener = new AbortController();
-  addEventListener('keydown', (e) => e.key === 'Escape' && !panel.hidden && close(), { signal: escListener.signal });
+  addEventListener('keydown', (e) => e.key === 'Escape' && !panel.hidden && close(), { signal: ctx.signal });
   const [bg, ink, accent] = ctx.settings.newtab.look === 'custom' ? [ctx.settings.newtab.custom.bg, ctx.settings.newtab.custom.ink, ctx.settings.newtab.custom.accent] : (THEMES.find((t) => t.id === ctx.settings.newtab.look) ?? THEMES[0]).swatch;
   const button = h(
     'button',
-    { type: 'button', class: 'nt-gear nt-cz-btn', title: 'Customize: wallpaper, colours and layout', 'aria-label': 'Customize', 'aria-haspopup': 'dialog', onclick: () => (panel.hidden ? open() : close()) },
+    { type: 'button', class: 'nt-gear nt-cz-btn', title: 'Customize: wallpaper, colours and layout', 'aria-label': 'Customize', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', onclick: () => (panel.hidden ? open() : close()) },
     ico('palette', 18),
     h('i', { class: 'cz-dot', 'aria-hidden': 'true', style: { background: `linear-gradient(135deg, ${bg} 50%, ${ink} 50%)`, boxShadow: `0 0 0 1.5px ${accent}` } }),
   );

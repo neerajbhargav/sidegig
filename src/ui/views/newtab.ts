@@ -271,7 +271,7 @@ function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arran
       czButton,
       arrange,
       soundToggle(ctx),
-      launcherEl(),
+      launcherEl(ctx.signal),
       h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 18)),
     ),
   );
@@ -318,9 +318,6 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
   return card;
 }
 
-/** Window listeners for the current render (replaced on each re-render). */
-let pageListeners: AbortController | undefined;
-
 /** A two-way switch with a pill that slides to the chosen side. */
 function segmented<T extends string>(label: string, options: [T, string, string][], value: T, onPick: (v: T) => void): { el: HTMLElement; set: (v: T) => void } {
   const el = h('div', { class: 'nt-seg', role: 'tablist', 'aria-label': label, style: { '--n': String(options.length) } });
@@ -336,7 +333,9 @@ function segmented<T extends string>(label: string, options: [T, string, string]
 }
 
 export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
+  const signal = ctx.signal ?? new AbortController().signal;
   const browser = await detectBrowser();
+  if (signal.aborted) return h('div');
   const n = ctx.settings.newtab;
   const w = n.widgets;
   applyLook(n.look, browser, n.accent, n.custom);
@@ -465,9 +464,6 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   // The edition, under your apps.
   if (feedOn) void editionSection(ctx).then((ed) => (feedHost.classList.add('nt-card'), feedHost.append(ed)));
 
-  pageListeners?.abort();
-  pageListeners = new AbortController();
-  const signal = pageListeners.signal;
   // Clear widgets read the wallpaper behind them to stay readable.
   keepReadable(root, wall, n.panels === 'clear', signal);
   addEventListener('nt-arrange', () => grid.edit(true), { signal });
