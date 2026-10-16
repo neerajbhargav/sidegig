@@ -36,6 +36,7 @@ export function defaultSettings(): Settings {
     apps: DEFAULT_PINNED.filter((id) => CATALOG.some((c) => c.id === id)).map(appFromCatalog),
     stacks: { spaces: [], activeSpace: '' },
     ai: {
+      instructions: '',
       defaultApp: 'claude',
       selectionTemplate: '{text}\n\nSource: {title}\n{url}',
       pageTemplate: 'Summarize this page and point out anything I should pay attention to.\n\nTitle: {title}\nURL: {url}\n\n{text}',

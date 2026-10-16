@@ -12,7 +12,7 @@ export interface ToolResult {
 }
 export interface ToolSet {
   defs: ToolDef[];
-  run: (call: ToolCall) => Promise<ToolResult>;
+  run: (call: ToolCall, signal?: AbortSignal) => Promise<ToolResult>;
   /** Shown while a tool runs. */
   describe: (call: ToolCall) => string;
 }
@@ -129,7 +129,7 @@ export function browserTools(opts: { hostTabId?: number } = {}): ToolSet {
 export function combine(...sets: ToolSet[]): ToolSet {
   return {
     defs: sets.flatMap((s) => s.defs),
-    run: (c) => (sets.find((s) => s.defs.some((d) => d.name === c.name)) ?? sets[0]).run(c),
+    run: (c, signal) => (sets.find((s) => s.defs.some((d) => d.name === c.name)) ?? sets[0]).run(c, signal),
     describe: (c) => (sets.find((s) => s.defs.some((d) => d.name === c.name)) ?? sets[0]).describe(c),
   };
 }

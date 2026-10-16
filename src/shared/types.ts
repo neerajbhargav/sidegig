@@ -88,6 +88,8 @@ export interface Settings {
     activeSpace: string;
   };
   ai: {
+    /** Extra instructions for the built-in chat. */
+    instructions: string;
     defaultApp: string;
     /** Used when text is selected. Tokens: {text} {title} {url} */
     selectionTemplate: string;
