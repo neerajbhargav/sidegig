@@ -85,6 +85,8 @@ async function boot() {
 
   let current: { name: ViewName; app?: string } = { name: 'home' };
   let token = 0;
+  let renderLife: AbortController | undefined;
+  addEventListener('pagehide', (e) => { if (!e.persisted) renderLife?.abort(); });
 
   const ctx: Ctx = {
     kind,
@@ -109,15 +111,19 @@ async function boot() {
 
   async function render(name: ViewName, opts: { app?: string; q?: string } = {}) {
     const my = ++token;
+    renderLife?.abort();
+    const life = new AbortController();
+    renderLife = life;
+    const viewCtx: Ctx = { ...ctx, signal: life.signal };
     current = { name, app: opts.app ?? (name === 'app' ? current.app : undefined) };
     let el: HTMLElement;
-    if (kind === 'newtab') el = await newtabView(ctx);
-    else if (name === 'search') el = await searchView(ctx, opts.q ?? '');
-    else if (name === 'status') el = await statusView(ctx);
-    else if (name === 'settings') el = await quickView(ctx);
-    else if (name === 'add') el = await addView(ctx);
-    else if (name === 'app') el = await appBar(ctx, current.app);
-    else el = await homeView(ctx);
+    if (kind === 'newtab') el = await newtabView(viewCtx);
+    else if (name === 'search') el = await searchView(viewCtx, opts.q ?? '');
+    else if (name === 'status') el = await statusView(viewCtx);
+    else if (name === 'settings') el = await quickView(viewCtx);
+    else if (name === 'add') el = await addView(viewCtx);
+    else if (name === 'app') el = await appBar(viewCtx, current.app);
+    else el = await homeView(viewCtx);
     if (my !== token) return;
     view.replaceChildren(el);
     view.style.flex = name === 'app' ? 'none' : '1 1 auto';
