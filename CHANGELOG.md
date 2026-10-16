@@ -1,10 +1,19 @@
 # Changelog
 
-Generated from the git history of `audit-fixes` by `npm run changelog`. Newest first.
+Generated from the git history of `main` by `npm run changelog`. Newest first.
 Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Current state and next steps: [docs/STATUS.md](docs/STATUS.md).
+
+## 2026-10-16
+
+- `1ee0a8e` STATUS: audit decisions, phase plan and where work stopped; Gmail milestone screenshot
+- `3598f2b` identity permission for sign-in windows; Chrome 130 and Firefox 148 minimums
 
 ## 2026-10-14
 
+- `20e53e2` Remove 265 CSS selectors that can never match, and a test that keeps it that way
+- `0b40c50` Delete dead TypeScript found by the audit
+- `46a8528` Changelog is regenerated on main after a merge, not on every commit
+- `988e9e2` CI: typecheck, tests and a Chrome build on every push; one version number
 - `aae3fce` Removing a widget in arrange mode no longer freezes the top bar
 - `a236fc2` Customize › Reset layout redraws the grid
 - `79ecde9` Saved new-tab layout, folder colours and active space survive loading
