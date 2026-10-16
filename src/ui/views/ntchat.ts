@@ -3,7 +3,7 @@
 // your browser and any MCP servers you connect. Works on the new tab (as an
 // overlay) and in the sidebar (inline, with "this page" attached).
 import { ext, uid } from '../../shared/api.ts';
-import { getLocal, setLocal } from '../../shared/storage.ts';
+import { getLocal, setLocal, onLocalChanged } from '../../shared/storage.ts';
 import { h, ico, toast, favicon } from '../dom.ts';
 import { play } from '../sound.ts';
 import { openOptions, type Ctx } from '../ctx.ts';
@@ -366,7 +366,12 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   await picks.load();
   let chat: Chat = { id: uid('c_'), title: 'New chat', model: '', created: Date.now(), updated: Date.now(), messages: [] };
   let running: AbortController | null = null;
-  let mcp: { set: ToolSet; status: McpStatus[]; at: number } | null = null;
+  let mcp: { set: ToolSet; status: McpStatus[]; at: number; config: string } | null = null;
+  const stopKeys = onLocalChanged('aiKeys', () => {
+    if (!ctx.signal?.aborted) void picks.load(true);
+  });
+  if (ctx.signal?.aborted) stopKeys();
+  else ctx.signal?.addEventListener('abort', stopKeys, { once: true });
   const attached = new Map<number, { title: string; url: string }>();
 
   const view = h('section', { class: `cv cv-${o.where}`, 'aria-label': 'Assistant', hidden: o.where === 'newtab' });
@@ -546,7 +551,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
               'div',
               { class: 'cv-recents' },
               h('div', { class: 'cc-group' }, 'Recent chats'),
-              recents.map((c) => h('button', { type: 'button', class: 'cv-recent', onclick: () => ((chat = c), paintChat()) }, h('span', {}, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString()))),
+              recents.map((c) => h('button', { type: 'button', class: 'cv-recent', onclick: () => loadChat(c) }, h('span', {}, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString()))),
             )
           : null,
       ),
@@ -558,9 +563,11 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     const base = browserTools({ hostTabId: o.hostTabId });
     const servers = (await loadServers()).filter((s) => s.enabled);
     if (!servers.length) return base;
-    if (!mcp || Date.now() - mcp.at > 600_000) {
+    const config = JSON.stringify(servers);
+    if (!mcp || mcp.config !== config || Date.now() - mcp.at > 600_000) {
       const r = await mcpTools(servers, signal).catch(() => null);
-      if (r) mcp = { ...r, at: Date.now() };
+      if (signal.aborted) return base;
+      if (r) mcp = { ...r, at: Date.now(), config };
     }
     const signin = mcp?.status.filter((s) => s.state === 'signin') ?? [];
     if (signin.length) toast(`${signin.map((s) => s.server.name).join(', ')} needs you to sign in (Settings, AI).`);
@@ -575,11 +582,24 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     view.toggleAttribute('data-running', on);
   };
 
-  async function runFrom(userIndex: number) {
+  const stop = () => {
+    const ctrl = running;
+    running = null;
+    ctrl?.abort();
+    setRunning(false);
+  };
+  ctx.signal?.addEventListener('abort', () => {
+    stop();
+    closePop();
+    if (o.where === 'newtab') document.documentElement.removeAttribute('data-chat');
+  }, { once: true });
+
+  async function runFrom(userIndex: number, ctrl = new AbortController()) {
     const model = picks.model;
     if (!model) return void showSetup();
-    const ctrl = new AbortController();
+    const target = chat;
     running = ctrl;
+    const current = () => chat === target && running === ctrl && !ctx.signal?.aborted;
     setRunning(true);
     const turn = turnEl();
     thread.append(turn);
@@ -591,7 +611,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
       painting = true;
       requestAnimationFrame(() => {
         painting = false;
-        if (!seg || !lastMsg) return;
+        if (!seg || !lastMsg || !current()) return;
         const stick = nearBottom();
         seg.body.innerHTML = md(lastMsg.content);
         if (lastMsg.thinking) {
@@ -603,6 +623,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     };
     const rows = new Map<string, HTMLElement>();
     const on = (e: RunEvent) => {
+      if (!current()) return;
       if (e.type === 'start') {
         seg = segment(turn);
         lastMsg = e.msg;
@@ -631,62 +652,84 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
         play('fail');
       }
     };
-    const history = chat.messages.slice(0, userIndex + 1);
+    const history = target.messages.slice(0, userIndex + 1);
     try {
       const tools = model.tools ? await toolsFor(ctrl.signal) : browserTools();
-      const extra = (ctx.settings.ai as { instructions?: string }).instructions ?? '';
+      if (ctrl.signal.aborted || !current()) return;
+      const extra = ctx.settings.ai.instructions;
       const added = await runChat({ model, effort: picks.effective(), system: systemPrompt(extra), history, tools, signal: ctrl.signal, on });
-      chat.messages = [...history, ...added];
-      chat.model = modelKey(model);
-      chat.updated = Date.now();
-      await saveChat(chat);
+      if (!current()) return;
+      target.messages = [...history, ...added];
+      target.model = modelKey(model);
+      target.updated = Date.now();
+      await saveChat(target);
+      if (!current()) return;
       turn.querySelectorAll('.cm-wait').forEach((x) => x.classList.remove('cm-wait'));
       [...turn.querySelectorAll('.cm-seg')].forEach((s) => {
         if (!s.textContent?.trim() && !s.querySelector('.cm-tool')) s.remove();
       });
       if (!turn.querySelector('.cm-err')) actions(turn, userIndex, model.label);
       if (!ctrl.signal.aborted && !turn.querySelector('.cm-err')) play('arrive');
+    } catch (e) {
+      if (current() && !ctrl.signal.aborted) errorEl(turn, (e as Error).message || 'The assistant could not finish. Try again.', userIndex);
     } finally {
-      running = null;
-      setRunning(false);
+      if (running === ctrl) {
+        running = null;
+        setRunning(false);
+      }
     }
   }
 
   async function send(text: string, tabIds?: number[]) {
     const q = text.trim();
     if (!q || running) return;
-    if (!picks.model) return void showSetup();
     open();
-    if (!chat.messages.length) {
-      chat.title = titleFor(q);
-      title.textContent = chat.title;
-      thread.replaceChildren();
-    }
-    // Attached tabs travel with the question, read now.
-    const ids = tabIds ?? [...attached.keys()];
-    const pages: string[] = [];
-    const shown: { title: string; url: string }[] = [];
-    for (const id of ids) {
-      try {
-        const p = await readTab(id, 16_000);
-        pages.push(asPage(p));
-        shown.push({ title: p.title, url: p.url });
-      } catch {
-        /* a tab we can't read is skipped */
+    if (!picks.model) return void showSetup();
+    const target = chat;
+    const ctrl = new AbortController();
+    running = ctrl;
+    setRunning(true);
+    try {
+      if (!chat.messages.length) {
+        chat.title = titleFor(q);
+        title.textContent = chat.title;
+        thread.replaceChildren();
+      }
+      // Attached tabs travel with the question, read now.
+      const ids = tabIds ?? [...attached.keys()];
+      const pages: string[] = [];
+      const shown: { title: string; url: string }[] = [];
+      for (const id of ids) {
+        try {
+          const p = await readTab(id, 16_000);
+          pages.push(asPage(p));
+          shown.push({ title: p.title, url: p.url });
+        } catch {
+          /* a tab we can't read is skipped */
+        }
+        if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
+      }
+      if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
+      const msg: Msg = { role: 'user', content: pages.length ? `${q}\n\n${pages.join('\n\n')}` : q, display: q, ...(shown.length ? { tabs: shown } : {}) };
+      chat.messages.push(msg);
+      await saveChat(target);
+      if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
+      thread.append(userEl(msg));
+      toBottom();
+      input.value = '';
+      grow();
+      if (o.where === 'newtab') {
+        attached.clear();
+        paintCtx();
+      }
+      play('send');
+      await runFrom(target.messages.length - 1, ctrl);
+    } finally {
+      if (running === ctrl) {
+        running = null;
+        setRunning(false);
       }
     }
-    const msg: Msg = { role: 'user', content: pages.length ? `${q}\n\n${pages.join('\n\n')}` : q, display: q, ...(shown.length ? { tabs: shown } : {}) };
-    chat.messages.push(msg);
-    thread.append(userEl(msg));
-    toBottom();
-    input.value = '';
-    grow();
-    if (o.where === 'newtab') {
-      attached.clear();
-      paintCtx();
-    }
-    play('send');
-    await runFrom(chat.messages.length - 1);
   }
 
   async function retry(userIndex: number) {
@@ -725,7 +768,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
               h(
                 'div',
                 { class: 'cc-optrow' },
-                h('button', { type: 'button', role: 'option', class: 'cc-opt', 'aria-selected': String(c.id === chat.id), onclick: () => ((chat = c), paintChat(), closePop()) }, h('span', { class: 'cc-opt-t' }, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString())),
+                h('button', { type: 'button', role: 'option', class: 'cc-opt', 'aria-selected': String(c.id === chat.id), onclick: () => (loadChat(c), closePop()) }, h('span', { class: 'cc-opt-t' }, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString())),
                 h('button', { type: 'button', class: 'cc-del', title: 'Delete', 'aria-label': `Delete ${c.title}`, onclick: async () => (await deleteChat(c.id), paintList((await loadChats()).filter((x) => x.id !== c.id)), c.id === chat.id && newChat()) }, ico('close', 14)),
               ),
             )
@@ -735,11 +778,16 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     popover(anchor, list, 'cc-pop-history');
   };
   const newChat = () => {
-    if (running) running.abort();
+    stop();
     chat = { id: uid('c_'), title: 'New chat', model: '', created: Date.now(), updated: Date.now(), messages: [] };
     paintChat();
     input.focus();
   };
+  function loadChat(c: Chat) {
+    stop();
+    chat = c;
+    paintChat();
+  }
   const close = () => {
     if (o.where !== 'newtab') return;
     view.hidden = true;
@@ -793,11 +841,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     isOpen: () => !view.hidden,
     send,
     newChat,
-    load: (c: Chat) => {
-      if (running) running.abort();
-      chat = c;
-      paintChat();
-    },
+    load: loadChat,
     focus: () => input.focus(),
   };
 }

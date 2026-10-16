@@ -42,6 +42,7 @@ export async function runChat(o: {
   const added: Msg[] = [];
   const effort: Effort = o.model.efforts.includes(o.effort) ? o.effort : 'auto';
   for (let step = 0; step < MAX_STEPS; step++) {
+    if (o.signal.aborted) break;
     const msg: Msg = { role: 'assistant', content: '', calls: [], thinking: '' };
     o.on({ type: 'start', msg });
     let stop = 'end';
@@ -61,11 +62,17 @@ export async function runChat(o: {
     if (!msg.calls!.length) delete msg.calls;
     if (!msg.thinking) delete msg.thinking;
     if (o.signal.aborted) {
-      if (msg.content || msg.calls) added.push(msg);
+      // A stopped stream can contain incomplete tool calls. They were never
+      // run, so keep only the readable answer rather than an invalid tool turn.
+      delete msg.calls;
+      delete msg.raw;
+      if (msg.content || msg.thinking) added.push(msg);
       o.on({ type: 'message', msg });
       break;
     }
     if (failed) {
+      delete msg.calls;
+      delete msg.raw;
       if (msg.content) added.push(msg);
       o.on({ type: 'error', message: failed });
       break;
@@ -76,11 +83,10 @@ export async function runChat(o: {
     // Run what it asked for, one after another, and send the results back.
     for (const call of msg.calls) {
       o.on({ type: 'tool', call, state: 'running', label: o.tools.describe(call) });
-      const r = await o.tools.run(call);
+      const r = o.signal.aborted ? { content: 'Stopped before this tool ran.', error: true } : await o.tools.run(call, o.signal);
       const res: Msg = { role: 'tool', callId: call.id, name: call.name, content: r.content, label: r.label ?? o.tools.describe(call), ...(r.error ? { error: true } : {}) };
       added.push(res);
       o.on({ type: 'tool', call, state: r.error ? 'failed' : 'done', label: r.label ?? o.tools.describe(call) });
-      if (o.signal.aborted) break;
     }
     if (o.signal.aborted) break;
     if (step === MAX_STEPS - 1) o.on({ type: 'error', message: 'Stopped after ten steps. Ask again to keep going.' });
