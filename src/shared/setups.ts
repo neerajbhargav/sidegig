@@ -99,7 +99,7 @@ export function toBundle(data: unknown, fallbackName = 'Imported setup'): SetupB
       name: typeof data.name === 'string' && data.name.trim() ? data.name.trim().slice(0, 60) : fallbackName,
       created: typeof data.created === 'number' ? data.created : Date.now(),
       from: typeof data.from === 'string' ? data.from.slice(0, 40) : undefined,
-      parts: parts.length ? parts : ['apps', 'looks', 'reading'],
+      parts: Array.isArray(data.parts) ? parts : ['apps', 'looks', 'reading'],
       settings: data.settings as unknown as Settings,
       local: isObj(data.local) ? data.local : {},
     };
@@ -168,10 +168,11 @@ export const fileName = (bundle: SetupBundle) => `sidegig-${bundle.name.toLowerC
 
 /** What a setup contains, in words ("8 apps · Night theme · 3 interests"). */
 export function describe(bundle: SetupBundle): string {
-  const s = bundle.settings as Partial<Settings>;
+  const s = mergeSettings(defaultSettings(), migrate(bundle.settings));
   const bits: string[] = [];
   if (bundle.parts.includes('apps') && Array.isArray(s.apps)) bits.push(`${s.apps.length} app${s.apps.length === 1 ? '' : 's'}`);
-  if (bundle.parts.includes('looks') && s.newtab) bits.push(`${s.newtab.look === 'auto' ? 'Match browser' : s.newtab.look[0].toUpperCase() + s.newtab.look.slice(1)} theme`);
+  const look = s.newtab.look || 'auto';
+  if (bundle.parts.includes('looks')) bits.push(`${look === 'auto' ? 'Match browser' : look[0].toUpperCase() + look.slice(1)} theme`);
   const interests = (bundle.local.edProfile as { interests?: unknown[] } | undefined)?.interests?.length;
   if (bundle.parts.includes('reading') && interests) bits.push(`${interests} interest${interests === 1 ? '' : 's'}`);
   const todos = (bundle.local.ntTodos as unknown[] | undefined)?.length;

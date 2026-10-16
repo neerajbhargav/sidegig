@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings, appFromCatalog } from '../src/shared/defaults.ts';
-import { applySetup, describe, makeSetup, parseSetup, toBundle, toCode, fileName } from '../src/shared/setups.ts';
+import { applySetup, describe, makeSetup, parseSetup, toBundle, toCode, fileName, PARTS } from '../src/shared/setups.ts';
 
 const mine = () => {
   const s = defaultSettings();
@@ -68,6 +68,24 @@ test('files: new setup files and old settings exports both import; junk is refus
   await assert.rejects(parseSetup('hello'), /Not a sidegig setup/);
   await assert.rejects(parseSetup('{"foo":1}'), /Not a sidegig setup/);
   assert.throws(() => toBundle({ kind: 'sidegig-setup', format: 2, settings: {} }), /newer sidegig/);
+});
+
+test('partial imported settings can be described before applying them', async () => {
+  for (const settings of [{ version: 10, newtab: { name: 'Sam' } }, { version: 10, newtab: { look: '' } }]) {
+    const legacy = await parseSetup(JSON.stringify(settings));
+    assert.match(describe(legacy), /Match browser theme/);
+    const bundle = toBundle({ kind: 'sidegig-setup', format: 1, settings, parts: ['looks'] });
+    assert.equal(describe(bundle), 'Match browser theme');
+    assert.deepEqual(bundle.settings, settings, 'describing does not change the imported file');
+  }
+});
+
+test('a code with no portable parts does not acquire apps or overwrite them', async () => {
+  const b = makeSetup('Pictures only', mine(), local, ['pictures']);
+  const back = await parseSetup(await toCode(b));
+  assert.deepEqual(back.parts, []);
+  const current = defaultSettings();
+  assert.deepEqual(applySetup(current, back, PARTS.map((p) => p.id)).settings, current);
 });
 
 test('an old setup is migrated when applied (Gmail opens in the sidebar)', () => {
