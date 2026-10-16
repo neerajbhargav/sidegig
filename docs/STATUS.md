@@ -13,7 +13,8 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 - Each render now has an abort signal. Replacing a new tab ends its bookmark, storage, keyboard and resize listeners, observers and timers. A browser probe across 12 redraws stays at 7 storage listeners, 1 bookmark listener, 1 resize listener, 4 keyboard listeners and 1 observer. Before the fix, bookmark listeners and observers grew from 1 to 13.
 - The grid uses the page’s actual bottom padding. The fixture dashboard fits 1280×720, 1440×900 and 1920×1080 without vertical overflow. Arrange, resizing, removing Notes and Reset layout still work in the browser.
-- Theme, Customize, chat cancellation and AI settings fixes are also present in the worktree. They are being committed separately before the authorized merge. Final validation of the combined worktree passes: 123 tests, typecheck, all four builds and zips, and 16 fixture screens. The installed extension has not yet been rebuilt.
+- Customize now has a visible close button, keyboard tabs, a Size control in Colours, and no reload memory. Async Wallpaper loads cannot overwrite a newer tab. Switches and segmented controls reflect each click immediately. Shared chat and help controls use the surface theme, with visible keyboard focus and correct dark fields. The mobile dashboard clips decorative feather overflow; 390×844 has no horizontal scroll. Hover and slip-drop motion use ease-out.
+- Chat cancellation and AI settings fixes are also present in the worktree. They are being committed separately before the authorized merge. Final validation of the combined worktree passes: 123 tests, typecheck, all four builds and zips, and 16 fixture screens. The installed extension has not yet been rebuilt.
 
 **Bug review, 2026-10-16, `bugfix/codebase-review` (not merged or deployed):**
 

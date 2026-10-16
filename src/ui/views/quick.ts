@@ -10,17 +10,28 @@ export const ACCENTS = ['#0b57d0', '#3b6ef5', '#7c5cff', '#e5484d', '#f2994a', '
 export function seg<T extends string>(value: T, options: [T, string][], onPick: (v: T) => void): HTMLElement {
   const el = h('div', { class: 'seg', role: 'group' });
   for (const [v, label] of options) {
-    el.append(h('button', { type: 'button', 'aria-pressed': String(v === value), onclick: () => onPick(v) }, label));
+    el.append(h('button', { type: 'button', 'aria-pressed': String(v === value), onclick: () => {
+      for (const button of el.querySelectorAll('button')) button.setAttribute('aria-pressed', 'false');
+      (el.children[options.findIndex(([id]) => id === v)] as HTMLElement).setAttribute('aria-pressed', 'true');
+      onPick(v);
+    } }, label));
   }
   return el;
 }
 
 export function toggle(on: boolean, onChange: (v: boolean) => void, label: string): HTMLElement {
-  return h('button', { class: 'toggle', type: 'button', role: 'switch', 'aria-checked': String(on), 'aria-label': label, onclick: () => onChange(!on) });
+  const button = h('button', { class: 'toggle', type: 'button', role: 'switch', 'aria-checked': String(on), 'aria-label': label, onclick: () => {
+    on = !on;
+    button.setAttribute('aria-checked', String(on));
+    onChange(on);
+  } });
+  return button;
 }
 
-export const opt = (title: string, meta: string | null, control: HTMLElement) =>
-  h('div', { class: 'opt' }, h('div', { class: 'text' }, h('div', { class: 't' }, title), meta ? h('div', { class: 'm' }, meta) : null), control);
+export const opt = (title: string, meta: string | null, control: HTMLElement) => {
+  if (control.matches('input, select, textarea, [role="group"]') && !control.hasAttribute('aria-label')) control.setAttribute('aria-label', title);
+  return h('div', { class: 'opt' }, h('div', { class: 'text' }, h('div', { class: 't' }, title), meta ? h('div', { class: 'm' }, meta) : null), control);
+};
 
 const set = (fn: (s: Settings) => void) => void updateSettings(fn);
 
