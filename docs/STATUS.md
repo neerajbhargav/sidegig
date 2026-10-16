@@ -9,6 +9,8 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 `main` holds all of the work below (merged 2026-10-16 from `audit-fixes`, which was built on `wip/in-panel-apps`). One branch is still open: `drawer-dynamic-url` (open work item 1). The full audit report, the session transcript and the test scripts are in `context/claude-code-session-2026-10-14/` (local only).
 
+**Deployed 2026-10-16:** `dist/chrome` built from `main` is loaded in the owner's Aside (extension reloaded; the loaded manifest has `identity` and minimum Chrome 130). Checked live after the reload: Gmail reached the inbox in 2 s and stayed, X showed posts in 3 s. CI is green on `main`. All four targets and their store zips are in `dist/`. Nothing is published to a store.
+
 **Gmail and X open inside sidegig's own sidebar frame, signed in** (checked live in the owner's Aside on 2026-10-14: Gmail stays in the inbox for 30 s and more, X shows the timeline).
 
 - **X:** `src/content/framefit-main.ts` (MAIN world) adds `SameSite=None; Secure` to cookie writes, merges the site's same-site cookies into `document.cookie` reads (from `pageCookies` in `src/background/framecookies.ts`), and blocks service-worker registration.
