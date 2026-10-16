@@ -1,13 +1,18 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-16 (Claude Code session: Gmail in a frame, three new-tab fixes, whole-codebase audit with the owner's decisions, Phase 1 of the audit fixes; all merged to `main`).
+Last updated: 2026-10-16 (Codex bug review on `bugfix/codebase-review`; the earlier Phase 1 work remains on `main`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
 
-`main` holds all of the work below (merged 2026-10-16 from `audit-fixes`, which was built on `wip/in-panel-apps`). One branch is still open: `drawer-dynamic-url` (open work item 1). The full audit report, the session transcript and the test scripts are in `context/claude-code-session-2026-10-14/` (local only).
+`main` holds the earlier work below (merged 2026-10-16 from `audit-fixes`, which was built on `wip/in-panel-apps`). Open branches: `bugfix/codebase-review` and `drawer-dynamic-url` (open work item 1). The full earlier audit report, session transcript and test scripts are in `context/claude-code-session-2026-10-14/` (local only).
+
+**Bug review, 2026-10-16, `bugfix/codebase-review` (not merged or deployed):**
+
+- A save that exceeds sync quota now survives loading over an older synced copy. Each save keeps a device-local backup and an embedded timestamp. Loading chooses the newer copy; a newer remote save can still win. Custom CSS remains local. Six storage regression tests cover fallback, recovery, remote updates, legacy copies, browsers without sync and clock rollback after an observed save. Legacy copies without timestamps retain sync precedence because their age is unknown.
+- Baseline: all 111 existing tests and the typecheck passed. With the storage regression tests, 117 tests pass; the typecheck passes. Sixteen fixture preview pages render, with zero changed pixels against `main` outside the installed rail. T3's browser automation disconnected; the comparison used Aside. Its viewport-resize API was unavailable, so both captures used the existing viewport.
 
 **Deployed 2026-10-16:** `dist/chrome` built from `main` is loaded in the owner's Aside (extension reloaded; the loaded manifest has `identity` and minimum Chrome 130). Checked live after the reload: Gmail reached the inbox in 2 s and stayed, X showed posts in 3 s. CI is green on `main`. All four targets and their store zips are in `dist/`. Nothing is published to a store.
 
@@ -47,7 +52,7 @@ The audit plan, then the earlier list. Run the typecheck, tests and preview diff
    - Background message checks: decide from `sender` (URL, extension page or not), not from hosts named inside the message (`frame-cookies`, `clear-sw`, `profile-import`, `badge`, `ai-claim`).
    - Bridge: pairing code from `sidegig-bridge setup`, proved on every connection; frame-size limit; reject unmasked frames; cap Codex runs and stop them when the socket closes; tool calls belong to the socket that asked.
 2. **AI settings section** in `src/options/main.ts` (owner chose the full section): keys, local server address, browser model status, ChatGPT plan (Codex) toggle, OpenRouter sign-in, custom instructions, MCP servers add/remove (`mcpServers` is read but nothing writes it; `mcpSignIn` exists), bridge status and the pairing-code field. Agent access off/read/full waits for the bridge's browser side (item 9).
-3. **Phase 2, typed data:** a typed schema for the `chrome.storage.local` keys and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings` with ordered migrations, explicit user-owned maps and a newest-wins load; one typed message protocol with a handler map in `src/background/index.ts`.
+3. **Phase 2, typed data:** a typed schema for the `chrome.storage.local` keys and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings` with ordered migrations and explicit user-owned maps (newest-wins loading is fixed on `bugfix/codebase-review`); one typed message protocol with a handler map in `src/background/index.ts`.
 4. **Phase 3, new tab and CSS:** the new tab owns its lifecycle (one session object and an abort signal per render, which also ends the listener leaks); a widget registry; Customize talks to the page through one API and starts closed after a reload (its sessionStorage memory is cut); `sync()` redraws only the subsystem that changed. CSS: one component set (buttons, chips, toggles, fields, menus, cards) on panel, drawer, options and new tab, colours from each surface's own theme; fix the undefined tokens (`--c-surface`, `--m-surface-2`, `data-theme`), the white help box in a dark sidebar and the unthemed panel chat. Changed digits bounce everywhere (clock, to-do count, timer); remove the overshoot from figure hover and the slip drop. Delete the overridden pattern-fade rule in `ui.css`.
 5. **Phase 4, tests:** a fake `chrome.*` seam built from the preview shim; router tests; a manifest snapshot test; bridge tests through Node's WebSocket client; preview end-to-end scripts.
 6. Phone layouts in the side panel and a live check of Calendar, Instagram, Grok and Messenger in frames (Gmail and X done). Watch Gmail for other `top` uses in modules it loads later (compose, settings, chat); `TOP_REWRITE_HOSTS` covers mail.google.com only.
