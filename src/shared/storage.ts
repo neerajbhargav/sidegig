@@ -94,14 +94,20 @@ export function autoEffect(kind: string, ref: string, look: string): 'photo' | '
 
 const syncArea = () => ext?.storage?.sync ?? ext?.storage?.local;
 const localArea = () => ext.storage.local;
+let lastSettingsSave = 0;
+const savedAt = (data: Plain) => isObj(data.settings) && typeof data.settings.savedAt === 'number' && Number.isFinite(data.settings.savedAt) ? Math.max(0, data.settings.savedAt) : 0;
 
 export async function loadSettings(): Promise<Settings> {
   const [synced, local] = await Promise.all([
     syncArea().get('settings').catch(() => ({}) as Plain),
     localArea().get(['settings', 'customCss']),
   ]);
-  // Prefer the synced copy; fall back to a local copy written when sync was full.
-  const raw = (synced as Plain).settings ?? (local as Plain).settings;
+  const syncTime = savedAt(synced as Plain);
+  const localTime = savedAt(local as Plain);
+  lastSettingsSave = Math.max(lastSettingsSave, syncTime, localTime);
+  // A failed sync leaves a newer local save. A later save from another device
+  // can still win; legacy copies without timestamps keep sync precedence.
+  const raw = localTime > syncTime ? (local as Plain).settings : (synced as Plain).settings ?? (local as Plain).settings;
   const s = mergeSettings(defaultSettings(), migrate(raw));
   s.theme.customCss = typeof (local as Plain).customCss === 'string' ? ((local as Plain).customCss as string) : '';
   return s;
@@ -109,13 +115,18 @@ export async function loadSettings(): Promise<Settings> {
 
 export async function saveSettings(next: Settings): Promise<void> {
   const { customCss, ...theme } = next.theme;
-  const toStore = { ...next, theme: { ...theme, customCss: '' } };
-  await localArea().set({ customCss });
+  const timestamp = Math.max(Date.now(), lastSettingsSave + 1);
+  lastSettingsSave = timestamp;
+  // The timestamp travels inside settings so sync cannot deliver it separately.
+  const toStore = { ...next, theme: { ...theme, customCss: '' }, savedAt: timestamp };
+  // Keep a durable local copy before attempting sync, including when sync's
+  // per-item quota is exceeded. CSS never leaves this device.
+  await localArea().set({ settings: toStore, customCss });
+  if (!ext.storage.sync) return;
   try {
     await syncArea().set({ settings: toStore });
   } catch {
-    // Sync quota exceeded or unavailable: keep a device-local copy instead.
-    await localArea().set({ settings: toStore });
+    // Sync quota exceeded or unavailable: the local save is already durable.
   }
 }
 
