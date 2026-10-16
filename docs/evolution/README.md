@@ -106,3 +106,11 @@ Commit `77bab66` on branch `bugfix/codebase-review` (plus uncommitted work).
 Commit `21559a8` on branch `bugfix/codebase-review` (plus uncommitted work).
 
 <img src="2026-10-16-02-the-new-tab-grid-fits-a-1280-by-720-desk.jpg" width="49%" alt="The new-tab grid fits a 1280 by 720 desktop without extra scrolling">
+
+## 2026-10-16: End new-tab listeners and observers when a render is replaced
+
+Commit `9b754ec` on branch `bugfix/codebase-review` (plus uncommitted work).
+
+<img src="2026-10-16-03-customize-keeps-its-close-button-visible.jpg" width="49%" alt="Customize keeps its close button visible and its widget controls match the dark theme">
+<img src="2026-10-16-04-the-narrow-new-tab-uses-one-column-witho.jpg" width="49%" alt="The narrow new tab uses one column without horizontal overflow">
+<img src="2026-10-16-05-sidebar-chat-uses-readable-themed-contro.jpg" width="49%" alt="Sidebar chat uses readable themed controls and the full panel width">
