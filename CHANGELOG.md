@@ -5,6 +5,8 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-16
 
+- `3df8cfb` STATUS: deployed to the owner's Aside and checked live
+- `a3f1ada` Changelog for the 2026-10-16 merge
 - `1ee0a8e` STATUS: audit decisions, phase plan and where work stopped; Gmail milestone screenshot
 - `3598f2b` identity permission for sign-in windows; Chrome 130 and Firefox 148 minimums
 
