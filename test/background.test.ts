@@ -8,7 +8,7 @@ import { appFromCatalog } from '../src/shared/defaults.ts';
 const EXT = 'abcdefghijklmnopabcdefghijklmnop';
 
 test('frame rules only cover frames sidegig opens and their own navigations', () => {
-  const rules = buildRules([appFromCatalog('claude'), appFromCatalog('whatsapp')], EXT);
+  const rules = buildRules([appFromCatalog('claude'), appFromCatalog('whatsapp')], [EXT]);
   assert.equal(rules.length, 2);
   for (const r of rules) {
     assert.deepEqual(r.condition.resourceTypes, ['sub_frame'], 'never top-level pages');
@@ -28,27 +28,27 @@ test('frame rules only cover frames sidegig opens and their own navigations', ()
 });
 
 test('mobile rule appears only when an app asks for it', () => {
-  assert.equal(buildRules([{ ...appFromCatalog('gmail'), mobile: false }], EXT).length, 2);
+  assert.equal(buildRules([{ ...appFromCatalog('gmail'), mobile: false }], [EXT]).length, 2);
   const mobile = { ...appFromCatalog('x'), mobile: true };
-  const rules = buildRules([mobile], EXT);
+  const rules = buildRules([mobile], [EXT]);
   const ua = rules.filter((r) => r.action.requestHeaders?.some((h) => h.header === 'user-agent'));
   assert.equal(ua.length, 1);
   assert.equal(ua[0].action.requestHeaders?.find((h) => h.header === 'user-agent')?.value, MOBILE_UA);
   assert.deepEqual(ua[0].condition.requestDomains, ['x.com']);
   assert.deepEqual(ua[0].condition.resourceTypes, ['sub_frame']);
   // A docked side window's tab gets it for its whole page.
-  const side = buildRules([mobile], EXT, [42]).filter((r) => r.condition.tabIds);
+  const side = buildRules([mobile], [EXT], [42]).filter((r) => r.condition.tabIds);
   assert.deepEqual(side[0].condition.tabIds, [42]);
   assert.deepEqual(side[0].condition.resourceTypes, ['main_frame', 'sub_frame']);
 });
 
 test('Gmail never gets the phone user agent (Google then asks you to sign in again)', () => {
-  const rules = buildRules([{ ...appFromCatalog('gmail'), mobile: true }, { ...appFromCatalog('x'), mobile: true }], EXT, [42]);
+  const rules = buildRules([{ ...appFromCatalog('gmail'), mobile: true }, { ...appFromCatalog('x'), mobile: true }], [EXT], [42]);
   for (const r of rules.filter((r) => r.action.requestHeaders?.some((h) => h.header === 'user-agent'))) assert.deepEqual(r.condition.requestDomains, ['x.com']);
 });
 
 test('no apps still lets sidegig frame its own pages', () => {
-  const rules = buildRules([], EXT);
+  const rules = buildRules([], [EXT]);
   assert.equal(rules.length, 1);
 });
 
@@ -71,4 +71,10 @@ test('restricted pages', () => {
   assert.ok(isRestricted(''));
   assert.ok(!isRestricted('https://github.com'));
   assert.ok(!isRestricted('file:///Users/me/a.html'));
+});
+
+test("frames the drawer opens from its random URL get the same rules as the extension's own", () => {
+  const [mine, nav] = buildRules([appFromCatalog('claude')], [EXT, 'drawer-session-guid']);
+  assert.deepEqual(mine.condition.initiatorDomains, [EXT, 'drawer-session-guid']);
+  assert.ok(nav.condition.initiatorDomains!.includes('drawer-session-guid'));
 });
