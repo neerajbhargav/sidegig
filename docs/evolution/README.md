@@ -88,3 +88,9 @@ Commit `11c528c`. Arc-style plates on the rail with corner badges, one rail per 
 Commit `7d83c55`, branch `wip/in-panel-apps`. X loads inside a sidegig frame. Gmail stays in the frame but shows Temporary Error code 9.
 
 <img src="2026-10-14-06-gmail-frame-error-9.jpg" width="40%" alt="Gmail inside a sidegig frame showing Temporary Error, code 9">
+
+## 2026-10-14: Gmail signed in inside the sidebar frame
+
+Commit `51b363d`, branch `wip/in-panel-apps`. Code 9 fixed: Gmail's own scripts used `top` as their window; sidegig rewrites those uses before they run. The inbox stays put, signed in, with no new sign-in prompt. (Inbox rows blurred.)
+
+<img src="2026-10-14-07-gmail-signed-in-inside-the-sidebar-frame.jpg" width="49%" alt="Gmail signed in inside the sidebar frame, inbox blurred">
