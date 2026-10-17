@@ -4,15 +4,32 @@
 type Listener = (...a: any[]) => any;
 const ev = () => {
   const ls: Listener[] = [];
-  return { addListener: (f: Listener) => ls.push(f), removeListener: (f: Listener) => ls.splice(ls.indexOf(f), 1), fire: (...a: any[]) => ls.forEach((f) => f(...a)), hasListeners: () => ls.length > 0 };
+  return { addListener: (f: Listener) => ls.push(f), removeListener: (f: Listener) => { const i = ls.indexOf(f); if (i >= 0) ls.splice(i, 1); }, fire: (...a: any[]) => [...ls].forEach((f) => f(...a)), hasListeners: () => ls.length > 0 };
 };
 
 const fx = (globalThis as any).__SIDEGIG_FIXTURES__ ?? {};
 const log: any[] = ((globalThis as any).__SIDEGIG_LOG__ = []);
+const persistent = fx.persist ?? !(globalThis as any).__SIDEGIG_FIXTURES__;
+const namespace = `sidegig.preview:${location.pathname.slice(0, location.pathname.lastIndexOf('/'))}:`;
 
 function area(name: string, data: Record<string, any>, changed: ReturnType<typeof ev>) {
+  const key = namespace + name;
+  const read = () => {
+    if (persistent) try { data = JSON.parse(localStorage.getItem(key) || 'null') ?? data; } catch { /* isolated in-memory fallback */ }
+    return data;
+  };
+  const write = () => { if (persistent) try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* isolated in-memory fallback */ } };
+  addEventListener('storage', (e) => {
+    if (!persistent || e.key !== key) return;
+    const before = data;
+    read();
+    const changes: Record<string, any> = {};
+    for (const k of new Set([...Object.keys(before), ...Object.keys(data)])) if (JSON.stringify(before[k]) !== JSON.stringify(data[k])) changes[k] = { oldValue: before[k], newValue: data[k] };
+    if (Object.keys(changes).length) changed.fire(changes, name);
+  });
   return {
     async get(keys?: string | string[] | Record<string, any> | null) {
+      read();
       if (keys == null) return structuredClone(data);
       const list = typeof keys === 'string' ? [keys] : Array.isArray(keys) ? keys : Object.keys(keys);
       const out: Record<string, any> = {};
@@ -20,15 +37,21 @@ function area(name: string, data: Record<string, any>, changed: ReturnType<typeo
       return out;
     },
     async set(obj: Record<string, any>) {
+      read();
       const changes: Record<string, any> = {};
       for (const [k, v] of Object.entries(obj)) {
         changes[k] = { oldValue: data[k], newValue: structuredClone(v) };
         data[k] = structuredClone(v);
       }
+      write();
       setTimeout(() => changed.fire(changes, name), 0);
     },
     async remove(k: string) {
+      read();
+      const oldValue = data[k];
       delete data[k];
+      write();
+      setTimeout(() => changed.fire({ [k]: { oldValue } }, name), 0);
     },
   };
 }
