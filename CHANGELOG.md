@@ -5,6 +5,17 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-16
 
+- `954e50a` Merge 0.2.0 core product experience
+- `fe6c951` Record product checks and clean desktop and narrow screenshots
+- `d908f1a` Clarify local model connection failures
+- `79a8b83` Package 0.2.0 with installation guides and repeatable product checks
+- `6cc1306` Guide first installation and focus settings by section
+- `45388ea` Expose the built-in Assistant in the sidebar
+- `8c29dd8` Render the dashboard while model connections load
+- `004db45` Make compact dashboard tools usable and preserve note input
+- `603e523` Open web addresses directly from shared search
+- `0200a12` Record deployed fixes and live browser verification
+- `0bb4b51` Changelog for the codebase and UI fixes
 - `c8983ae` Merge codebase and UI fixes
 - `df9b923` Expose model connections, instructions and MCP management in settings
 - `de6a3b8` Keep stopped chat runs out of new conversations and tool calls
