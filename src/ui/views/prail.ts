@@ -41,6 +41,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
   const ai = s.apps.find((a) => a.id === aiId) ?? (catalogById(aiId) ? appFromCatalog(aiId) : undefined);
   nav.append(
     btn('Search', [ico('search', 20)], () => ctx.go('search'), current.name === 'search'),
+    btn('Assistant', [ico('ask', 20)], () => ctx.go('chat'), current.name === 'chat'),
     btn('Status', [ico('pulse', 20)], () => ctx.go('status'), current.name === 'status', news ? 'glow' : ''),
     btn(`Ask ${ai?.name ?? 'AI'} about this page`, [ico('ask', 20)], () => {
       if (!ai) return ctx.go('settings');
