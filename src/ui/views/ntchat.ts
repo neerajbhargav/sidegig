@@ -49,6 +49,8 @@ const EFFORT_TEXT: Record<Effort, [string, string]> = {
 
 /** Shared state: the models you can use and the one you picked. Both menus (new tab box and chat) follow it. */
 class Picks {
+  loading = true;
+  failed: ProviderId[] = [];
   models: ModelInfo[] = [];
   model: ModelInfo | null = null;
   effort: Effort = 'auto';
@@ -62,11 +64,15 @@ class Picks {
     for (const f of this.subs) f();
   }
   async load(force = false) {
-    const [{ models }, pick, recent] = await Promise.all([listModels(force), getLocal<{ model?: string; effort?: Effort }>(PICK, {}), getLocal<string[]>(RECENT, [])]);
+    this.loading = true;
+    this.emit();
+    const [{ models, failed }, pick, recent] = await Promise.all([listModels(force), getLocal<{ model?: string; effort?: Effort }>(PICK, {}), getLocal<string[]>(RECENT, [])]);
     this.models = models;
+    this.failed = failed;
     this.recent = recent;
     this.model = models.find((m) => modelKey(m) === pick.model) ?? models.find((m) => recent.includes(modelKey(m))) ?? models[0] ?? null;
     this.effort = pick.effort ?? 'auto';
+    this.loading = false;
     this.emit();
   }
   async choose(m: ModelInfo) {
@@ -207,7 +213,8 @@ export function pickerBar(picks: Picks, onSetup: () => void): HTMLElement {
   effort.addEventListener('click', () => effortMenu(picks, effort));
   const paint = () => {
     const m = picks.model;
-    model.replaceChildren(m ? providerIcon(m.provider) : ico('plus', 16), h('span', {}, m ? m.label : 'Pick a model'), ico('chevron', 16));
+    model.disabled = picks.loading;
+    model.replaceChildren(m ? providerIcon(m.provider) : ico('plus', 16), h('span', {}, picks.loading ? 'Loading models…' : m ? m.label : 'Connect a model'), ico('chevron', 16));
     effort.hidden = !m?.efforts.length;
     effort.replaceChildren(ico('effort', 16), h('span', {}, EFFORT_TEXT[picks.effective()][0]), ico('chevron', 16));
   };
@@ -363,7 +370,7 @@ export interface ChatUi {
 
 export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId?: number }): Promise<ChatUi> {
   const picks = new Picks();
-  await picks.load();
+  const modelsReady = picks.load().catch(() => { picks.loading = false; picks.emit(); });
   let chat: Chat = { id: uid('c_'), title: 'New chat', model: '', created: Date.now(), updated: Date.now(), messages: [] };
   let running: AbortController | null = null;
   let mcp: { set: ToolSet; status: McpStatus[]; at: number; config: string } | null = null;
@@ -394,6 +401,16 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
         }
       }),
     );
+    if (picks.failed.length) {
+      const retry = h('button', { class: 'btn', type: 'button', onclick: async () => {
+        retry.disabled = true;
+        retry.textContent = 'Checking connection…';
+        await picks.load(true);
+        if (picks.models.length) { setupHost.hidden = true; void paintEmpty(); }
+        else void showSetup();
+      } }, 'Try again');
+      setupHost.prepend(h('div', { class: 'cv-connection-error', role: 'status' }, h('p', {}, `Could not reach ${picks.failed.map((p) => PROVIDERS[p].name).join(', ')}. Your connection settings are still saved.`), retry));
+    }
     setupHost.hidden = false;
     thread.hidden = true;
   };
@@ -527,6 +544,9 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   /** The empty chat: a question, some starters, your recent chats. */
   const paintEmpty = async () => {
     thread.hidden = false;
+    if (picks.loading) thread.replaceChildren(h('p', { class: 'muted', role: 'status' }, 'Loading your models…'));
+    await modelsReady;
+    if (ctx.signal?.aborted || chat.messages.length) return;
     if (!picks.models.length) return void showSetup();
     const recents = (await loadChats()).slice(0, 5);
     // A question may have been asked while we were loading.
@@ -684,6 +704,8 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     const q = text.trim();
     if (!q || running) return;
     open();
+    await modelsReady;
+    if (running || ctx.signal?.aborted) return;
     if (!picks.model) return void showSetup();
     const target = chat;
     const ctrl = new AbortController();
