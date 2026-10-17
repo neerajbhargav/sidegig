@@ -217,7 +217,7 @@ ext.runtime.onInstalled.addListener(async (details) => {
       if (layout?.side === 'left' || layout?.side === 'right') fresh.rail.side = layout.side;
       await saveSettings(fresh);
     }
-    ext.runtime.openOptionsPage?.();
+    await ext.tabs.create({ url: ext.runtime.getURL('options.html#welcome') });
   }
   await sync();
 });

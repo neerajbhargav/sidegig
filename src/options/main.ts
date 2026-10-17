@@ -19,6 +19,7 @@ import { aiSetup } from '../ui/views/ntchat.ts';
 import { getKeys, setKeys, PROVIDERS } from '../shared/ai/providers.ts';
 import { getLocal, setLocal } from '../shared/storage.ts';
 import { mcpSignIn, mcpSignOut, mcpSignedIn, setMcpToken, type McpServer } from '../shared/ai/mcp.ts';
+import { welcomeView } from './welcome.ts';
 
 let s: Settings;
 const themeStyle = h('style');
@@ -915,24 +916,16 @@ const none = h('p', { class: 'opt-none', hidden: true }, 'No settings match. Try
 /** Show only the settings that match what you typed (rows, and whole sections by name). */
 function filter() {
   const q = search.value.trim().toLowerCase();
+  const active = NAV.some(([id]) => location.hash === `#${id}`) ? location.hash.slice(1) : 'appearance';
   let any = false;
   document.querySelectorAll<HTMLElement>('main section.opt-sec').forEach((sec) => {
-    const title = (sec.querySelector('h2')?.textContent ?? '').toLowerCase();
-    const rows = [...sec.querySelectorAll<HTMLElement>('.opt')];
-    const byTitle = !q || title.includes(q);
-    let shown = 0;
-    for (const r of rows) {
-      const hit = byTitle || (r.textContent ?? '').toLowerCase().includes(q);
-      r.hidden = !hit;
-      if (hit) shown++;
-    }
-    const visible = byTitle || shown > 0;
+    const visible = q ? (sec.textContent ?? '').toLowerCase().includes(q) : sec.id === active;
     sec.hidden = !visible;
-    sec.classList.toggle('filtered', !!q && !byTitle);
-    document.querySelector<HTMLElement>(`.opts nav a[data-id="${sec.id}"]`)?.classList.toggle('dim', !visible);
+    document.querySelector<HTMLElement>(`.opts nav a[data-id="${sec.id}"]`)?.classList.toggle('dim', !!q && !visible);
     any ||= visible;
   });
   none.hidden = any;
+  highlightNav();
 }
 search.addEventListener('input', filter);
 search.addEventListener('keydown', (e) => e.key === 'Escape' && ((search.value = ''), filter(), search.blur()));
@@ -950,17 +943,15 @@ async function render() {
   applyScale(document.documentElement, t.scale);
   const y = window.scrollY;
   const welcome = location.hash === '#welcome';
+  page.classList.toggle('opts-welcome', welcome);
+  if (welcome) {
+    page.replaceChildren(welcomeView(s));
+    return;
+  }
   const parts: (HTMLElement | null)[] = [
     head,
-    h('p', { class: 'opt-lede' }, 'Everything here is optional. sidegig works out of the box.'),
-    welcome
-      ? h(
-          'div',
-          { class: 'card', style: { marginTop: '24px' } },
-          h('div', { class: 'card-title' }, 'You’re set up'),
-          h('div', { class: 'card-detail', style: { marginTop: '6px', lineHeight: '1.6' } }, `Move your pointer to the left edge of any web page and the rail slides in. Click an app to open it in the sidebar, or press ${keys('K')} to search everything.`),
-        )
-      : null,
+    h('p', { class: 'opt-lede' }, 'Changes save automatically.'),
+    h('select', { class: 'text-input opts-section-select', 'aria-label': 'Settings section', onchange: (e: Event) => { search.value = ''; location.hash = (e.target as HTMLSelectElement).value; } }, NAV.map(([id, label]) => h('option', { value: `#${id}`, selected: location.hash === `#${id}` }, label))),
     appearanceSection(),
     railSection(),
     appsSection(),
@@ -989,21 +980,25 @@ async function render() {
     { 'aria-label': 'Settings sections' },
     h('div', { class: 'brand' }, h('img', { src: 'icons/32.png', width: '24', height: '24', alt: '' }), h('b', {}, 'sidegig')),
     NAV.map(([id, label]) => h('a', { href: `#${id}`, 'data-id': id }, label)),
+    h('a', { href: '#welcome', class: 'opts-guide' }, 'Setup guide'),
   );
   main.append(none);
   page.replaceChildren(nav, main);
-  if (search.value) filter();
-  highlightNav();
+  filter();
   window.scrollTo(0, y);
 }
 
 function highlightNav() {
-  const secs = NAV.map(([id]) => document.getElementById(id)).filter((x): x is HTMLElement => !!x);
-  let current = secs[0]?.id;
-  for (const sec of secs) if (sec.getBoundingClientRect().top < 140) current = sec.id;
-  document.querySelectorAll<HTMLElement>('.opts nav a').forEach((a) => a.classList.toggle('on', a.dataset.id === current));
+  const current = NAV.some(([id]) => location.hash === `#${id}`) ? location.hash.slice(1) : 'appearance';
+  document.querySelectorAll<HTMLElement>('.opts nav a').forEach((a) => {
+    const on = !search.value && a.dataset.id === current;
+    a.classList.toggle('on', on);
+    if (on) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  const select = document.querySelector<HTMLSelectElement>('.opts-section-select');
+  if (select) select.value = `#${current}`;
 }
-window.addEventListener('scroll', () => requestAnimationFrame(highlightNav), { passive: true });
 
 async function boot() {
   document.head.append(themeStyle);
@@ -1019,3 +1014,9 @@ async function boot() {
 }
 
 void boot();
+addEventListener('hashchange', () => {
+  if (!s) return;
+  if (location.hash === '#welcome' || page.classList.contains('opts-welcome')) void render();
+  else { search.value = ''; filter(); }
+  window.scrollTo(0, 0);
+});
