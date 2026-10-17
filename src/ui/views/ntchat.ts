@@ -409,7 +409,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
         if (picks.models.length) { setupHost.hidden = true; void paintEmpty(); }
         else void showSetup();
       } }, 'Try again');
-      setupHost.prepend(h('div', { class: 'cv-connection-error', role: 'status' }, h('p', {}, `Could not reach ${picks.failed.map((p) => PROVIDERS[p].name).join(', ')}. Your connection settings are still saved.`), retry));
+      setupHost.prepend(h('div', { class: 'cv-connection-error', role: 'status' }, h('p', {}, `Could not connect to ${picks.failed.map((p) => p === 'local' ? 'your local model server' : PROVIDERS[p].name).join(', ')}. Your connection settings are still saved.`), retry));
     }
     setupHost.hidden = false;
     thread.hidden = true;
