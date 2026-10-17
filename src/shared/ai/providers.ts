@@ -52,7 +52,7 @@ type ModelCache = Partial<Record<ProviderId, { at: number; models: ModelInfo[] }
 const DAY = 86_400_000;
 
 const getJson = async (url: string, headers: Record<string, string> = {}) => {
-  const r = await fetch(url, { headers, credentials: 'omit' });
+  const r = await fetch(url, { headers, credentials: 'omit', signal: AbortSignal.timeout(10_000) });
   if (!r.ok) throw new Error(String(r.status));
   return r.json();
 };
