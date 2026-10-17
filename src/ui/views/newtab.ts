@@ -400,7 +400,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   push('calendar', 'Calendar', w.calendar ? calendarCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.calendar = false)) });
   push('pomodoro', 'Pomodoro', w.pomodoro ? await pomodoroCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.pomodoro = false)) });
   push('todo', 'To-do', await todoSection(ctx), { expandable: true, remove: off((s) => void (s.newtab.todo = false)) });
-  push('notes', 'Notes', w.notes ? await notesCard() : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.notes = false)) });
+  push('notes', 'Notes', w.notes ? await notesCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.notes = false)) });
   const grid = widgetGrid(ctx, items);
   const choice = await choiceCard(ctx, browser);
   const dash = h('div', { class: 'nt-dash' }, choice ? h('div', { class: 'nt-choice-float' }, choice) : null, grid.el, h('div', { class: 'nt-below' }, feedHost));
@@ -441,7 +441,6 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   input.addEventListener(
     'keydown',
     (e) => {
-      const v = input.value.trim();
       if (e.key === 'Tab' && !e.shiftKey && !input.value && aiOn) {
         e.preventDefault();
         void setMode('ai');
@@ -451,11 +450,6 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
         input.value = '';
         input.dispatchEvent(new Event('input'));
         input.blur();
-      }
-      if (e.key === 'Enter' && /^[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/.test(v) && !/\s/.test(v)) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        location.href = /^https?:\/\//.test(v) ? v : `https://${v}`;
       }
     },
     true,

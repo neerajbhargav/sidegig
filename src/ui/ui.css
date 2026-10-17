@@ -1657,7 +1657,6 @@ body.ctx-options { font-size: calc(15px * var(--ui-s, 1)); line-height: 1.5; }
 .ctx-options .opt-sec { margin-top: calc(44px * var(--ui-s, 1)); scroll-margin-top: calc(96px * var(--ui-s, 1)); }
 .ctx-options .opt-sec h2 { margin: 0 0 calc(6px * var(--ui-s, 1)); font-size: calc(21px * var(--ui-s, 1)); font-weight: 600; letter-spacing: -0.015em; }
 .ctx-options .opt-intro { margin: 0 0 calc(16px * var(--ui-s, 1)); max-width: 64ch; font-size: calc(15px * var(--ui-s, 1)); line-height: 1.6; color: var(--m-fg-muted); }
-.ctx-options .opt-sec.filtered .opt-intro { display: none; }
 .ctx-options .group { padding: calc(4px * var(--ui-s, 1)) calc(20px * var(--ui-s, 1)); border-radius: calc(16px * var(--ui-s, 1)); border: 1px solid var(--m-border); background: var(--m-surface); }
 .ctx-options .opt { min-height: calc(64px * var(--ui-s, 1)); padding: calc(12px * var(--ui-s, 1)) 0; gap: calc(24px * var(--ui-s, 1)); }
 .ctx-options .opt[hidden] { display: none; }
@@ -1681,7 +1680,6 @@ body.ctx-options { font-size: calc(15px * var(--ui-s, 1)); line-height: 1.5; }
 @media (max-width: 860px) { .ctx-options .opts { grid-template-columns: minmax(0, 1fr); padding: 0 calc(20px * var(--ui-s, 1)) calc(96px * var(--ui-s, 1)); } .opts-head { flex-wrap: wrap; } .opts-find { max-width: none; order: 3; flex-basis: 100%; } }
 .ctx-options .opt + .opt { border-top: 0; }
 .ctx-options .opt:not([hidden]) ~ .opt:not([hidden]) { border-top: 1px solid var(--m-border); }
-.ctx-options .opt-sec.filtered > :not(h2):not(.group) { display: none; }
 .opts-search:not(:placeholder-shown) + kbd { display: none; }
 
 /* ======================================================================
@@ -1764,8 +1762,7 @@ html[data-look] .nt2 .gw > .nt-card { position: relative; z-index: 1; width: 100
 html[data-look] .nt2 .gw[data-size="s"] > .nt-card { padding: 0.75rem 0.875rem; }
 .gw .fig { min-height: 0; min-width: 0; }
 .gw .fig svg { width: 100%; height: 100%; }
-.gw[data-size="s"]:has(.gw-more), .gw[data-size="m"]:has(.gw-more) { cursor: pointer; }
-.gw-more { all: unset; box-sizing: border-box; position: absolute; z-index: 3; right: 0.375rem; bottom: 0.375rem; width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 999px; color: var(--c-mute); opacity: 0; cursor: pointer; transition: opacity 160ms ease-out, background 160ms ease-out; }
+.gw-more { all: unset; box-sizing: border-box; position: absolute; z-index: 3; right: 0.375rem; bottom: 0.375rem; width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 999px; color: var(--c-mute); background: var(--c-card); border: 1px solid var(--c-line); cursor: pointer; transition: background 160ms ease-out; }
 .gw:is(:hover, :focus-within) .gw-more, .gw-more:focus-visible { opacity: 1; }
 .gw-more:hover { background: var(--hov); color: var(--c-ink); }
 .gw-more:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 1px; }
@@ -1855,7 +1852,7 @@ html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-row { flex-dire
 html[data-look] .nt2 .gw[data-w="todo"] .nt-todo { display: flex; flex-direction: column; }
 .gw[data-w="todo"] .todo-list { flex: 1; min-height: 0; overflow: auto; }
 .gw[data-w="todo"][data-size="s"] .todo-list { overflow: hidden; }
-.gw[data-w="todo"][data-size="s"] :is(.todo-input, .todo-list .pin, .todo-list .note-x, .todo-list button:not(.todo-check)) { display: none; }
+.gw[data-w="todo"][data-size="s"] :is(.todo-list .pin, .todo-list .note-x, .todo-list button:not(.todo-check)) { display: none; }
 html[data-look] .nt2 .gw[data-w="todo"][data-size="s"] .fig-spike { width: 2.75rem; top: 0.25rem; right: 0.5rem; }
 html[data-look] .nt2 .gw[data-w="todo"][data-size="s"] .nt-card-h { padding-right: 3rem; min-height: 3.25rem; }
 
@@ -2266,3 +2263,39 @@ html[data-chat] .nt2 .nt-page, html[data-chat] .nt2 .gw-scrim { visibility: hidd
   .cv { --cv-w: calc(100vw - 1.5rem); }
   .cc-bar { flex-wrap: wrap; }
 }
+
+/* Keep the everyday actions visible at the default widget sizes. */
+.gw-close { all: unset; position: absolute; z-index: 4; top: 0.5rem; right: 0.5rem; width: 2rem; height: 2rem; place-items: center; border-radius: 50%; background: var(--c-card); color: var(--c-ink); cursor: pointer; display: none; }
+.gw.is-open .gw-close { display: grid; }
+.gw-close:hover { background: var(--hov); }
+.gw.is-open .nt-card-h { padding-right: 2.25rem; }
+html[data-look] .nt2 .gw[data-w="todo"][data-size="s"] .nt-card-h { min-height: 1.75rem; }
+.gw[data-w="todo"][data-size="s"] .todo-input { display: block; min-height: 2rem; width: calc(100% - 1.75rem); }
+html[data-look] .nt2 .gw[data-w="todo"][data-size="s"] .fig-spike { width: 1.75rem; }
+html[data-look="native"] .nt2:not([data-wall]) { background: color-mix(in srgb, var(--c-panel) 50%, var(--c-bg)); }
+html[data-look="native"] .nt2:not([data-wall]) .gw > .nt-card { border-color: transparent; }
+html[data-look="native"] .nt2 .gw[data-size="s"] > .nt-card { padding: 1rem; }
+html[data-look="native"] .nt2 .gw[data-size="s"] .nt-card-h { display: flex; min-height: 1.5rem; padding: 0; margin-bottom: 0.5rem; }
+html[data-look="native"] .nt2 .gw[data-size="s"] .nt-card-h h2 { font-size: 0.8125rem; font-weight: 550; }
+html[data-look="native"] .nt2 .gw[data-w="calendar"][data-size="s"] .nt-cal { display: flex; flex-direction: column; }
+html[data-look="native"] .nt2 .gw[data-w="calendar"][data-size="s"] .nt-card-a { display: none; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .nt-pomo { display: flex; flex-direction: column; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-go { display: inline-flex; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-time { font-size: clamp(1.5rem, 21cqh, 2.25rem); }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-row { justify-content: space-between; flex: 1; gap: 0.5rem; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-read { align-items: flex-start; text-align: left; }
+html[data-look="native"] .nt2 .gw[data-w="notes"][data-size="s"] :is(.notes, .notes-empty) { display: block; }
+html[data-look="native"] .nt2 .gw[data-w="notes"][data-size="s"] .note { min-height: 5rem; }
+html[data-look="native"] .nt2 .gw[data-w="notes"][data-size="s"] .note-t { min-height: 3.25rem; }
+.notes:has(> .note:only-child) { grid-template-columns: minmax(0, 1fr); }
+.note { display: flex; flex-direction: column; }
+.note-t { flex: 1; resize: none; }
+.cv-connection-error { padding: 0.875rem; margin-bottom: 1rem; border: 1px solid var(--c-line); border-radius: 0.75rem; color: var(--c-ink); background: var(--c-panel); }
+.cv-connection-error p { margin: 0 0 0.75rem; font-size: 0.875rem; line-height: 1.5; }
+input.todo-check { appearance: auto; accent-color: var(--c-signal); margin: 0; }
+.wx-setup .text-input { min-width: 0; width: 100%; }
+.wx-setup-hint { margin: 0.375rem 0 0.75rem; color: var(--c-mute); font-size: 0.8125rem; line-height: 1.45; }
+/* Native mode keeps the tools prominent at every size. Studio palettes retain the objects. */
+html[data-look="native"] .nt2 .gw :is(.fig-watch, .fig-cubes, .fig-pad, .fig-spike, .pomo-figbtn) { display: none; }
+html[data-look="native"] .nt2 .gw[data-w="clock"] .nt-timeblock.has-fig { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+html[data-look="native"] .nt2 .gw .has-fig .nt-card-h { min-height: 1.5rem; }

@@ -46,6 +46,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   const sizeLabels = new Map<WidgetId, HTMLElement>();
   let editing = false;
   let openId: WidgetId | null = null;
+  let returnFocus: HTMLElement | null = null;
 
   const setBox = (id: WidgetId, b: Box | undefined) => {
     const w = wraps.get(id);
@@ -112,16 +113,22 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   // ------------------------------------------------ open a small widget in place
   const scrim = h('div', { class: 'gw-scrim', hidden: true, onclick: () => close() });
   const open = (id: WidgetId) => {
-    if (openId || flow.matches) return;
+    if (openId || editing || flow.matches || !wraps.has(id)) return;
     const w = wraps.get(id)!;
+    // Large widgets already expose their controls in place.
+    if (w.dataset.size === 'l') return;
     const b = boxes[id]!;
     const [bw, bh] = [...SIZES[id]].sort((p, q) => q[0] * q[1] - p[0] * p[1])[0];
     const big: Box = { w: bw, h: bh, x: clamp(b.x + Math.round((b.w - bw) / 2), 0, COLS - bw), y: clamp(b.y + b.h - bh > 0 && b.y + bh > ROWS ? ROWS - bh : b.y, 0, ROWS - bh) };
     const from = w.getBoundingClientRect();
     const to = rectOf(big);
     openId = id;
+    returnFocus = document.activeElement as HTMLElement | null;
     play('on');
     w.classList.add('is-open');
+    w.setAttribute('role', 'dialog');
+    w.setAttribute('aria-modal', 'true');
+    for (const [other, wrap] of wraps) if (other !== id) wrap.inert = true;
     w.dataset.toneWas = w.dataset.tone ?? '';
     delete w.dataset.tone;
     w.dataset.size = 'l';
@@ -138,6 +145,9 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     play('off');
     const from = w.getBoundingClientRect();
     w.classList.remove('is-open');
+    w.setAttribute('role', 'group');
+    w.removeAttribute('aria-modal');
+    for (const wrap of wraps.values()) wrap.inert = false;
     for (const p of ['left', 'top', 'width', 'height'] as const) w.style.removeProperty(p);
     if (w.dataset.toneWas) w.dataset.tone = w.dataset.toneWas;
     delete w.dataset.toneWas;
@@ -145,8 +155,11 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     scrim.hidden = true;
     const to = w.getBoundingClientRect();
     if (!still()) w.animate([{ transform: `translate(${from.left - to.left}px, ${from.top - to.top}px)`, width: `${from.width}px`, height: `${from.height}px` }, { transform: 'none', width: `${to.width}px`, height: `${to.height}px` }], { duration: 220, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
-    w.focus({ preventScroll: true });
+    const focus = returnFocus?.isConnected && !returnFocus.matches('input, textarea') ? returnFocus : w.querySelector<HTMLElement>('.gw-more');
+    focus?.focus({ preventScroll: true });
+    returnFocus = null;
   };
+  el.addEventListener('nt-widget-open', (e) => open((e as CustomEvent<WidgetId>).detail));
 
   // ------------------------------------------------ arrange mode
   const ghost = h('div', { class: 'gw-ghost', hidden: true, 'aria-hidden': 'true' });
@@ -212,7 +225,8 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
       it.remove ? h('button', { type: 'button', class: 'gw-btn', title: `Remove ${it.label}`, 'aria-label': `Remove ${it.label}`, onclick: () => (play('dismiss'), it.remove!()) }, ico('close', 16)) : null,
     );
     const more = it.expandable ? h('button', { type: 'button', class: 'gw-more', title: `Open ${it.label}`, 'aria-label': `Open ${it.label}`, onclick: () => open(it.id) }, ico('expand', 16)) : null;
-    const w = h('div', { class: 'gw', dataset: { w: it.id }, 'aria-label': it.label, role: 'group' }, it.el, more, chrome);
+    const dismiss = it.expandable ? h('button', { type: 'button', class: 'gw-close', 'aria-label': `Close ${it.label}`, onclick: close }, ico('close', 18)) : null;
+    const w = h('div', { class: 'gw', dataset: { w: it.id }, 'aria-label': it.label, role: 'group' }, it.el, more, dismiss, chrome);
     wraps.set(it.id, w);
     setBox(it.id, boxes[it.id]);
     if (!boxes[it.id]) w.hidden = true;
@@ -293,6 +307,12 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   // carry on arranging, so the page-wide flag and this grid agree.
   if (document.documentElement.hasAttribute('data-arranging')) edit(true, true);
   addEventListener('keydown', (e) => {
+    if (openId && e.key === 'Tab') {
+      const controls = [...wraps.get(openId)!.querySelectorAll<HTMLElement>('button, input, textarea, select, a[href], [tabindex="0"]')].filter((node) => !node.hidden && node.getClientRects().length && !(node as HTMLButtonElement).disabled);
+      const first = controls[0], last = controls.at(-1);
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+    }
     if (e.key !== 'Escape' || !el.isConnected) return;
     if (openId) close();
     else if (editing) edit(false);

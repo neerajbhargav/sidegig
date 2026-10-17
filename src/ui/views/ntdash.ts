@@ -134,10 +134,11 @@ export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLEleme
 
 async function loadWeather(ctx: Ctx): Promise<WeatherNow | null> {
   const w = ctx.settings.newtab.weather;
-  const cached = await getLocal<WeatherNow | null>('ntWeather', null);
+  const stored = await getLocal<WeatherNow | null>('ntWeather', null);
+  const cached = stored?.place === w.place && stored.units === w.units ? stored : null;
   if (cached && cached.place === w.place && cached.units === w.units && cached.days && cached.wind && Date.now() - cached.at < 30 * 60_000) return cached;
   try {
-    const r = await fetch(weatherUrl(w.lat, w.lon, w.units), { credentials: 'omit' });
+    const r = await fetch(weatherUrl(w.lat, w.lon, w.units), { credentials: 'omit', signal: AbortSignal.timeout(10_000) });
     const now = parseWeather(await r.json(), w.units, w.place);
     if (now) await setLocal('ntWeather', now);
     return now ?? cached;
@@ -151,25 +152,33 @@ export function weatherCard(ctx: Ctx): HTMLElement {
   if (!w.place) {
     // Set it up right here: type a city, pick it.
     const input = h('input', { class: 'text-input', type: 'text', placeholder: 'Your city', 'aria-label': 'Your city' });
-    const list = h('div', { class: 'wx-pick' });
+    input.addEventListener('focus', () => input.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'weather' })));
+    const list = h('div', { class: 'wx-pick', role: 'status', 'aria-live': 'polite' });
+    const findButton = h('button', { class: 'btn', type: 'submit' }, 'Find');
+    let searching = false;
     const find = async () => {
       const q = input.value.trim();
-      if (!q) return;
-      const places = await findPlace(q).catch(() => []);
-      list.replaceChildren(
-        ...(places.length
-          ? places.slice(0, 4).map((p) =>
-              h(
-                'button',
-                { type: 'button', class: 'nt-chip', onclick: () => void updateSettings((s) => void (s.newtab.weather = { ...s.newtab.weather, enabled: true, place: p.name, lat: p.lat, lon: p.lon })) },
-                p.name,
-              ),
-            )
-          : [h('span', { class: 'muted' }, 'No place by that name')]),
-      );
+      if (!q || searching) return;
+      searching = true;
+      findButton.disabled = true;
+      list.textContent = 'Finding your city…';
+      try {
+        const places = await findPlace(q);
+        list.replaceChildren(
+          ...(places.length
+            ? places.slice(0, 4).map((p) =>
+                h(
+                  'button',
+                  { type: 'button', class: 'nt-chip', onclick: () => void updateSettings((s) => void (s.newtab.weather = { ...s.newtab.weather, enabled: true, place: p.name, lat: p.lat, lon: p.lon })) },
+                  p.name,
+                ),
+              )
+            : [h('span', { class: 'muted' }, 'No place by that name')]),
+        );
+      } catch { list.textContent = 'Could not reach weather search. Try again.'; }
+      finally { searching = false; findButton.disabled = false; }
     };
-    input.addEventListener('keydown', (e) => e.key === 'Enter' && void find());
-    return card('nt-wx', 'Weather', [], h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, h('button', { class: 'btn', type: 'submit' }, 'Find')), list);
+    return card('nt-wx', 'Weather', [], h('p', { class: 'wx-setup-hint' }, 'Choose a city for your local forecast.'), h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, findButton), list);
   }
   const body = h('div', { class: 'wx-body', 'aria-live': 'polite' }, skel('60%', '90%', '75%'));
   // A small weather station: the cups spin with the wind, the vane points into it,
@@ -228,7 +237,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
     station.dataset.drawn = '1';
   }, () => hovering || Date.now() < spinUntil || !station.dataset.drawn, ctx.signal);
   void loadWeather(ctx).then((now) => {
-    if (!now) return void reveal(body, h('span', { class: 'muted' }, 'Weather is unavailable right now'));
+    if (!now) return void reveal(body, h('span', { class: 'muted' }, 'Weather is unavailable right now.'), h('button', { class: 'btn', type: 'button', onclick: () => ctx.go('home') }, 'Try again'));
     const { label, icon } = weatherLabel(now.code, now.isDay);
     station.dataset.ready = '';
     live.temp = now.temp;
@@ -309,7 +318,7 @@ export function calendarCard(ctx: Ctx): HTMLElement {
     upNext.replaceChildren(
       ...(evs.length
         ? evs.map((e) => h('button', { type: 'button', class: 'cal-ev', style: { '--c': `var(--feed-${e.feed % 4})` }, title: e.location ?? e.title, onclick: () => (e.url ? void openUrl(ctx, e.url) : openDay(new Date(e.start))) }, h('span', { class: 'cal-ev-t' }, when(e)), h('span', { class: 'cal-ev-n' }, e.title)))
-        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing this week' : 'No calendars yet')]),
+        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing this week' : 'Your calendar, one click away'), ...(!cal.feeds.length ? [h('button', { class: 'nt-chip', type: 'button', onclick: () => openDay(today) }, 'Open calendar')] : [])]),
     );
   };
 
@@ -550,15 +559,23 @@ interface Note {
 }
 const NOTE_COLORS = 5;
 
-export async function notesCard(): Promise<HTMLElement> {
+export async function notesCard(ctx: Ctx): Promise<HTMLElement> {
   let notes = await getLocal<Note[]>('ntNotes', []);
   const grid = h('div', { class: 'notes' });
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const ownWrites = new Set<string>();
+  // Dispatch the storage write during the input event. A delayed write is lost
+  // when someone closes a new tab immediately after typing.
   const persist = () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => void setLocal('ntNotes', notes), 350);
+    const value = JSON.stringify(notes);
+    ownWrites.add(value);
+    void setLocal('ntNotes', notes).catch(() => {
+      ownWrites.delete(value);
+      toast('Your note could not be saved. Keep this tab open and try again.');
+    });
   };
+  const empty = h('button', { type: 'button', class: 'notes-empty', onclick: () => add() }, 'Add a note');
   let paint = () => {
+    empty.hidden = notes.length > 0;
     grid.replaceChildren(
       ...notes.map((n) => {
         const ta = h('textarea', { class: 'note-t', rows: 3, placeholder: 'Write something', 'aria-label': 'Note', maxlength: 600 });
@@ -602,9 +619,9 @@ export async function notesCard(): Promise<HTMLElement> {
     notes = [{ id: `n${Date.now().toString(36)}`, text: '', color: notes.length % NOTE_COLORS }, ...notes];
     persist();
     paint();
+    root.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'notes' }));
     grid.querySelector<HTMLTextAreaElement>('textarea')?.focus();
   };
-  const empty = () => (notes.length ? null : h('button', { type: 'button', class: 'notes-empty', onclick: add }, 'Add a note'));
   // A sticky-note pad with a pen: the top sheet shows how many notes you have; tap it for a new one.
   const pad = h('button', { type: 'button', class: 'fig fig-pad iso', title: 'New note', 'aria-label': 'New note', onclick: () => add() });
   const paintPad = () => (pad.innerHTML = figureSvg(PAD.width, PAD.height, `${PAD.art}${faceText(PAD.countFace, String(notes.length), 11)}`));
@@ -612,8 +629,16 @@ export async function notesCard(): Promise<HTMLElement> {
   const repaint = paint;
   paint = () => (repaint(), paintPad());
   const root = card('nt-notes has-fig', 'Notes', [iconBtn('plus', 'New note', add)], pad, grid);
-  const e = empty();
-  if (e) root.append(e);
+  root.append(empty);
+  const stop = onLocalChanged('ntNotes', (value) => {
+    // Earlier keystrokes can arrive after a newer one. Their echoes must not
+    // replace the active editor and drop its focus or cursor.
+    if (!Array.isArray(value) || ownWrites.delete(JSON.stringify(value)) || JSON.stringify(value) === JSON.stringify(notes)) return;
+    notes = value as Note[];
+    paint();
+  });
+  if (ctx.signal?.aborted) stop();
+  else ctx.signal?.addEventListener('abort', stop, { once: true });
   return root;
 }
 
