@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { manifestFor, TARGETS } from './manifest.mjs';
+import { configurePreview } from './preview.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -65,6 +66,7 @@ async function copyStatic(outdir) {
   await cp(path.join(root, 'src/assets/fonts'), path.join(outdir, 'fonts'), { recursive: true });
   await cp(path.join(root, 'LICENSE'), path.join(outdir, 'LICENSE'));
   await cp(path.join(root, 'THIRD_PARTY_NOTICES.md'), path.join(outdir, 'THIRD_PARTY_NOTICES.md'));
+  for (const file of ['INSTALL.md', 'PRIVACY.md', 'README.md']) await cp(path.join(root, file), path.join(outdir, file));
 }
 
 const esbuild = await loadEsbuild();
@@ -75,6 +77,7 @@ for (const target of targets) {
   if (target === 'preview') {
     await bundle(esbuild, 'preview', outdir, { shim: 'src/preview/shim.ts' });
     await copyStatic(outdir);
+    await configurePreview(outdir);
     console.log('built preview ->', path.relative(root, outdir));
     continue;
   }
