@@ -17,6 +17,7 @@ import { quickView } from './views/quick.ts';
 import { appBar, framesHost, showFrames } from './views/appview.ts';
 import { newtabView } from './views/newtab.ts';
 import { addView } from './views/add.ts';
+import { chatUi } from './views/ntchat.ts';
 
 const params = new URLSearchParams((globalThis as any).__SIDEGIG_PARAMS__ ?? (location.hash.slice(1) || location.search.slice(1)));
 const kind = (document.body.dataset.ctx ?? params.get('ctx') ?? 'panel') as Kind;
@@ -122,6 +123,7 @@ async function boot() {
     else if (name === 'status') el = await statusView(viewCtx);
     else if (name === 'settings') el = await quickView(viewCtx);
     else if (name === 'add') el = await addView(viewCtx);
+    else if (name === 'chat') el = (await chatUi(viewCtx, { where: 'panel' })).view;
     else if (name === 'app') el = await appBar(viewCtx, current.app);
     else el = await homeView(viewCtx);
     if (my !== token) return;

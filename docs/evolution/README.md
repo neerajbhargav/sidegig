@@ -120,3 +120,19 @@ Commit `9b754ec` on branch `bugfix/codebase-review` (plus uncommitted work).
 Commit `de6a3b8` on branch `bugfix/codebase-review` (plus uncommitted work).
 
 <img src="2026-10-16-06-ai-settings-connect-providers-and-save-c.jpg" width="49%" alt="AI settings connect providers and save custom instructions and tool servers">
+
+## 2026-10-16: Clarify local model connection failures
+
+Commit `d908f1a` on branch `product/core-experience` (plus uncommitted work).
+
+<img src="2026-10-16-07-first-use-setup-fits-a-1280-by-720-lapto.jpg" width="49%" alt="First-use setup fits a 1280 by 720 laptop">
+<img src="2026-10-16-08-first-use-app-choices-on-a-narrow-screen.jpg" width="49%" alt="First-use app choices on a narrow screen">
+<img src="2026-10-16-09-native-dashboard-with-visible-daily-tool.jpg" width="49%" alt="Native dashboard with visible daily tools and compact controls">
+<img src="2026-10-16-10-native-dashboard-stacks-cleanly-on-a-nar.jpg" width="49%" alt="Native dashboard stacks cleanly on a narrow screen">
+<img src="2026-10-16-11-expanded-notes-editor-with-keyboard-clos.jpg" width="49%" alt="Expanded Notes editor with keyboard close and clean fixture text">
+<img src="2026-10-16-12-built-in-assistant-reached-through-the-s.jpg" width="49%" alt="Built-in Assistant reached through the sidebar rail">
+<img src="2026-10-16-13-settings-show-one-complete-section-with.jpg" width="49%" alt="Settings show one complete section with model and MCP controls">
+<img src="2026-10-16-14-narrow-settings-retain-section-navigatio.jpg" width="49%" alt="Narrow settings retain section navigation and readable controls">
+<img src="2026-10-16-15-local-model-failure-keeps-connection-set.jpg" width="49%" alt="Local model failure keeps connection settings and offers retry">
+<img src="2026-10-16-16-weather-search-failure-has-a-clear-retry.jpg" width="49%" alt="Weather search failure has a clear retry state">
+<img src="2026-10-16-17-typed-web-address-leads-search-results-w.jpg" width="49%" alt="Typed web address leads search results with a direct open action">

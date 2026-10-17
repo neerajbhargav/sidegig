@@ -18,6 +18,18 @@ export function engineUrl(id: string, q: string): string | null {
   return ENGINES[id]?.url?.(q) ?? null;
 }
 
+/** Addresses entered into search open directly. Other text stays a search query. */
+export function navigationUrl(text: string): string | null {
+  const q = text.trim();
+  if (!q || /\s/.test(q)) return null;
+  const explicit = /^https?:\/\//i.test(q);
+  if (!explicit && !/^(?:localhost|(?:[\w-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(?::\d+)?(?:[/?#].*)?$/i.test(q)) return null;
+  try {
+    const url = new URL(explicit ? q : `${/^localhost(?::|\/|$)/i.test(q) ? 'http' : 'https'}://${q}`);
+    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null;
+  } catch { return null; }
+}
+
 export function greetingFor(hour: number): string {
   if (hour >= 5 && hour < 12) return 'Good morning';
   if (hour >= 12 && hour < 17) return 'Good afternoon';
