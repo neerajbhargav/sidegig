@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { engineUrl, greetingFor, dailyReset, sortTodos, weatherLabel, weatherUrl, parseWeather, type Todo } from '../src/shared/ntdata.ts';
+import { navigationUrl, engineUrl, greetingFor, dailyReset, sortTodos, weatherLabel, weatherUrl, parseWeather, type Todo } from '../src/shared/ntdata.ts';
 
 test('engines: default defers to the browser, others build a URL', () => {
   assert.equal(engineUrl('default', 'x'), null);
@@ -42,4 +42,18 @@ test('weather: codes, URL and parsing (Open-Meteo shape)', () => {
   );
   assert.deepEqual(w, { temp: 58, feels: 55, humidity: 71, code: 3, isDay: true, hi: 62, lo: 49, units: 'f', place: 'Jersey City', at: 1, days: [] });
   assert.equal(parseWeather({}, 'c', 'x'), null);
+});
+
+// Addresses and search phrases share one input in the new tab and sidebar.
+// Explicit addresses must not become web searches or executable schemes.
+test('navigation opens real web addresses and leaves phrases and unsafe schemes as search text', () => {
+  for (const [input, expected] of [
+    ['example.com', 'https://example.com/'],
+    ['https://example.com/docs?q=hello#part', 'https://example.com/docs?q=hello#part'],
+    ['http://localhost:8765/preview/', 'http://localhost:8765/preview/'],
+    ['localhost:3000', 'http://localhost:3000/'],
+    ['127.0.0.1:8765/check', 'https://127.0.0.1:8765/check'],
+    [' EXAMPLE.com/path ', 'https://example.com/path'],
+  ]) assert.equal(navigationUrl(input), expected);
+  for (const input of ['', 'new tab ideas', 'how to use example.com', 'javascript:alert(1)', 'data:text/html,test', 'file:///tmp/test', 'https://user:password@example.com', 'https://', 'example.com:99999']) assert.equal(navigationUrl(input), null, input);
 });

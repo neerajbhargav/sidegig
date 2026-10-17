@@ -1,5 +1,5 @@
 // Command palette: one box for tabs, apps, bookmarks, history and commands.
-import { engineUrl } from '../../shared/ntdata.ts';
+import { engineUrl, navigationUrl } from '../../shared/ntdata.ts';
 import { ext, TARGET } from '../../shared/api.ts';
 import { rank } from '../../shared/fuzzy.ts';
 import { updateSettings } from '../../shared/storage.ts';
@@ -25,6 +25,8 @@ async function loadData(): Promise<Data> {
 }
 
 function webSearch(ctx: Ctx, q: string) {
+  const address = navigationUrl(q);
+  if (address) return openUrl(ctx, address);
   // Your pick of engine, if you made one; otherwise the browser's own default.
   const picked = engineUrl(ctx.settings.newtab.engine, q);
   if (picked) return openUrl(ctx, picked);
@@ -156,7 +158,9 @@ export async function createSearch(ctx: Ctx, input: HTMLInputElement, list: HTML
       .map(({ item: b }): Result => ({ kind: 'Bookmark', title: b.title || hostOf(b.url), meta: b.path || hostOf(b.url), url: b.url, icon: () => favicon(b.url, b.title, 'fav sm'), run: (e) => openUrl(ctx, b.url, e) }));
     const cmd = rank(cmds, q, (c) => [[c.title, 1], [c.meta, 0.4]], 4).map((r) => r.item);
     const web: Result = { kind: 'Web', title: `Search the web for “${q.trim()}”`, meta: '', icon: () => ico('search', 16), run: () => webSearch(ctx, q.trim()) };
-    results = [...tabs, ...apps, ...bms, ...cmd, web];
+    const address = navigationUrl(q);
+    const direct: Result[] = address ? [{ kind: 'Web', title: address, meta: 'Open website', url: address, icon: () => ico('external', 16), run: (e) => openUrl(ctx, address, e) }] : [];
+    results = [...direct, ...tabs, ...apps, ...bms, ...cmd, web];
     draw();
     const hist = await ext.history.search({ text: q, maxResults: 40, startTime: 0 }).catch(() => []);
     if (my !== seq) return;
@@ -169,7 +173,7 @@ export async function createSearch(ctx: Ctx, input: HTMLInputElement, list: HTML
       run: (e) => openUrl(ctx, x.url!, e),
     }));
     if (histResults.length) {
-      results = [...tabs, ...apps, ...bms, ...histResults, ...cmd, web];
+      results = [...direct, ...tabs, ...apps, ...bms, ...histResults, ...cmd, web];
       draw();
     }
   };

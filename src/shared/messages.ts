@@ -22,4 +22,4 @@ export type ToContent =
   | { type: 'toggle-rail' }
   | { type: 'open-view'; view: View };
 
-export type View = 'home' | 'search' | 'status' | 'settings' | 'add';
+export type View = 'home' | 'search' | 'status' | 'settings' | 'add' | 'chat';

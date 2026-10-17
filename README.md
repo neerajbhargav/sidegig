@@ -1,6 +1,6 @@
 # sidegig
 
-**A free, open-source sidebar for every browser.** Touch the edge of any page and sidegig slides in: your apps, one-tap AI, bookmark stacks, search across everything, and quiet status cards. Move away and it's gone.
+**Your apps, bookmarks and daily tools, close while you browse.** sidegig is a free, open-source browser sidebar with an optional new tab. Start with a short setup, pin the apps you use, and make room for your day.
 
 No account. No servers. No analytics. Works in Chrome, Edge, Brave, Arc, Dia, Vivaldi, Opera, Aside, Firefox and Safari.
 
@@ -30,7 +30,8 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 | **Opera-style panel** | Apps open in the browser's sidebar laid out like Opera: buttons list on the outer edge, the app right beside it. When the panel opens on the rail's side, the page rail steps aside so it reads as one sidebar. If the browser puts its sidebar on the other side, sidegig offers a one-click fix. |
 | **Apps** | Claude, ChatGPT, Gemini, Perplexity, Grok, WhatsApp, Telegram, Slack, Discord, Gmail, Calendar, YouTube Music, Spotify, Notion, Linear, GitHub and more, or any site. Opens in the browser's own sidebar (where your sign-ins work), a slim mini window, a tab, or an in-page drawer. Unread badges from page titles. |
 | **Add this site** | The **+** on the rail turns the page you're on into a rail app or a bookmark in one tap, with suggested apps below. |
-| **One-tap AI** | The sparkle sends the page, or your selection, to your default AI. Hover it to pick Claude, ChatGPT, Gemini, Perplexity or Grok instead. Uses the account you're already signed in to: no API keys, no extra cost. sidegig types the prompt; you press send (or turn on auto-send). Also in the right-click menu. |
+| **One-tap AI** | The Ask button sends the page, or your selection, to your default AI. Hover it to pick Claude, ChatGPT, Gemini, Perplexity or Grok instead. Uses the account you're already signed in to: no API keys, no extra cost. sidegig types the prompt; you press send (or turn on auto-send). Also in the right-click menu. |
+| **Sidebar assistant** | Built-in chat with the browser’s model, a local model or your own API provider. Attach tabs, use browser tools and connect MCP tool servers. Provider keys and tool tokens stay on the device. |
 | **Bookmark stacks** | Your real browser bookmarks: folders become Dia/Arc-style stacks with overlapping site icons, loose bookmarks become an Opera-style icon grid. Pick folders as spaces. Syncs through the browser; stays yours if you uninstall. |
 | **Tabs, Dia style** | This window's tabs with Chrome tab groups shown as colored sections. Close, switch, put background tabs to sleep, save the window as a workspace and restore it later. |
 | **Search everything** | Open tabs, apps, bookmarks (with folder paths), history and commands in one fuzzy-matched list, plus web search. |
@@ -48,7 +49,13 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 
 ![New tab page](docs/screenshots/newtab.jpg)
 
-## Install from source
+## Install
+
+Have a built zip? Follow the [installation guide](INSTALL.md). Local Chromium builds use **Load unpacked**. Store publication and signed Firefox/Safari distribution remain separate steps.
+
+On first install, sidegig opens a short setup for pinned apps, sidebar position and the optional new tab. Refresh existing web pages after installing.
+
+### Build from source
 
 ```bash
 git clone git@github.com:neerajbhargav/sidegig.git && cd sidegig
@@ -63,7 +70,7 @@ npm run build          # dist/chrome, dist/opera, dist/firefox, dist/safari
 | Firefox | `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → `dist/firefox/manifest.json` |
 | Safari | `npm run safari` (needs Xcode), then build the generated project and enable sidegig in Safari settings |
 
-`npm run zip` also writes store-ready zips to `dist/`.
+`npm run zip` writes browser packages to `dist/`. The Chromium packages can be loaded locally. Firefox and Safari still need their browser-specific signing and distribution steps.
 
 ## Shortcuts
 
@@ -137,3 +144,15 @@ The build uses native esbuild when it can and falls back to the WebAssembly buil
 ## License
 
 [GPL-3.0-or-later](LICENSE). Bundled font and icons are covered by their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Check the product flows
+
+`npm run preview` builds a standalone preview with persistent, isolated fixture storage. Serve `dist/` on port 8765 and open `http://127.0.0.1:8765/preview/`. The preview includes first install, new tab, sidebar and settings. Its reset button affects only preview data.
+
+If you use the Aside CLI, run:
+
+```bash
+aside repl "$(cat scripts/product-smoke.js)"
+```
+
+The smoke test uses the local preview. It checks setup choices, note editing and reload, updates across two tabs, task completion, settings search, offline model discovery, sidebar assistant access and direct address navigation. It makes no paid model calls. Browser integrations and signed-in app frames need a separate installed-extension check.

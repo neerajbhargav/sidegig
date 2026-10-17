@@ -1,7 +1,7 @@
 // Everyday tools for the new tab: the analog clock, the weather place lookup,
 // the to-do list, the Google apps launcher and voice typing.
 import { uid } from '../../shared/api.ts';
-import { getLocal, setLocal } from '../../shared/storage.ts';
+import { getLocal, setLocal, onLocalChanged } from '../../shared/storage.ts';
 import { dailyReset, dayKey, sortTodos, type Todo } from '../../shared/ntdata.ts';
 import { h, ico, iconButton, favicon, toast } from '../dom.ts';
 import { SPIKE } from '../figures/spike.ts';
@@ -50,7 +50,8 @@ export function analogClockEl(): HTMLElement {
 
 /** Look up a place for weather (Open-Meteo geocoding, free, no key). */
 export async function findPlace(q: string): Promise<{ name: string; lat: number; lon: number }[]> {
-  const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en&format=json`, { credentials: 'omit' });
+  const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en&format=json`, { credentials: 'omit', signal: AbortSignal.timeout(10_000) });
+  if (!r.ok) throw new Error('Weather search is unavailable.');
   const d = await r.json();
   return (d?.results ?? []).map((x: any) => ({ name: [x.name, x.admin1, x.country_code].filter(Boolean).join(', '), lat: x.latitude, lon: x.longitude }));
 }
@@ -102,20 +103,19 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
           'div',
           { class: t.id === just ? 'todo just' : 'todo', dataset: { done: String(t.done), pinned: String(t.pinned) } },
           h(
-            'button',
+            'input',
             {
-              type: 'button',
+              type: 'checkbox',
               class: 'todo-check',
-              role: 'checkbox',
-              'aria-checked': String(t.done),
+              checked: t.done,
               'aria-label': t.done ? `Mark “${t.text}” not done` : `Mark “${t.text}” done`,
-              onclick: () => {
-                play(t.done ? 'off' : 'on');
-                just = t.done ? '' : t.id;
-                void save(todos.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)));
+              onchange: (e: Event) => {
+                const done = (e.target as HTMLInputElement).checked;
+                play(done ? 'on' : 'off');
+                just = done ? t.id : '';
+                void save(todos.map((x) => (x.id === t.id ? { ...x, done } : x)));
               },
             },
-            t.done ? ico('check', 14) : null,
           ),
           h('span', { class: 'todo-text' }, t.text),
           iconButton(t.pinned ? 'pin' : 'pin', t.pinned ? 'Unpin (stops coming back each day)' : 'Pin (comes back each day)', () => void save(todos.map((x) => (x.id === t.id ? { ...x, pinned: !x.pinned } : x))), t.pinned),
@@ -128,6 +128,7 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
     );
   };
   const input = h('input', { class: 'todo-input', placeholder: 'Add a task', 'aria-label': 'Add a task. Done tasks clear each morning; pinned ones come back.' });
+  input.addEventListener('focus', () => input.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'todo' })));
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && input.value.trim()) {
       play('confirm');
@@ -136,6 +137,13 @@ export async function todoSection(ctx: Ctx): Promise<HTMLElement | null> {
     }
   });
   const sec = h('section', { class: 'nt-card nt-todo has-fig', 'aria-label': 'To-do' }, spike, h('header', { class: 'nt-card-h' }, h('h2', {}, 'To-do'), h('div', { class: 'nt-card-a' }, count)), list, input);
+  const stop = onLocalChanged('ntTodos', (value) => {
+    if (!Array.isArray(value) || JSON.stringify(value) === JSON.stringify(todos)) return;
+    todos = value as Todo[];
+    paint();
+  });
+  if (ctx.signal?.aborted) stop();
+  else ctx.signal?.addEventListener('abort', stop, { once: true });
   paint();
   just = '';
   return sec;

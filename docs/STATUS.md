@@ -1,11 +1,22 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-16 (Codex bug and UI fixes merged to `main` and deployed to the owner’s Aside).
+Last updated: 2026-10-16 (0.2.0 product pass validated on `product/core-experience`; merge and live deployment next).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Product iteration 0.2.0, 2026-10-16:** the owner asked for an installable, usable product with a better experience across existing features. Work is on `product/core-experience`, based on `main` at `0200a12`. The earlier merge/deploy authorization remains in scope. Current source passes the checks below; this iteration has not yet been reloaded in the installed extension.
+
+- Fresh installation opens a dedicated setup screen. It saves pinned apps, sidebar position and the optional new tab. Turning the new tab off and on clears the cached off flag correctly. Existing users can reopen Setup guide from settings. Settings now show one section at a time, retain complete forms during search, and offer a section selector on narrow screens.
+- Native appearance keeps the tools prominent. Studio looks retain their decorative objects. Compact widgets have visible expand controls. Notes opens a usable editor, writes during input, and follows changes from another tab. Own storage echoes cannot replace the editor during rapid typing. Tasks expose their input and use a native checkbox. Expanded widgets have a close control, keyboard focus loop and Escape recovery. Weather has loading, timeout, failure and retry states; changing cities cannot display the previous city’s cached forecast. The calendar empty state opens the calendar.
+- The sidebar now exposes the existing built-in Assistant. Model discovery runs independently of the dashboard, has a bounded timeout and a recoverable connection error. No paid model requests were made. Shared search opens complete HTTP(S) addresses and bare domains directly.
+- The preview now supports isolated persistent settings, notes and tasks across reloads and open tabs. Explicit fixtures stay volatile. Cache-busted preview assets prevent stale bundles during rapid rebuilds. `scripts/product-smoke.js` checks setup, note editing and rapid input, reload persistence, two open tabs, tasks, settings search/navigation, held model discovery, the Assistant route and URL navigation. Preview bookmark data is still an in-memory fixture.
+- Validation: 124 tests and typecheck pass. The product browser smoke passes. All 12 looks fit 1440×900. Native views pass 1280×720, 1440×900, 1920×1080 and narrow 390×844; narrow pages scroll vertically without horizontal overflow. The setup primary action fits 1280×720. Sidebar chat fits 420×720. Keyboard Tab/Shift+Tab/Escape, Arrange resizing, widget removal, Reset layout, setup opt-out/re-enable and weather/model failure states pass. Both weather search and model discovery recover through Try again when the fixture network returns. Twelve redraws stay at 9 storage listeners, 1 bookmark listener, 1 resize listener, 4 keyboard listeners and 1 observer. A held chat reply after New chat does not enter the new conversation.
+- Packaging: version 0.2.0; all four targets and zips pass in an isolated copy with the real tsconfig. Packages include INSTALL.md, PRIVACY.md and README.md. Preview scripts and fixture pages are excluded. Chromium remains a local unpacked install; Firefox needs signing for distribution and Safari needs Xcode conversion/signing. There is no browser-store publication.
+- Tool limits: T3 snapshots timed out twice, so verification used the documented Aside workflow. The preview server expired once and was restarted after `ERR_CONNECTION_REFUSED`. One URL probe targeted the hidden Search field while Ask mode was active; selecting Search corrected the probe. Rapid Notes input exposed a real focus loss, fixed by ignoring own storage echoes. A stale cached bundle initially hid that fix; revisioned preview assets corrected the check. An expired shell session returned `Unknown process id`; its saved logs were read directly. Aside’s one-shot process can exit zero after JavaScript errors, so smoke success requires the explicit PASS marker.
+- Limits: a clean browser-profile install, real keyed chat, provider/MCP OAuth, bridge pairing and live cross-device sync remain untested. Full backup still excludes notes, conversations and keys; the install guide states this. Strongest alternative: passing unit tests would conceal broken daily-use flows — ruled out for the listed flows by browser interaction, reload checks, two open tabs, held-network failures and independent isolated package builds. Other integrations still require live checks.
 
 `main` includes the bug and UI fixes below, merged from `bugfix/codebase-review` in `c8983ae` at the owner’s request. The branch is retained as merged history. `drawer-dynamic-url` remains unmerged (open work item 1). The earlier Phase 1 work was merged from `audit-fixes`, built on `wip/in-panel-apps`. The full earlier audit report, session transcript and test scripts are in `context/claude-code-session-2026-10-14/` (local only).
 
@@ -58,7 +69,9 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 ## Open work, in priority order
 
-The audit plan, then the earlier list. Run the typecheck, tests and preview diff after each step; live checks in the owner's Aside are announced first.
+Continue the existing-feature product pass. Run the typecheck, tests and relevant browser flows after each step. Announce live checks first.
+
+Next product checks: install 0.2.0 in a clean browser profile, verify sign-in and failure recovery for each shipped app, and exercise real provider/MCP connections. Then address the hardening work below before public store distribution. Add complete local backup/restore for notes and chats; current Setups export does not include them.
 
 1. **Phase 1b, hardening** (owner: "Yes, as Phase 1b").
    - Branch `drawer-dynamic-url` puts the drawer behind Chrome's per-session random URL (`use_dynamic_url`), so websites can't embed it. Not merged: a drawer at that URL starts its app frames from a second host, so the frame rules now list both hosts (`applyRules` in `src/background/dnr.ts`), but nobody has seen it work. Before merging, check live: an app opens inside the in-page drawer on a normal page, and Gmail and X still open in the side panel. If a drawer app fails, compare the drawer document's origin with rule 1's `initiatorDomains` (`declarativeNetRequest.testMatchOutcome`).
@@ -72,9 +85,9 @@ The audit plan, then the earlier list. Run the typecheck, tests and preview diff
 5. **Phase 4, tests:** a fake `chrome.*` seam built from the preview shim; router tests; a manifest snapshot test; bridge tests through Node's WebSocket client; preview end-to-end scripts.
 6. Phone layouts in the side panel and a live check of Calendar, Instagram, Grok and Messenger in frames (Gmail and X done). Watch Gmail for other `top` uses in modules it loads later (compose, settings, chat); `TOP_REWRITE_HOSTS` covers mail.google.com only.
 7. Sharp icons: each site's best icon source, fitted (see `src/shared/iconfit.ts`, `src/background/favicons.ts`).
-8. Sidebar chat: `chatUi(ctx, { where: 'panel' })` exists; wire it into `panel.html` and add a rail button.
+8. Sidebar Assistant is wired in 0.2.0. Verify a real model and page attachments from the side panel.
 9. Agent bridge end to end: run `bridge/sidegig-bridge.mjs` (WebSocket handshake, a `codex.run` prompt); build the extension side that answers `browser_*` tool calls, with an agent-access setting and a visible banner while an agent controls a tab.
-10. Settings page redesign (sticky header with search, live slider values, "Saved" chip, Appearance first). A previous script failed near `opt('Delay', ...)` in `src/options/main.ts`; inspect that line first.
+10. Settings now have a sticky header, search, Saved status, section navigation and a narrow-screen selector. Continue field-level validation, error recovery and focus checks; keep full forms available in search.
 11. Check other compact windows and unusually large interface sizes. Colours and Layout both have a Size slider; standard desktop and narrow fixture sizes pass.
 12. Verify in the real extension after a reload: the saved layout surviving a reload, new-tab grid and Clear mode, arrange mode, chat with a real key, rail plates and single rail, icon fit, the Pomodoro seconds hand, bell and digit bounce.
 13. Undecided (ask the owner): Opera-style drawer placement next to the rail; hiding the page rail while Chrome's side panel is open; the product name (sidegig, Ledge or Edgewise); default wallpaper.
