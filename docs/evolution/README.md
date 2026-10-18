@@ -150,3 +150,9 @@ Commit `387d99b` on branch `product/complete-core-flows` (plus uncommitted work)
 <img src="2026-10-17-07-dock-inspired-page-rail-with-grouped-app.jpg" width="49%" alt="Dock-inspired page rail with grouped app plates, reserved badge space and a rounded gutter">
 <img src="2026-10-17-08-taskbar-style-active-marker-and-badge-wi.jpg" width="49%" alt="Taskbar-style active marker and badge with app content starting below one compact toolbar">
 <img src="2026-10-17-09-setups-includes-notes-and-optional-chat.jpg" width="49%" alt="Setups includes notes and optional chat history while leaving connection credentials out">
+
+## 2026-10-17: Restore page rails immediately when native panels close
+
+Commit `945a9d1` on branch `bugfix/panel-close-restore` (plus uncommitted work).
+
+<img src="2026-10-17-10-native-panel-closure-restores-the-page-d.jpg" width="49%" alt="Native panel closure restores the page dock; clean fixture view">
