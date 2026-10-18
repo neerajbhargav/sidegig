@@ -15,8 +15,11 @@ import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
+import { trackPanels } from './panels.ts';
 import { checkFavicons } from './favicons.ts';
 import { findCollection, readPool, refreshPool, REFRESH_MS } from '../shared/collect.ts';
+
+trackPanels();
 
 let cache: Settings | null = null;
 const now = () => cache ?? defaultSettings();
