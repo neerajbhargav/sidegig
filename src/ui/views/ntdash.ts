@@ -5,7 +5,7 @@ import { ext } from '../../shared/api.ts';
 import { getLocal, setLocal, onLocalChanged, updateSettings } from '../../shared/storage.ts';
 import { CAL_APPS, eventIcs, feedUrl, monthGrid, occurrences, parseIcs, sameDay, weekStartFor, type CalEvent } from '../../shared/ntcal.ts';
 import { clockText, freshPomo, msLeft, next, pause, phaseMs, settle, start, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
-import { greetingFor, parseWeather, weatherLabel, weatherUrl, type WeatherNow } from '../../shared/ntdata.ts';
+import { greetingFor, navigationUrl, parseWeather, weatherLabel, weatherUrl, type WeatherNow } from '../../shared/ntdata.ts';
 import { h, ico, favicon, faviconOnly, toast } from '../dom.ts';
 import { type Ctx, openUrl } from '../ctx.ts';
 import { spacesFor } from './home.ts';
@@ -759,6 +759,18 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
   const form = h('form', { class: 'shelf-add nt-card', hidden: true });
   const root = h('section', { class: 'nt-shelf nt-card', 'aria-label': 'Bookmarks' }, head, grid, form);
   const here = () => trail[trail.length - 1]?.id ?? active.id;
+  const closeForm = () => {
+    form.hidden = true;
+    void paint();
+  };
+  const openForm = () => {
+    form.hidden = false;
+    error.textContent = '';
+    root.querySelector('.shelf-addkey')?.setAttribute('aria-expanded', 'true');
+    root.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'bookmarks' }));
+    nameIn.focus();
+  };
+  root.addEventListener('nt-widget-close', () => { form.hidden = true; });
 
   const tile = (label: string, icon: Node, props: Record<string, unknown>) =>
     h('div', { role: 'listitem', class: 'shelf-item' }, h('button', { type: 'button', class: 'nt-key', ...props }, icon, h('span', { class: 'nt-label' }, label)));
@@ -820,9 +832,9 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
         title: 'Add a site or a folder here',
         'aria-expanded': String(!form.hidden),
         onclick: () => {
-          form.hidden = !form.hidden;
           play('key');
-          if (!form.hidden) (form.querySelector('input') as HTMLInputElement | null)?.focus();
+          if (form.hidden) openForm();
+          else closeForm();
         },
       }),
     );
@@ -833,17 +845,15 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
   // Add a site (name and address) or a folder (name only), right where you are.
   const nameIn = h('input', { class: 'text-input', type: 'text', placeholder: 'Name', 'aria-label': 'Name', maxlength: 80 });
   const urlIn = h('input', { class: 'text-input', type: 'text', placeholder: 'Address, like example.com', 'aria-label': 'Address', inputmode: 'url', spellcheck: 'false' });
+  const error = h('p', { class: 'shelf-error', role: 'status', 'aria-live': 'polite' });
   const addSite = async () => {
     const raw = urlIn.value.trim();
     if (!raw) return void urlIn.focus();
-    const url = /^[a-z][\w+.-]*:/i.test(raw) ? raw : `https://${raw}`;
-    try {
-      new URL(url);
-    } catch {
-      return toast('That address doesn’t look right');
-    }
+    const url = navigationUrl(raw);
+    if (!url) { error.textContent = 'Enter a website address, like example.com.'; urlIn.focus(); return; }
     play('confirm');
-    await ext.bookmarks.create({ parentId: here(), title: nameIn.value.trim() || hostName(url), url });
+    try { await ext.bookmarks.create({ parentId: here(), title: nameIn.value.trim() || hostName(url), url }); }
+    catch { error.textContent = 'The site could not be saved. Try again.'; return; }
     nameIn.value = urlIn.value = '';
     form.hidden = true;
     await paint();
@@ -852,15 +862,18 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     const title = nameIn.value.trim();
     if (!title) return void nameIn.focus();
     play('confirm');
-    await ext.bookmarks.create({ parentId: here(), title });
+    try { await ext.bookmarks.create({ parentId: here(), title }); }
+    catch { error.textContent = 'The folder could not be saved. Try again.'; return; }
     nameIn.value = urlIn.value = '';
     form.hidden = true;
     await paint();
   };
   form.append(
+    h('h3', {}, 'Add a bookmark'),
     nameIn,
     urlIn,
-    h('div', { class: 'shelf-add-a' }, h('button', { type: 'submit', class: 'btn primary' }, 'Add site'), h('button', { type: 'button', class: 'btn', onclick: () => void addFolder() }, 'New folder'), h('button', { type: 'button', class: 'btn ghost', onclick: () => ((form.hidden = true), void paint()) }, 'Cancel')),
+    error,
+    h('div', { class: 'shelf-add-a' }, h('button', { type: 'submit', class: 'btn primary' }, 'Add site'), h('button', { type: 'button', class: 'btn', onclick: () => void addFolder() }, 'New folder'), h('button', { type: 'button', class: 'btn ghost', onclick: closeForm }, 'Cancel')),
   );
   form.addEventListener('submit', (e) => (e.preventDefault(), void (urlIn.value.trim() ? addSite() : addFolder())));
   form.addEventListener('keydown', (e) => e.key === 'Escape' && ((form.hidden = true), void paint()));

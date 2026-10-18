@@ -1,11 +1,25 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-16 (0.2.0 merged to `main`, packaged and deployed to the owner’s Aside).
+Last updated: 2026-10-17 (0.3.0 refinement ready on `product/complete-core-flows`; merge and live deployment follow validation).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Product refinement 0.3.0, 2026-10-17:** the owner reported clipping, unread-count truncation, duplicate sidebars, wasted sidebar space, wallpaper halos, missing widget expansion and a difficult For you page. The owner then requested centered button text, Google/Apple consistency, and Dock/taskbar inspiration. Earlier merge/deploy authorization remains in force. Implementation is ready on `product/complete-core-flows`; this section will record the merged deployment after the live check.
+
+- The new tab adapts to both window size and interface size. A dense desktop grid becomes a scrolling layout before controls clip. Every enabled widget remains available when a saved layout cannot fit them. Existing saved arrangements remain intact; Reset layout applies the new defaults.
+- Widget surfaces have bounded tints and borders. Removed the feathered wallpaper patches, oversized digit travel, clipped figure paint containment and width/height interpolation during expansion. Folder animation has reserved padding. Widgets open from their surface, Open control or Enter/Space; embedded controls retain their own actions. Large widgets also expand, and Escape/Close returns focus.
+- All button captions center. Action buttons center their icon/label groups. Wallpaper now owns surface selection, Fade/Soften values and Reset picture effects. Colours owns appearance; Layout owns widgets and placement. Customize stays open through changes. The local historical reference boards were inspected. `docs/DESIGN.md` records the Google, Apple, Dock and taskbar sources and the shared rules.
+- The page rail sizes to its contents, centers vertically and reserves a gutter. App plates and spacing match the native panel. Active-app markers remain separate from corner unread badges. Pinned apps have a named group. The page rail hides whenever the same window has a live native panel, regardless of side. An ordinary `panel.html` tab neither creates nor clears native-panel heartbeats. The alignment hint is compact and appears only on Home. App content starts 49 px from the panel top in the fixture; 671 px remains in a 720 px window.
+- For you has its own page beside Desk. It starts near the top, offers category filters and readable descriptions, and keeps save/dismiss controls visible. Today and Saved keep separate filters. Reading list, Open tabs and Calculator are optional widgets in Customize. The calculator parses bounded arithmetic without executing code. Open tabs switches and closes real tabs; Reading list opens Saved.
+- Setups include notes and task reset state. Chat history, including attached page text, is optional. Connection credentials remain excluded. Malformed notes/chats and oversized decompressed codes are rejected. Export refuses files beyond the import limit. Apply restores the new-tab startup cache and shows errors without dismissing the form. Assistant setup preserves the draft question. An unreadable page attachment requires recovery instead of being silently omitted.
+- Concurrent settings updates in one context now queue. Local/sync echoes coalesce, avoiding duplicate redraws. Separate extension contexts still use whole-settings saves; that remains open.
+- Observed checks: 132 tests, typecheck, CSS token check and diff whitespace check pass. Product, responsive, refinement and portable browser scripts pass. Desktop checks cover 1280×720, 1440×900 and 1920×1080; narrow new tabs cover 390×844; sidebar chat covers 360/420×720. A 140% interface uses the scrolling layout without clipped controls. All 12 appearances fit 1440×900. Badges, including 99+ and dot activity, fit compact/comfortable rails at 80/100/140%. The opposite-side native-panel state hides the fixture page rail and clearing it restores the rail. Customize applies and saves Fade and surfaces, stays open, and resets only picture effects. The native-panel fixture shows the active marker, intact badge and compact app header.
+- Independent comparison: the previous `a4d2da6` rail clips the badge and remains visible for an opposite-side native panel. The current rail passes both checks. This rules out a stale preview as the cause of those reports. Final installed-file hashes will provide the deployment check.
+- Verification workarounds: T3 snapshots failed twice with “Preview automation snapshot timed out after 15000ms.” Aside performed the browser checks. Aside frame evaluation exposes a different global context for the preview’s mocked storage; storage writes therefore use the owning page’s iframe window. A navigation-readiness timeout was avoided with fresh owned tabs. Exact selectors were corrected where a title supplied the accessible name or a hidden widget shared a label with a tab-close control. A visual check caught the old docked rule overriding the rounded rail; that rule was removed and its radius/gutter were checked. Google’s page requires JavaScript, so its official implementation supplied the button evidence. Apple’s Markdown view was read directly after the web renderer rejected its content type.
+- Limits: no paid model call, real provider/MCP OAuth or bridge session was used. Bridge pairing and the extension-side agent host remain incomplete, along with the Phase 1b hardening below. Store publication and signed Firefox/Safari distribution are not part of this local deployment. New screenshot milestones accompany this release. Strongest alternative: clipping was only a stale visual state — ruled out by the independent previous/current rail comparison and live fixture geometry.
 
 **Product iteration 0.2.0, 2026-10-16:** the owner asked for an installable, usable product with a better experience across existing features. Work from `product/core-experience` was merged into `main` in `954e50a`, under the owner’s merge/deploy instruction. The branch remains as merged history. Version 0.2.0 is built into `dist/` and loaded in the owner’s Aside.
 
@@ -72,7 +86,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 Continue the existing-feature product pass. Run the typecheck, tests and relevant browser flows after each step. Announce live checks first.
 
-Next product checks: install 0.2.0 in a clean browser profile, verify sign-in and failure recovery for each shipped app, and exercise real provider/MCP connections. Then address the hardening work below before public store distribution. Add complete local backup/restore for notes and chats; current Setups export does not include them.
+Next product checks: install 0.2.0 in a clean browser profile, verify sign-in and failure recovery for each shipped app, and exercise real provider/MCP connections. Then address the hardening work below before public store distribution. Notes and optional chat backup/restore are implemented and fixture-tested in 0.3.0.
 
 1. **Phase 1b, hardening** (owner: "Yes, as Phase 1b").
    - Branch `drawer-dynamic-url` puts the drawer behind Chrome's per-session random URL (`use_dynamic_url`), so websites can't embed it. Not merged: a drawer at that URL starts its app frames from a second host, so the frame rules now list both hosts (`applyRules` in `src/background/dnr.ts`), but nobody has seen it work. Before merging, check live: an app opens inside the in-page drawer on a normal page, and Gmail and X still open in the side panel. If a drawer app fails, compare the drawer document's origin with rule 1's `initiatorDomains` (`declarativeNetRequest.testMatchOutcome`).
@@ -91,7 +105,7 @@ Next product checks: install 0.2.0 in a clean browser profile, verify sign-in an
 10. Settings now have a sticky header, search, Saved status, section navigation and a narrow-screen selector. Continue field-level validation, error recovery and focus checks; keep full forms available in search.
 11. Check other compact windows and unusually large interface sizes. Colours and Layout both have a Size slider; standard desktop and narrow fixture sizes pass.
 12. Verify in the real extension after a reload: the saved layout surviving a reload, new-tab grid and Clear mode, arrange mode, chat with a real key, rail plates and single rail, icon fit, the Pomodoro seconds hand, bell and digit bounce.
-13. Undecided (ask the owner): Opera-style drawer placement next to the rail; hiding the page rail while Chrome's side panel is open; the product name (sidegig, Ledge or Edgewise); default wallpaper.
+13. Undecided (ask the owner): Opera-style drawer placement next to the rail; the product name (sidegig, Ledge or Edgewise); default wallpaper.
 
 ## Blocked or limited
 
@@ -110,7 +124,8 @@ Next product checks: install 0.2.0 in a clean browser profile, verify sign-in an
 - Chat: clean-room from public API docs and the MCP spec. Keys stay on the device (`aiKeys`, local storage, never synced). ChatGPT-plan access only through the official Codex CLI via the bridge. Claude and Gemini subscriptions are not supported (their terms forbid third-party use); use API keys. No identity spoofing, no reading other apps' tokens.
 - Bridge: one local daemon on `127.0.0.1:47617`; the extension connects over WebSocket; web pages are refused. Pairing is by a code that `sidegig-bridge setup` prints and the owner pastes once in AI settings (decided 2026-10-14; today the first extension origin is paired).
 - Icons: the site's own icon at screen resolution, measured and fitted to one visual size; bundled CC0 brand glyphs when the browser has none.
-- One rail per page: an older rail instance removes itself.
+- One rail per page: an older rail instance removes itself. Hide the page rail while a native panel is open in that window, on either side (owner, 2026-10-17).
+- Controls: center button captions and icon/label groups across appearances. Wallpaper owns surface materials. Use Dock-inspired grouping and taskbar-style active markers without hover magnification or clipped badges (owner, 2026-10-17).
 
 ### Owner decisions from the 2026-10-14 audit round
 

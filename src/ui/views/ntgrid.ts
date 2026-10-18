@@ -15,7 +15,7 @@ export interface GridItem {
   id: WidgetId;
   el: HTMLElement;
   label: string;
-  /** Opens to full size when clicked at small or medium size. */
+  /** Opens the full widget when its surface or Open button is activated. */
   expandable?: boolean;
   /** Take it off the page. */
   remove?: () => void;
@@ -26,7 +26,12 @@ export interface Grid {
   editing: () => boolean;
 }
 
-const FLOW = '(max-width: 899px), (max-height: 539px)';
+// A larger interface needs more room per widget. Switch to a scrolling list
+// before fixed grid cells would clip controls or calendar labels.
+const needsFlow = () => {
+  const scale = Math.max(1, Number(getComputedStyle(document.documentElement).getPropertyValue('--ui-s')) || 1);
+  return innerWidth < 900 * scale || innerHeight < 700 * scale;
+};
 const ARRANGED = 'nt-arranged';
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,7 +45,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   const ids = items.map((i) => i.id);
   const resolved = resolve(ctx.settings.newtab.layout, ids);
   let boxes = resolved.boxes;
-  const flow = matchMedia(FLOW);
+  const flow = { matches: needsFlow() || resolved.hidden.length > 0 };
   const el = h('div', { class: 'nt-grid', dataset: { flow: String(flow.matches) } });
   const wraps = new Map<WidgetId, HTMLElement>();
   const sizeLabels = new Map<WidgetId, HTMLElement>();
@@ -50,7 +55,8 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
 
   const setBox = (id: WidgetId, b: Box | undefined) => {
     const w = wraps.get(id);
-    if (!w || !b) return;
+    if (!w) return;
+    if (!b) { if (flow.matches) w.dataset.size = 'l'; return; }
     w.style.setProperty('--x', String(b.x + 1));
     w.style.setProperty('--y', String(b.y + 1));
     w.style.setProperty('--w', String(b.w));
@@ -75,7 +81,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
       const dx = a.left - b.left;
       const dy = a.top - b.top;
       if (Math.abs(dx) + Math.abs(dy) < 1 && Math.abs(a.width - b.width) < 1) continue;
-      w.animate([{ transform: `translate(${dx}px, ${dy}px)`, width: `${a.width}px`, height: `${a.height}px` }, { transform: 'none', width: `${b.width}px`, height: `${b.height}px` }], { duration: 240, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+      w.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 180, easing: 'ease-out' });
     }
   };
 
@@ -115,13 +121,13 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
   const open = (id: WidgetId) => {
     if (openId || editing || flow.matches || !wraps.has(id)) return;
     const w = wraps.get(id)!;
-    // Large widgets already expose their controls in place.
-    if (w.dataset.size === 'l') return;
     const b = boxes[id]!;
     const [bw, bh] = [...SIZES[id]].sort((p, q) => q[0] * q[1] - p[0] * p[1])[0];
     const big: Box = { w: bw, h: bh, x: clamp(b.x + Math.round((b.w - bw) / 2), 0, COLS - bw), y: clamp(b.y + b.h - bh > 0 && b.y + bh > ROWS ? ROWS - bh : b.y, 0, ROWS - bh) };
-    const from = w.getBoundingClientRect();
-    const to = rectOf(big);
+    const place = rectOf(big);
+    const width = Math.min(innerWidth - 32, Math.max(place.width, id === 'bookmarks' ? 720 : 420));
+    const height = Math.min(innerHeight - 48, Math.max(place.height, id === 'clock' ? 280 : 480));
+    const to = { width, height, left: clamp(place.left, 16, innerWidth - width - 16), top: clamp(place.top, 24, innerHeight - height - 24) };
     openId = id;
     returnFocus = document.activeElement as HTMLElement | null;
     play('on');
@@ -134,7 +140,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     w.dataset.size = 'l';
     Object.assign(w.style, { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px` });
     scrim.hidden = false;
-    if (!still()) w.animate([{ transform: `translate(${from.left - to.left}px, ${from.top - to.top}px)`, width: `${from.width}px`, height: `${from.height}px`, opacity: 0.6 }, { transform: 'none', width: `${to.width}px`, height: `${to.height}px`, opacity: 1 }], { duration: 260, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+    if (!still()) w.animate([{ opacity: 0.7 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
     (w.querySelector<HTMLElement>('input, textarea, button:not(.gw-btn)') ?? w).focus({ preventScroll: true });
   };
   const close = () => {
@@ -143,7 +149,6 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     const w = wraps.get(id)!;
     openId = null;
     play('off');
-    const from = w.getBoundingClientRect();
     w.classList.remove('is-open');
     w.setAttribute('role', 'group');
     w.removeAttribute('aria-modal');
@@ -153,12 +158,12 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     delete w.dataset.toneWas;
     setBox(id, boxes[id]);
     scrim.hidden = true;
-    const to = w.getBoundingClientRect();
-    if (!still()) w.animate([{ transform: `translate(${from.left - to.left}px, ${from.top - to.top}px)`, width: `${from.width}px`, height: `${from.height}px` }, { transform: 'none', width: `${to.width}px`, height: `${to.height}px` }], { duration: 220, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+    w.querySelector('.nt-card')?.dispatchEvent(new Event('nt-widget-close'));
     const focus = returnFocus?.isConnected && !returnFocus.matches('input, textarea') ? returnFocus : w.querySelector<HTMLElement>('.gw-more');
     focus?.focus({ preventScroll: true });
     returnFocus = null;
   };
+  addEventListener('nt-widget-dismiss', close, { signal });
   el.addEventListener('nt-widget-open', (e) => open((e as CustomEvent<WidgetId>).detail));
 
   // ------------------------------------------------ arrange mode
@@ -201,6 +206,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
 
   const edit = (on: boolean, quiet = false) => {
     if (on === editing) return;
+    if (on && flow.matches) { toast('Use a wider or taller window to arrange the grid. You can choose widgets in Customize.'); return; }
     if (on) close();
     editing = on;
     el.toggleAttribute('data-edit', on);
@@ -208,6 +214,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     bar.hidden = !on;
     for (const [, w] of wraps) {
       if (on) w.tabIndex = 0;
+      else if (items.find((it) => it.id === w.dataset.w)?.expandable && !flow.matches) w.tabIndex = 0;
       else w.removeAttribute('tabindex');
     }
     if (!quiet) play(on ? 'on' : 'off');
@@ -224,15 +231,26 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
       h('button', { type: 'button', class: 'gw-btn', title: 'Change size', 'aria-label': `Change the size of ${it.label}`, onclick: () => cycleSize(it.id) }, ico('resize', 16), sizeLabel),
       it.remove ? h('button', { type: 'button', class: 'gw-btn', title: `Remove ${it.label}`, 'aria-label': `Remove ${it.label}`, onclick: () => (play('dismiss'), it.remove!()) }, ico('close', 16)) : null,
     );
-    const more = it.expandable ? h('button', { type: 'button', class: 'gw-more', title: `Open ${it.label}`, 'aria-label': `Open ${it.label}`, onclick: () => open(it.id) }, ico('expand', 16)) : null;
+    const openLabel = it.id === 'tabs' ? 'Expand Open tabs' : `Open ${it.label}`;
+    const more = it.expandable ? h('button', { type: 'button', class: 'gw-more', title: openLabel, 'aria-label': openLabel, onclick: () => open(it.id) }, ico('expand', 16)) : null;
     const dismiss = it.expandable ? h('button', { type: 'button', class: 'gw-close', 'aria-label': `Close ${it.label}`, onclick: close }, ico('close', 18)) : null;
     const w = h('div', { class: 'gw', dataset: { w: it.id }, 'aria-label': it.label, role: 'group' }, it.el, more, dismiss, chrome);
     wraps.set(it.id, w);
     setBox(it.id, boxes[it.id]);
-    if (!boxes[it.id]) w.hidden = true;
+    if (!boxes[it.id]) w.hidden = !flow.matches;
 
-    // Opening to full size is only ever the expand button (never a stray click on
-    // the widget), so nothing appears on top of what you meant to click.
+    // The widget surface opens it. Controls keep their own action, so clicking
+    // a task, link or timer never opens something over that action.
+    if (it.expandable) {
+      if (!flow.matches) w.tabIndex = 0;
+      w.addEventListener('keydown', (e) => {
+        if (!editing && e.target === w && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(it.id); }
+      });
+      w.addEventListener('click', (e) => {
+        if ((e.target as Element).closest('button, a, input, textarea, select, [contenteditable="true"], .gw-chrome')) return;
+        open(it.id);
+      });
+    }
 
     // Drag to move.
     w.addEventListener('pointerdown', (e) => {
@@ -317,20 +335,24 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     if (openId) close();
     else if (editing) edit(false);
   }, { signal });
-  flow.addEventListener('change', () => {
-    if (!el.isConnected) return;
-    close();
-    el.dataset.flow = String(flow.matches);
-    for (const id of ids) setBox(id, boxes[id]);
-    arranged();
-  }, { signal });
-  if (resolved.hidden.length) {
-    const names = resolved.hidden.map((id) => items.find((i) => i.id === id)?.label ?? id);
-    setTimeout(() => toast(`No room for ${names.join(' and ')}. Make something smaller in Arrange.`), 600);
-  }
   // Fill exactly what's left of the window under the top bar, so the page never scrolls by a few pixels.
   const fit = () => {
-    if (!el.isConnected) return;
+    if (!el.isConnected || !el.getClientRects().length) return;
+    const nextFlow = needsFlow() || resolved.hidden.length > 0;
+    if (nextFlow !== flow.matches) {
+      if (nextFlow && editing) edit(false);
+      close();
+      flow.matches = nextFlow;
+      el.dataset.flow = String(nextFlow);
+      for (const id of ids) {
+        const w = wraps.get(id)!;
+        setBox(id, boxes[id]);
+        if (!boxes[id]) w.dataset.size = 'l';
+        w.hidden = !boxes[id] && !nextFlow;
+        if (items.find((it) => it.id === id)?.expandable) w.tabIndex = nextFlow ? -1 : 0;
+      }
+      arranged();
+    }
     const top = el.getBoundingClientRect().top + scrollY;
     const page = el.closest('.nt-page');
     const pad = page ? parseFloat(getComputedStyle(page).paddingBottom) : 0;

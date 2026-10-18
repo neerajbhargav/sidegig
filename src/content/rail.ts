@@ -27,7 +27,7 @@ type DrawerView = View | 'app' | 'add';
 const send = (msg: ToBackground) => ext.runtime.sendMessage(msg).catch(() => undefined);
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 const keys = (k: string) => (isMac ? `\u2325\u21e7${k}` : `Alt+Shift+${k}`);
-const railWidth = (s: Settings) => Math.round((s.rail.size === 'compact' ? 48 : 56) * scaleFactor(s.theme.scale));
+const railWidth = (s: Settings) => Math.round((s.rail.size === 'compact' ? 64 : 72) * scaleFactor(s.theme.scale));
 
 /** Should the rail dock (make room) on this site, per settings? */
 function dockedHere(s: Settings): boolean {
@@ -158,7 +158,7 @@ class Rail {
     if (this.windowId === null) return;
     const map = await getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {});
     const e = map[String(this.windowId)];
-    const open = !!e && Date.now() - e.ts < 40_000 && e.side === this.s.rail.side;
+    const open = !!e && Date.now() - e.ts < 40_000;
     if (open === this.covered) return;
     this.covered = open;
     this.applySettings(this.s);
@@ -170,7 +170,7 @@ class Rail {
 
   /** Tell the page how much room to make: the rail, plus the drawer when it's open. */
   private updateDock() {
-    const w = this.docked ? railWidth(this.s) + (this.view ? this.drawerWidth() : 0) : 0;
+    const w = this.docked ? railWidth(this.s) + (this.view ? this.drawerWidth() + Math.round(6 * scaleFactor(this.s.theme.scale)) : 0) : 0;
     this.dock.set(w, this.s.rail.side);
   }
 
@@ -179,7 +179,7 @@ class Rail {
     this.host.dataset.side = s.rail.side;
     this.host.dataset.size = s.rail.size;
     this.host.dataset.mode = this.docked ? 'docked' : 'hover';
-    this.host.style.display = (this.enabledHere && !this.tempHidden && !this.covered) || this.sticky ? '' : 'none';
+    this.host.style.display = !this.covered && ((this.enabledHere && !this.tempHidden) || this.sticky) ? '' : 'none';
     if (this.covered) {
       this.closeDrawer();
       this.open = false;
@@ -297,6 +297,8 @@ class Rail {
 
     const apps = document.createElement('div');
     apps.className = 'scroll';
+    apps.setAttribute('role', 'group');
+    apps.setAttribute('aria-label', 'Pinned apps');
     for (const app of s.apps) {
       const b = this.button(app.name, this.appIcon(app), () => this.openApp(app), 'app');
       b.dataset.app = app.id;
@@ -335,6 +337,9 @@ class Rail {
   }
 
   private markActive() {
+    for (const b of this.rail.querySelectorAll<HTMLElement>('button[data-app]')) {
+      b.setAttribute('aria-pressed', String(this.view === 'app' && b.dataset.app === this.drawerApp));
+    }
     for (const b of this.rail.querySelectorAll<HTMLElement>('button[data-view]')) {
       b.setAttribute('aria-pressed', String(!!this.view && b.dataset.view === this.view));
     }
@@ -762,7 +767,7 @@ async function main() {
   else void start();
 }
 
-if (window.top === window && document.documentElement && !(document.contentType && !/html/.test(document.contentType))) {
+if ((window.top === window || TARGET === 'preview') && document.documentElement && !(document.contentType && !/html/.test(document.contentType))) {
   void main();
 }
 

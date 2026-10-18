@@ -1,0 +1,15 @@
+// Run after npm run preview, with dist/ served on 127.0.0.1:8765.
+// aside repl "$(cat scripts/responsive-smoke.js)"
+// Uses only synthetic fixture data. Images stay in the Aside session folder.
+await fs.mkdir('./refine-qa',{recursive:true});
+const t=await openTab('http://127.0.0.1:8765/preview/qa-viewport.html?w=1280&h=720&page=qa-wallpaper.html');console.log((await snapshot(t,{interactive:true})).tree);
+for(const [w,h,p,name] of [[1280,720,'qa-wallpaper.html','wallpaper-1280'],[1440,900,'qa-wallpaper.html','wallpaper-1440'],[1920,1080,'qa-wallpaper.html','wallpaper-wide'],[390,844,'qa-wallpaper.html','wallpaper-narrow'],[1280,720,'qa-wallpaper.html?scale=140','wallpaper-large-text'],[390,844,'qa-edition.html','for-you-narrow'],[1440,900,'qa-edition.html','for-you'],[1280,720,'qa-tools.html','extra-widgets'],[360,720,'panel.html','panel-360'],[420,720,'panel.html','panel-420']]){
+ await t.evaluate(async([w,h,p])=>{const f=document.querySelector('#subject');f.width=w;f.height=h;await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Frame load timeout')),8000);f.onload=()=>{clearTimeout(timer);resolve()};f.src=new URL(p,location.href).href})},[w,h,p]);
+ console.log((await snapshot(t,{interactive:true})).diff);
+ const frame=t.frames().find(f=>!f.url().includes('qa-viewport')&&f.url().includes(p.split('?')[0]));
+ if(p==='panel.html'){await frame.locator('[aria-label="Assistant"]').click();console.log((await snapshot(t,{interactive:true})).diff);}
+ const r=await frame.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const widgets=[...document.querySelectorAll('.gw')].map(e=>({id:e.dataset.w,size:e.dataset.size,hidden:e.hidden,box:{w:e.clientWidth,h:e.clientHeight},card:(()=>{const c=e.querySelector('.nt-card');return c?{h:c.clientHeight,sh:c.scrollHeight,w:c.clientWidth,sw:c.scrollWidth}:null})()}));return{width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,gridBottom:document.querySelector('.nt-grid')?.getBoundingClientRect().bottom,flow:document.querySelector('.nt-grid')?.dataset.flow,buttonsCentered:[...document.querySelectorAll('button')].filter(e=>e.getClientRects().length).every(e=>getComputedStyle(e).textAlign==='center'),widgets,emptyTop:document.querySelector('.cv-empty')?.getBoundingClientRect().top,shadow:[...document.querySelectorAll('.gw .nt-card')].map(e=>getComputedStyle(e).boxShadow)}});
+ console.log('SIZE',name,JSON.stringify(r));if(!r.buttonsCentered)throw Error('Uncentred button '+name);if(r.scrollWidth>w+1)throw Error('Horizontal overflow '+name);if(p.includes('wallpaper')&&w>900&&r.flow==='false'&&r.scrollHeight>h+1)throw Error('Vertical overflow '+name);if(r.widgets.some(x=>x.card && x.card.sh>x.card.h+3))throw Error('Widget content clips '+name);if(r.widgets.some(x=>x.hidden))throw Error('Hidden widget '+name);
+ await t.screenshot({path:'./refine-qa/'+name+'.png',fullPage:true});
+}
+await closeTab(t);console.log('SIZE CHECK PASS');console.log('ARTIFACTS',pwd);

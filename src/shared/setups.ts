@@ -6,18 +6,20 @@ import { defaultSettings } from './defaults.ts';
 import { mergeSettings, migrate } from './storage.ts';
 import type { Settings } from './types.ts';
 
-export type SetupPart = 'apps' | 'looks' | 'reading' | 'todos' | 'pictures';
+export type SetupPart = 'apps' | 'looks' | 'reading' | 'todos' | 'notes' | 'chats' | 'pictures';
 
 export const PARTS: { id: SetupPart; name: string; note: string }[] = [
   { id: 'apps', name: 'Apps and sidebar', note: 'Apps, rail, stacks, Ask AI, link rules, tab sleep' },
   { id: 'looks', name: 'Looks and new tab', note: 'Appearance, new tab theme, background, collections, name' },
   { id: 'reading', name: 'Interests and reading list', note: 'Edition settings, interests, saved items' },
   { id: 'todos', name: 'To-dos', note: 'Your to-do list' },
+  { id: 'notes', name: 'Notes', note: 'Your sticky notes and their colours' },
+  { id: 'chats', name: 'Chat history', note: 'Conversations, including attached page text. No API keys.' },
   { id: 'pictures', name: 'Your pictures', note: 'Backgrounds you uploaded (larger file)' },
 ];
 
 /** Which settings each part owns. */
-const SETTING_KEYS: Record<Exclude<SetupPart, 'todos' | 'pictures'>, (keyof Settings)[]> = {
+const SETTING_KEYS: Record<'apps' | 'looks' | 'reading', (keyof Settings)[]> = {
   apps: ['apps', 'rail', 'drawer', 'ai', 'stacks', 'rules', 'sleep', 'status'],
   looks: ['theme', 'newtab'],
   reading: ['edition'],
@@ -27,7 +29,9 @@ const LOCAL_KEYS: Record<SetupPart, string[]> = {
   apps: ['workspaces'],
   looks: ['ntWallHidden'],
   reading: ['edProfile', 'edSaved'],
-  todos: ['ntTodos'],
+  todos: ['ntTodos', 'ntTodoDay'],
+  notes: ['ntNotes'],
+  chats: ['aiChats'],
   pictures: ['ntUploads', 'ntAlbums', 'ntImg:*'],
 };
 
@@ -66,11 +70,20 @@ export const isPrefixKey = (k: string) => k.endsWith('*');
 const matchKeys = (pattern: string, data: Record<string, unknown>) =>
   isPrefixKey(pattern) ? Object.keys(data).filter((k) => k.startsWith(pattern.slice(0, -1))) : data[pattern] !== undefined ? [pattern] : [];
 
+/** Refuse malformed new portable data before it can replace a working editor. */
+function validatePortable(local: Record<string, unknown>) {
+  const obj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+  const strings = (x: Record<string, unknown>, keys: string[]) => keys.every((k) => typeof x[k] === 'string');
+  if (local.ntNotes !== undefined && (!Array.isArray(local.ntNotes) || !local.ntNotes.every((n) => obj(n) && strings(n, ['id', 'text']) && Number.isInteger(n.color) && Number(n.color) >= 0 && Number(n.color) < 5))) throw new Error('This setup has invalid notes. Export a new copy from the original browser.');
+  if (local.aiChats !== undefined && (!Array.isArray(local.aiChats) || !local.aiChats.every((c) => obj(c) && strings(c, ['id', 'title', 'model']) && Number.isFinite(c.created) && Number.isFinite(c.updated) && Array.isArray(c.messages) && c.messages.every((m: unknown) => obj(m) && ['user', 'assistant', 'tool'].includes(String(m.role)) && typeof m.content === 'string' && (m.tabs === undefined || Array.isArray(m.tabs) && m.tabs.every((t) => obj(t) && strings(t, ['title', 'url']))) && (m.calls === undefined || Array.isArray(m.calls) && m.calls.every((t) => obj(t) && strings(t, ['id', 'name']) && obj(t.args))))))) throw new Error('This setup has invalid chat history. Export a new copy from the original browser.');
+}
+
 /**
  * The result of applying the chosen parts of a setup on top of what you have:
  * new settings, plus local data to write.
  */
 export function applySetup(current: Settings, bundle: SetupBundle, parts: SetupPart[]): { settings: Settings; local: Record<string, unknown> } {
+  validatePortable(bundle.local);
   const incoming = mergeSettings(defaultSettings(), migrate(bundle.settings));
   const next: Settings = JSON.parse(JSON.stringify(current));
   const local: Record<string, unknown> = {};
@@ -92,6 +105,7 @@ export function toBundle(data: unknown, fallbackName = 'Imported setup'): SetupB
   if (data.kind === 'sidegig-setup') {
     if (data.format !== 1) throw new Error('This setup comes from a newer sidegig. Update sidegig, then try again.');
     if (!isObj(data.settings)) throw new Error('This setup has no settings in it');
+    validatePortable(isObj(data.local) ? data.local : {});
     const parts = (Array.isArray(data.parts) ? data.parts : []).filter((p): p is SetupPart => PARTS.some((x) => x.id === p));
     return {
       kind: 'sidegig-setup',
@@ -126,8 +140,22 @@ const b64 = {
 };
 
 async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> {
-  const out = new Response(new Blob([bytes as BlobPart]).stream().pipeThrough(stream));
-  return new Uint8Array(await out.arrayBuffer());
+  const reader = new Blob([bytes as BlobPart]).stream().pipeThrough(stream).getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      length += value.length;
+      if (length > MAX_SETUP_BYTES) throw new RangeError('That’s too big to be a sidegig setup');
+      chunks.push(value);
+    }
+  } finally { await reader.cancel().catch(() => undefined); }
+  const out = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) { out.set(chunk, offset); offset += chunk.length; }
+  return out;
 }
 
 /** A short code to paste into another browser: compressed, URL-safe. Pictures stay out (too big). */
@@ -135,6 +163,7 @@ export async function toCode(bundle: SetupBundle): Promise<string> {
   const pics = (k: string) => LOCAL_KEYS.pictures.some((p) => (isPrefixKey(p) ? k.startsWith(p.slice(0, -1)) : k === p));
   const slim: SetupBundle = { ...bundle, parts: bundle.parts.filter((p) => p !== 'pictures'), local: Object.fromEntries(Object.entries(bundle.local).filter(([k]) => !pics(k))) };
   const bytes = new TextEncoder().encode(JSON.stringify(slim));
+  if (bytes.length > MAX_SETUP_BYTES) throw new RangeError('That’s too big to be a sidegig setup');
   return CODE_PREFIX + b64.enc(await pipe(bytes, new CompressionStream('deflate-raw')));
 }
 
@@ -146,11 +175,13 @@ export async function parseSetup(text: string, fallbackName?: string): Promise<S
     let json: string;
     try {
       json = new TextDecoder().decode(await pipe(b64.dec(t.slice(CODE_PREFIX.length).replace(/\s+/g, '')), new DecompressionStream('deflate-raw')));
-    } catch {
+    } catch (e) {
+      if (e instanceof RangeError) throw e;
       throw new Error('That code is incomplete. Copy all of it and try again.');
     }
     return toBundle(JSON.parse(json), fallbackName);
   }
+  if (new TextEncoder().encode(t).length > MAX_SETUP_BYTES) throw new Error('That’s too big to be a sidegig setup');
   let data: unknown;
   try {
     data = JSON.parse(t);
@@ -161,7 +192,9 @@ export async function parseSetup(text: string, fallbackName?: string): Promise<S
 }
 
 export function setupFile(bundle: SetupBundle): Blob {
-  return new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+  const file = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+  if (file.size > MAX_SETUP_BYTES) throw new RangeError('That’s too big to be a sidegig setup');
+  return file;
 }
 
 export const fileName = (bundle: SetupBundle) => `sidegig-${bundle.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'setup'}.json`;
@@ -177,6 +210,10 @@ export function describe(bundle: SetupBundle): string {
   if (bundle.parts.includes('reading') && interests) bits.push(`${interests} interest${interests === 1 ? '' : 's'}`);
   const todos = (bundle.local.ntTodos as unknown[] | undefined)?.length;
   if (bundle.parts.includes('todos') && todos) bits.push(`${todos} to-do${todos === 1 ? '' : 's'}`);
+  for (const [part, key, label] of [['notes', 'ntNotes', 'note'], ['chats', 'aiChats', 'chat']] as const) {
+    const count = Array.isArray(bundle.local[key]) ? bundle.local[key].length : 0;
+    if (bundle.parts.includes(part) && count) bits.push(`${count} ${label}${count === 1 ? '' : 's'}`);
+  }
   const pics = (bundle.local.ntUploads as unknown[] | undefined)?.length;
   if (bundle.parts.includes('pictures') && pics) bits.push(`${pics} picture${pics === 1 ? '' : 's'}`);
   return bits.join(', ');
