@@ -5,6 +5,10 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-17
 
+- `b329b14` Merge native panel lifecycle repair
+- `48f152c` Record the restored dock state after native panel closure
+- `945a9d1` Restore page rails immediately when native panels close
+- `9796587` Changelog for 0.3.0 refinements
 - `fa7a2f5` Merge 0.3.0 adaptive desk and dock refinements
 - `c753628` Record clean 0.3.0 desktop, sidebar and customization screenshots
 - `387d99b` Refine the adaptive desk, dock and core product flows for 0.3.0
