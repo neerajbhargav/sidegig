@@ -3,8 +3,16 @@
 Generated from the git history of `main` by `npm run changelog`. Newest first.
 Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Current state and next steps: [docs/STATUS.md](docs/STATUS.md).
 
+## 2026-10-17
+
+- `fa7a2f5` Merge 0.3.0 adaptive desk and dock refinements
+- `c753628` Record clean 0.3.0 desktop, sidebar and customization screenshots
+- `387d99b` Refine the adaptive desk, dock and core product flows for 0.3.0
+
 ## 2026-10-16
 
+- `a4d2da6` Record 0.2.0 deployment and live verification
+- `93a1488` Changelog for the 0.2.0 product iteration
 - `954e50a` Merge 0.2.0 core product experience
 - `fe6c951` Record product checks and clean desktop and narrow screenshots
 - `d908f1a` Clarify local model connection failures
