@@ -704,6 +704,9 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     const q = text.trim();
     if (!q || running) return;
     open();
+    // Keep the question visible while models load or connection setup is needed.
+    input.value = q;
+    grow();
     await modelsReady;
     if (running || ctx.signal?.aborted) return;
     if (!picks.model) return void showSetup();
@@ -727,7 +730,10 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
           pages.push(asPage(p));
           shown.push({ title: p.title, url: p.url });
         } catch {
-          /* a tab we can't read is skipped */
+          toast('This page could not be read. Remove its attachment or choose another page, then send again.');
+          input.value = q;
+          grow();
+          return;
         }
         if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
       }

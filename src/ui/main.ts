@@ -128,6 +128,7 @@ async function boot() {
     else el = await homeView(viewCtx);
     if (my !== token) return;
     view.replaceChildren(el);
+    hintHost.hidden = name !== 'home';
     view.style.flex = name === 'app' ? 'none' : '1 1 auto';
     showFrames(name === 'app');
     if (kind === 'panel') void renderRail();
@@ -148,22 +149,17 @@ async function boot() {
       h(
         'div',
         { class: 'side-hint' },
-        h('div', { class: 'side-hint-text' }, `Your rail is on the ${ctx.settings.rail.side}, but this browser opens its sidebar on the ${other}. Put them on the same side so apps open right next to the rail.`),
-        h(
-          'div',
-          { class: 'actions' },
-          h('button', { class: 'btn primary', type: 'button', onclick: () => void ext.tabs.create({ url: 'chrome://settings/appearance' }) }, `Open browser settings`),
-          h('button', { class: 'btn', type: 'button', onclick: () => void updateSettings((s) => void (s.rail.side = other)) }, `Move rail to the ${other}`),
-          iconButton('close', 'Dismiss', async () => {
-            await setLocal('sideHintDismissed', true);
-            hintHost.textContent = '';
-          }),
-        ),
+        h('div', { class: 'side-hint-text' }, `The page rail is on the ${ctx.settings.rail.side}.`),
+        h('button', { class: 'btn', type: 'button', title: `Move the page rail to the ${other}, beside this sidebar`, onclick: () => void updateSettings((s) => void (s.rail.side = other)) }, 'Align rail'),
+        iconButton('close', 'Dismiss alignment hint', async () => {
+          await setLocal('sideHintDismissed', true);
+          hintHost.textContent = '';
+        }),
       ),
     );
   }
 
-  // Tell pages in this window the panel is open, so a rail on the same side steps
+  // Tell pages in this window the panel is open, so the page rail steps
   // aside and the panel's own buttons list takes its place (one sidebar, not two).
   if (kind === 'panel' && where.windowId !== undefined) {
     const wid = String(where.windowId);
@@ -172,13 +168,19 @@ async function boot() {
       map[wid] = { side, ts: Date.now() };
       await setLocal('panelOpen', map);
     };
-    void beat();
-    setInterval(() => void beat(), 15_000);
-    addEventListener('pagehide', () => {
-      void getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {}).then((map) => {
-        delete map[wid];
-        return setLocal('panelOpen', map);
-      });
+    // Opening panel.html as a normal tab is useful for diagnostics, but it is
+    // not an open side panel and must not hide the page rail.
+    void ext.tabs.getCurrent().catch(() => undefined).then((tab) => {
+      if (tab?.id !== undefined) return;
+      void beat();
+      const heartbeat = setInterval(() => void beat(), 15_000);
+      addEventListener('pagehide', () => {
+        clearInterval(heartbeat);
+        void getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {}).then((map) => {
+          delete map[wid];
+          return setLocal('panelOpen', map);
+        });
+      }, { once: true });
     });
   }
 

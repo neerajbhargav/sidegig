@@ -132,19 +132,33 @@ export async function saveSettings(next: Settings): Promise<void> {
   }
 }
 
-export async function updateSettings(mutate: (s: Settings) => void): Promise<Settings> {
-  const s = await loadSettings();
-  mutate(s);
-  await saveSettings(s);
-  return s;
+let updateChain: Promise<unknown> = Promise.resolve();
+export function updateSettings(mutate: (s: Settings) => void): Promise<Settings> {
+  const pending = updateChain.then(async () => {
+    const s = await loadSettings();
+    mutate(s);
+    await saveSettings(s);
+    return s;
+  });
+  updateChain = pending.catch(() => undefined);
+  return pending;
 }
 
 export function onSettingsChanged(cb: (s: Settings) => void): () => void {
+  let revision = 0;
+  let previous = '';
   const listener = (changes: Record<string, unknown>) => {
-    if ('settings' in changes || 'customCss' in changes) loadSettings().then(cb);
+    if (!('settings' in changes || 'customCss' in changes)) return;
+    const current = ++revision;
+    void loadSettings().then((settings) => {
+      const key = JSON.stringify(settings);
+      if (current !== revision || key === previous) return;
+      previous = key;
+      cb(settings);
+    });
   };
   ext.storage.onChanged.addListener(listener);
-  return () => ext.storage.onChanged.removeListener(listener);
+  return () => { revision++; ext.storage.onChanged.removeListener(listener); };
 }
 
 export async function loadSecrets(): Promise<Secrets> {

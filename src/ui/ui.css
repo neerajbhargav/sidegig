@@ -233,7 +233,7 @@ body.ctx-options { overflow: auto; }
 }
 .pshell[data-side="left"] .prail { border-right: 1px solid var(--m-border); }
 .pshell[data-side="right"] .prail { border-left: 1px solid var(--m-border); }
-.papps { align-self: stretch; display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--ui-s, 1)); overflow-y: auto; scrollbar-width: none; min-height: 0; }
+.papps { padding: calc(6px * var(--ui-s, 1)) calc(8px * var(--ui-s, 1)); align-self: stretch; display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--ui-s, 1)); overflow-y: auto; scrollbar-width: none; min-height: 0; }
 .papps::-webkit-scrollbar { display: none; }
 .psep { width: calc(20px * var(--ui-s, 1)); height: 1px; background: var(--m-border); margin: calc(6px * var(--ui-s, 1)) 0; flex: none; }
 .pspacer { flex: 1 1 auto; }
@@ -258,7 +258,9 @@ body.ctx-options { overflow: auto; }
 .appbar .app-title { font-weight: 600; margin-left: calc(6px * var(--ui-s, 1)); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side-hint { margin: calc(10px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)) 0; padding: calc(12px * var(--ui-s, 1)); border-radius: var(--m-radius); background: var(--m-accent-soft); }
 .side-hint-text { line-height: 1.5; }
-.side-hint .actions { align-items: center; }
+.side-hint { display: flex; align-items: center; gap: 0.375rem; margin: 0.375rem; padding: 0.375rem 0.5rem; }
+.side-hint-text { flex: 1; font-size: 0.8125rem; }
+.side-hint .btn { height: 2rem; padding-inline: 0.5rem; font-size: 0.8125rem; white-space: nowrap; }
 
 /* new tab edition: a calm front page that ends */
 .ed { margin: calc(40px * var(--ui-s, 1)) 0 calc(8px * var(--ui-s, 1)); }
@@ -1207,10 +1209,6 @@ html[data-look] .nt2 .nt-brief { margin: 0.625rem auto 0; text-align: center; }
 .ask-feed { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0 0.75rem; border-radius: calc(999px * var(--ui-s, 1)); color: var(--c-mute); font: 500 0.9375rem/1 var(--f-text); }
 .ask-feed:hover { background: var(--hov); color: var(--c-ink); }
 .ask-feed[aria-checked="true"] { color: var(--c-ink); }
-.ask-sw { position: relative; width: 2.125rem; height: 1.25rem; border-radius: calc(999px * var(--ui-s, 1)); background: color-mix(in oklab, var(--c-ink) 20%, transparent); transition: background 220ms ease; }
-.ask-sw::after { content: ""; position: absolute; top: 0.1563rem; left: 0.1563rem; width: 0.9375rem; height: 0.9375rem; border-radius: 50%; background: #fff; box-shadow: none; transition: transform 420ms var(--spring); }
-.ask-feed[aria-checked="true"] .ask-sw { background: var(--c-signal); }
-.ask-feed[aria-checked="true"] .ask-sw::after { transform: translateX(0.875rem); }
 html[data-look] .nt2 .ask-go {
   all: unset; cursor: pointer; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.25rem; border-radius: calc(999px * var(--ui-s, 1));
   background: var(--c-signal); color: var(--c-on-signal); font: 600 0.9375rem/1 var(--f-text); letter-spacing: 0; text-transform: none; white-space: nowrap;
@@ -1304,10 +1302,9 @@ html[data-look] .nt2 .nt-pomo[data-running="true"] .pomo-go { background: var(--
 html[data-look] .nt2 .nt-todo { max-width: none; }
 .nt2 .todo { min-height: 2.75rem; border-bottom-color: var(--card-line); }
 .nt2 .todo-input { border-bottom: 0; padding: 0.75rem 0.25rem 0.125rem; }
-.todo.just .todo-check { animation: nt-pop 320ms var(--spring); }
+.todo.just .todo-check { animation: nt-in 180ms ease-out; }
 .todo.just .todo-check svg { animation: nt-tick 320ms cubic-bezier(0.3, 0.7, 0.3, 1) both; }
 @keyframes nt-tick { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-@keyframes nt-pop { 40% { transform: scale(1.18); } }
 
 /* Notes */
 .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
@@ -1687,7 +1684,7 @@ body.ctx-options { font-size: calc(15px * var(--ui-s, 1)); line-height: 1.5; }
    Changed digits bounce in; nothing else does.
    ====================================================================== */
 .roll.in { animation: nt-bounce 460ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-@keyframes nt-bounce { 0% { opacity: 0; transform: translateY(-0.55em) scale(0.92); } 55% { opacity: 1; } 100% { transform: none; } }
+@keyframes nt-bounce { 0% { opacity: 0; transform: translateY(-0.12em) scale(0.98); } 55% { opacity: 1; } 100% { transform: none; } }
 .fig { all: unset; display: block; box-sizing: border-box; }
 button.fig { cursor: pointer; border-radius: 0.75rem; }
 button.fig:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
@@ -1716,7 +1713,7 @@ html[data-look] .nt2 .has-fig .nt-date { font-size: 1rem; margin-top: 0.375rem; 
 .nt-notes .fig-pad { position: absolute; top: 0.375rem; right: 3.25rem; width: 6rem; }
 .nt-notes.has-fig .nt-card-h { min-height: 3.25rem; }
 .slip.drop { animation: slip-drop 420ms var(--ease) both; }
-@keyframes slip-drop { from { transform: translateY(-28px); opacity: 0; } 40% { opacity: 1; } }
+@keyframes slip-drop { from { opacity: 0; } to { opacity: 1; } }
 /* Pomodoro: a thin seconds hand while it runs; the bell shakes when time is up. */
 .nt2 .pomo-sweep { stroke-width: 0.9px; }
 .ringing .pomo-bell { animation: bell-ring 140ms linear 10; }
@@ -1743,8 +1740,8 @@ html[data-look] .nt2 .has-fig .nt-date { font-size: 1rem; margin-top: 0.375rem; 
 .cz-w-add:focus-visible, .cz-w-on:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
 
 /* ======================================================================
-   The desk (v8): one 12 × 8 grid that fills the screen. Widgets keep to the
-   edges by default so the middle of the wallpaper stays open. Each draws
+   The desk (v8): one 12 × 8 grid that fills the screen. Widgets use the
+   available space by default. Each draws
    small, medium or large from its size (data-size), using container units so
    it fits any screen.
    ====================================================================== */
@@ -1766,10 +1763,13 @@ html[data-look] .nt2 .gw[data-size="s"] > .nt-card { padding: 0.75rem 0.875rem; 
 .gw:is(:hover, :focus-within) .gw-more, .gw-more:focus-visible { opacity: 1; }
 .gw-more:hover { background: var(--hov); color: var(--c-ink); }
 .gw-more:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 1px; }
-.gw[data-size="l"] .gw-more, .nt-grid[data-edit] .gw-more, .nt-grid[data-flow="true"] .gw-more { display: none; }
+.nt-grid[data-edit] .gw-more, .nt-grid[data-flow="true"] .gw-more { display: none; }
 
 /* One column you scroll, on narrow or short windows. */
-.nt-grid[data-flow="true"] { display: flex; flex-direction: column; height: auto; min-height: 0; }
+.nt-grid[data-flow="true"] { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); grid-template-rows: none; align-items: start; height: auto; min-height: 0; }
+.nt-grid[data-flow="true"] .gw { grid-column: auto; grid-row: auto; }
+.nt-grid[data-flow="true"] .gw[data-w="search"] { grid-column: 1 / -1; order: -2 !important; }
+.nt-grid[data-flow="true"] .gw[data-w="bookmarks"] { grid-column: 1 / -1; order: -1 !important; }
 .nt-grid[data-flow="true"] .gw { container-type: inline-size; }
 html[data-look] .nt2 .nt-grid[data-flow="true"] .gw > .nt-card { height: auto; overflow: visible; }
 .nt-grid[data-flow="true"] .gw[data-w="clock"], .nt-grid[data-flow="true"] .gw[data-w="weather"] { min-height: 9rem; }
@@ -1791,10 +1791,6 @@ html[data-look] .nt2 .gw-search > .nt-results { position: absolute; left: 0; rig
 .gw-search > .nt-ai-host { position: absolute; left: 0; right: 0; top: calc(100% + 0.5rem); z-index: 30; max-height: calc(100dvh - 22rem); overflow: auto; border-radius: var(--r-cardx); }
 .nt2[data-mode="home"] .gw-search > .nt-ai-host { display: none; }
 html[data-look] .nt2 .nt-grid[data-flow="true"] .gw-search > :is(.nt-results, .nt-ai-host) { position: static; max-height: none; margin-top: 0.75rem; }
-.nt-below { margin-top: 1.5rem; }
-.nt-below:has(> .nt-feed:empty) { display: none; }
-.nt-below .nt-feed:empty { display: none; }
-html[data-look] .nt2 .nt-below .nt-feed { width: min(70rem, 100%); margin: 0 auto; }
 .nt-choice-float { position: fixed; z-index: 40; left: 50%; bottom: 1.25rem; transform: translateX(-50%); width: min(40rem, calc(100% - 2rem)); }
 
 /* Clock. Medium: the big time, the date and the day's line, straight on the picture. */
@@ -1869,20 +1865,13 @@ html[data-look] .nt2 .gw[data-w="notes"][data-size="s"] .nt-card-h { min-height:
 html[data-look] .nt2 .gw[data-w="bookmarks"] .nt-shelf.nt-card { display: flex; flex-direction: column; width: 100%; margin: 0; padding: 0.75rem 1rem 0.75rem; }
 .gw[data-w="bookmarks"] .shelf-grid { flex: 1; min-height: 0; overflow: auto; align-content: start; }
 
-/* ======================================================================
-   Clear: no box at all; text reads straight off the picture. Each widget
-   gets white or dark text from the patch behind it, and a feathered
-   dimming layer only as strong as that patch needs (ntlegible.ts).
-   ====================================================================== */
-html[data-look] .nt2[data-wall][data-panels="clear"] .gw:not([data-w="search"]):not(.is-open) > .nt-card { background: transparent; border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
-.gw { --feather: calc(1.5rem * var(--ui-s, 1)); }
-.gw::before { content: ""; position: absolute; z-index: 0; inset: calc(-1 * var(--feather)); pointer-events: none; opacity: 0; transition: opacity 320ms ease-out; border-radius: calc(var(--r-cardx) + var(--feather)); }
-.nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open)::before {
-  opacity: 1;
-  background: rgb(var(--lg-rgb) / var(--lg-dim, 0));
-  -webkit-backdrop-filter: blur(var(--lg-blur, 0px)); backdrop-filter: blur(var(--lg-blur, 0px));
-  -webkit-mask: linear-gradient(to right, transparent, #000 var(--feather), #000 calc(100% - var(--feather)), transparent), linear-gradient(to bottom, transparent, #000 var(--feather), #000 calc(100% - var(--feather)), transparent);
-  -webkit-mask-composite: source-in; mask-composite: intersect;
+/* Clear: bounded tinted surfaces, with text tone sampled from the wallpaper. */
+html[data-look] .nt2[data-wall][data-panels="clear"] .gw:not([data-w="search"]):not(.is-open) > .nt-card { background: var(--c-card); border: 1px solid var(--card-line); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+/* Uniform bounded surfaces separate the wallpaper without floating halos. */
+.gw::before { content: none; }
+html[data-look] .nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open) > .nt-card {
+  background: rgb(var(--lg-rgb) / 0.62); border: 1px solid var(--card-line);
+  -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none;
 }
 .nt2[data-panels="clear"] :is(.gw[data-tone="light"], .gw[data-tone="light"] .nt-card) {
   --lg-rgb: 0 0 0; --c-ink: #fff; --c-mute: rgb(255 255 255 / 0.8); --c-mute-glass: rgb(255 255 255 / 0.8);
@@ -1952,10 +1941,6 @@ html[data-arranging] .nt2 .nt-top { opacity: 0.35; pointer-events: none; }
 .cal-next .cal-ev { padding-block: 0.25rem; }
 .gw[data-w="calendar"][data-size="s"] .cal-next .cal-ev { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
 .gw[data-w="calendar"][data-size="s"] .cal-ev-t { font-size: 0.75rem; color: var(--c-mute); }
-/* The dimming hugs what's actually drawn in the widget. */
-.nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open)::before {
-  inset: calc(var(--lg-t, 0px) - var(--feather)) calc(var(--lg-r, 0px) - var(--feather)) calc(var(--lg-b, 0px) - var(--feather)) calc(var(--lg-l, 0px) - var(--feather));
-}
 
 /* ======================================================================
    Pocket folders: muted leathers and papers, a stitched pocket, the sites
@@ -1991,11 +1976,14 @@ html[data-icons="themed"] .fold-art { --f-back: color-mix(in oklab, var(--c-ink)
 .menu-tone[data-tone="graphite"] { --f-back: #3d3d42; --f-front: #5b5b62; }
 .menu-tone[aria-pressed="true"] { outline: 2px solid var(--c-signal); outline-offset: 2px; }
 .menu-tone:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
-/* Add, as the last tile; its form floats over the shelf. */
+/* Add opens a complete form within the shelf. */
 html[data-look] .nt2 .shelf-addkey .nt-cap-add { background: transparent; border: 1.5px dashed color-mix(in oklab, var(--c-ink) 30%, transparent); color: var(--c-mute); }
 html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .shelf-addkey .nt-cap-add { background: transparent; }
 .gw[data-w="bookmarks"] .nt-shelf { position: relative; }
-html[data-look] .nt2 .gw[data-w="bookmarks"] .shelf-add { position: absolute; z-index: 5; left: 0.75rem; right: 0.75rem; bottom: 0.75rem; margin: 0; --card-bg: color-mix(in oklab, var(--c-card) 90%, transparent); background: var(--card-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+html[data-look] .nt2 .gw[data-w="bookmarks"] .shelf-add { position: static; width: 100%; margin: 0; padding: 0.5rem 0; background: transparent; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.nt-shelf:has(.shelf-add:not([hidden])) .shelf-grid { display: none; }
+.shelf-add h3, .shelf-add .shelf-error { grid-column: 1 / -1; margin: 0; }
+.shelf-error { color: var(--c-ink); min-height: 1.3em; font-size: 0.875rem; }
 .shelf-head[hidden] { display: none; }
 /* Customize: each tab says what it changes. */
 .cz-lede { margin: 0.25rem 0.25rem 0.75rem; font-size: 0.9375rem; line-height: 1.45; color: var(--c-mute); }
@@ -2019,8 +2007,10 @@ html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="clock"] .nt-ampm { f
 html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="clock"] .nt-time { font-size: min(5rem, 14cqw); }
 .nt-grid[data-flow="true"] .gw[data-w="clock"] .fig-watch { height: 9rem; }
 html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="calendar"] .fig-cubes { position: static; width: 8rem; height: auto; margin: 0 auto; }
-/* Bookmarks: the card hugs its tiles (up to the cell), so Glass and Solid don't show an empty tray. */
-html[data-look] .nt2 .gw[data-w="bookmarks"] > .nt-shelf.nt-card { height: auto; max-height: 100%; }
+/* Bookmarks fill the allocated cell, with their tiles centred inside it. */
+html[data-look] .nt2 .gw[data-w="bookmarks"] > .nt-shelf.nt-card { height: 100%; max-height: 100%; }
+.gw[data-w="bookmarks"] .shelf-grid { align-content: center; padding: 0.75rem 0.5rem; }
+html[data-look] .nt2 .gw-search > .nt-ask { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
 
 /* ======================================================================
    The assistant: a chat over the page (new tab) or in the sidebar.
@@ -2051,7 +2041,7 @@ html[data-look] .nt2 .gw[data-w="bookmarks"] > .nt-shelf.nt-card { height: auto;
 
 /* Empty: a question, starters, recent chats. */
 .cv-empty { margin: auto 0; padding: clamp(1rem, 12vh, 7rem) 0 1rem; display: flex; flex-direction: column; gap: 1rem; }
-.cv-panel .cv-empty { padding-top: 1.5rem; }
+.cv-panel .cv-empty { margin: 0; padding: 0.75rem 0 1rem; }
 .cv-empty h3 { margin: 0; font: 400 clamp(1.5rem, 2.6vw, 2rem)/1.2 var(--f-display); letter-spacing: -0.01em; }
 html[data-look="native"] .cv-empty h3 { font: 500 1.75rem/1.2 var(--f-text); letter-spacing: -0.02em; }
 .cv-starters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -2213,25 +2203,12 @@ html[data-chat] .nt2 .nt-page, html[data-chat] .nt2 .gw-scrim { visibility: hidd
 .nt-wall .wall-grain { animation: none; }
 /* Grain sits on the picture, under the interface, never blended over text or glass. */
 .nt2 .nt-grain { z-index: 0; }
-/* Clear: the dimming is a soft-edged shape: a plain colour, blurred once. */
-.nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open)::before {
-  -webkit-backdrop-filter: none; backdrop-filter: none; -webkit-mask: none; mask: none;
-  inset: calc(var(--lg-t, 0px) - 0.5rem) calc(var(--lg-r, 0px) - 0.5rem) calc(var(--lg-b, 0px) - 0.5rem) calc(var(--lg-l, 0px) - 0.5rem);
-  border-radius: 1.5rem;
-  filter: blur(calc(18px * var(--ui-s, 1)));
-  transition: opacity 320ms ease-out, background-color 320ms ease-out;
-}
 /* Moving drawings repaint on their own layer and nowhere else. */
-.fig, .pomo-figbtn { contain: layout paint; isolation: isolate; }
+.fig, .pomo-figbtn { contain: layout; isolation: isolate; }
+.fig svg, .pomo-figbtn svg { overflow: visible; }
 .fig svg, .pomo-figbtn svg { will-change: transform; transform: translateZ(0); backface-visibility: hidden; }
 /* Glass cards: one stable layer each, so edges don't crawl when something near them repaints. */
 .nt2 .nt-card, .nt2 :is(.nt-brand, .nt-meta), .cv-newtab { backface-visibility: hidden; }
-/* The soft shape reaches well past the text, so its full strength covers every word. */
-.nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open)::before {
-  inset: calc(var(--lg-t, 0px) - 1.25rem) calc(var(--lg-r, 0px) - 1.5rem) calc(var(--lg-b, 0px) - 1.25rem) calc(var(--lg-l, 0px) - 1.5rem);
-  border-radius: 2.5rem;
-  filter: blur(calc(16px * var(--ui-s, 1)));
-}
 
 /* ======================================================================
    Nothing sits on top of what you click.
@@ -2372,3 +2349,75 @@ input.todo-check { appearance: auto; accent-color: var(--c-signal); margin: 0; }
 html[data-look="native"] .nt2 .gw :is(.fig-watch, .fig-cubes, .fig-pad, .fig-spike, .pomo-figbtn) { display: none; }
 html[data-look="native"] .nt2 .gw[data-w="clock"] .nt-timeblock.has-fig { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 html[data-look="native"] .nt2 .gw .has-fig .nt-card-h { min-height: 1.5rem; }
+
+/* Interaction stays within its surface, including during movement. */
+html[data-look] .nt2 .nt-key:hover .nt-cap, button.fig:hover svg { transform: none; }
+.nt-time, .pomo-time, .nt-card-note { overflow: visible; padding-block: 0.15em; }
+.badge { box-sizing: border-box; white-space: nowrap; overflow: visible; font-variant-numeric: tabular-nums; }
+.cv-panel .cv-starters { flex-direction: column; align-items: stretch; }
+.cv-panel .cv-starter { border-radius: 0.75rem; min-height: 2.75rem; }
+@media (max-width: 600px) { .shelf-add { grid-template-columns: minmax(0, 1fr); } }
+
+/* Desk and For you are separate pages, with the same quiet surfaces. */
+.nt-pages { flex: none; width: 12rem; margin-left: 1.25rem; }
+.nt-pages button { white-space: nowrap; }
+.nt-pages[hidden], .nt-feed[hidden], .nt-dash[hidden] { display: none !important; }
+html[data-look] .nt2 .nt-feed:not(:empty) { max-width: 76rem; margin: 1rem auto 0; padding: clamp(1rem, 2vw, 1.75rem); background: var(--c-card); border: 1px solid var(--c-line); box-shadow: none; }
+.ctx-newtab .ed-head { align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--c-line); }
+.ctx-newtab .ed-name { font: 600 clamp(1.375rem, 2vw, 1.75rem)/1.2 var(--f-text); letter-spacing: -0.025em; }
+.ed-kind-nav { margin: 0 0 1rem; padding: 0.125rem 0 0.375rem; flex-wrap: wrap; }
+.ctx-newtab .ed-front { grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.ctx-newtab .ed-front .ed-card { background: var(--c-panel); border-color: var(--c-line); border-radius: 0.875rem; }
+.ctx-newtab .ed-front .ed-title { font-size: 1.0625rem; line-height: 1.45; -webkit-line-clamp: 4; }
+.ctx-newtab .ed-front .ed-body { padding: 1rem; gap: 0.625rem; }
+.ctx-newtab .ed-actions { position: static; align-self: flex-end; opacity: 1; margin: 0 0.75rem 0.75rem; background: transparent; border: 0; padding: 0; }
+.ctx-newtab .ed-card { display: flex; flex-direction: column; }
+.ctx-newtab .ed-card .ed-body { flex: 1; }
+.ctx-newtab .ed-setup { max-width: 44rem; margin: 0 auto; }
+@media (max-width: 700px) {
+  .nt-top { flex-wrap: wrap; gap: 0.5rem; }
+  .nt-pages { margin-left: auto; }
+  .nt-meta { width: 100%; justify-content: flex-end; }
+  .ctx-newtab .ed-head { align-items: flex-start; }
+  .ctx-newtab .ed-tools { width: 100%; }
+}
+
+.nt-extra { display: flex; flex-direction: column; gap: 0.5rem; }
+.nt-extra-list { display: flex; flex-direction: column; gap: 0.25rem; min-height: 0; overflow-y: auto; }
+.extra-link { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0.375rem 0.5rem; border-radius: 0.625rem; cursor: pointer; font-size: 0.9375rem; }
+.extra-link:hover { background: var(--hov); }
+.extra-link span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.extra-link:focus-visible { outline: 2px solid var(--c-signal); }
+.extra-tab { display: flex; align-items: center; }
+.extra-tab .extra-link { flex: 1; min-width: 0; }
+.calc-body { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; overflow: auto; }
+.calc-input { width: 100%; box-sizing: border-box; }
+.calc-result { display: block; font: 500 1.5rem/1.3 var(--f-text); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem; }
+.calc-keys .nt-chip { min-height: 2.25rem; justify-content: center; }
+.gw[data-size="s"] .calc-keys { display: none; }
+.gw[data-size="s"] .nt-extra-list .extra-link { font-size: 0.8125rem; }
+
+/* Month cells adapt to the available widget height. Expanded calendars scroll their event list. */
+.nt-grid[data-flow="false"] .gw[data-w="calendar"][data-size="l"] .cal-d { height: clamp(1.5rem, 8cqh, 2.625rem); }
+.nt-grid[data-flow="false"] .gw[data-w="calendar"][data-size="l"] .cal-d > span { width: min(1.875rem, 8cqh); height: min(1.875rem, 8cqh); }
+.gw:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 3px; }
+
+/* Shared controls: centred captions and icon/label groups on every appearance. */
+button { text-align: center !important; }
+:is(.btn, .nt-chip, .chip, .seg button, .cz-tabs button, .cv-starter, .shelf-trail button, .shelf-menu button) { display: inline-flex; align-items: center; justify-content: center; }
+.btn { box-sizing: border-box; height: auto; min-height: calc(40px * var(--ui-s, 1)); padding-block: calc(8px * var(--ui-s, 1)); line-height: 1.25; }
+:is(.btn, .nt-chip, .chip, .seg button, .cz-tabs button, .cv-starter):active { filter: brightness(0.94); }
+.cv-recent { align-items: center; justify-content: center; }
+.cv-recent > span:first-child { flex: 1; }
+.welcome-app-name { text-align: center; }
+.cz-row input[type="range"] { flex: 1; min-width: 0; }
+.cz-surface .seg { display: flex; }
+.cz-surface .seg button { flex: 1; }
+
+/* The native panel shares the dock's app plates, spacing and active marker. */
+.papps { gap: calc(6px * var(--ui-s, 1)); min-height: min(calc(60px * var(--ui-s, 1)), 25vh); }
+.prail { overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+.pitem.app { width: calc(36px * var(--ui-s, 1)); height: calc(36px * var(--ui-s, 1)); border-radius: calc(11px * var(--ui-s, 1)); background: var(--m-surface2); box-shadow: inset 0 0 0 1px var(--m-border); }
+.pitem.app:hover { background: var(--m-hover); }
+.pitem.app[aria-pressed="true"] { background: var(--m-accent-soft); box-shadow: inset 0 0 0 1.5px var(--m-accent); }

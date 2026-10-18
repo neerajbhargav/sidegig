@@ -728,7 +728,10 @@ async function currentSetup(name: string, parts: SetupPart[]): Promise<SetupBund
   return makeSetup(name || `${from} setup`, s, await readLocalParts(), parts, from);
 }
 function download(bundle: SetupBundle) {
-  const a = h('a', { href: URL.createObjectURL(setupFile(bundle)), download: fileName(bundle) });
+  let file: Blob;
+  try { file = setupFile(bundle); }
+  catch { toast('This setup exceeds the 12 MB limit. Exclude uploaded pictures or chat history, then export again.'); return; }
+  const a = h('a', { href: URL.createObjectURL(file), download: fileName(bundle) });
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
@@ -736,8 +739,8 @@ async function copyCode(bundle: SetupBundle) {
   try {
     await navigator.clipboard.writeText(await toCode(bundle));
     toast('Setup code copied. Paste it into sidegig in your other browser.');
-  } catch {
-    toast('Couldn’t copy. Use Export file instead.');
+  } catch (e) {
+    toast(e instanceof RangeError ? 'This setup exceeds the 12 MB limit. Exclude chat history, then try again.' : 'Couldn’t copy. Use Export file instead.');
   }
 }
 
@@ -745,15 +748,28 @@ async function copyCode(bundle: SetupBundle) {
 function applyDialog(bundle: SetupBundle, onDone: () => void): HTMLElement {
   const picks = new Set<SetupPart>(bundle.parts);
   const box = h('div', { class: 'setup-apply card' });
+  const error = h('p', { class: 'setup-error', role: 'alert', hidden: true });
+  const apply = h('button', { class: 'btn primary', type: 'button' }, 'Apply to this browser');
   const go = async () => {
     const chosen = [...picks];
     if (!chosen.length) return toast('Pick at least one part to apply');
-    const { settings, local } = applySetup(s, bundle, chosen);
-    await saveSettings(settings);
-    if (Object.keys(local).length) await ext.storage.local.set(local);
-    toast(`Applied “${bundle.name}”`);
-    onDone();
+    apply.disabled = true;
+    error.hidden = true;
+    try {
+      const { settings, local } = applySetup(s, bundle, chosen);
+      if (Object.keys(local).length) await ext.storage.local.set(local);
+      await saveSettings(settings);
+      if (chosen.includes('looks')) {
+        try { if (settings.newtab.enabled) localStorage.removeItem('sidegig.ntOff'); else localStorage.setItem('sidegig.ntOff', '1'); } catch { /* optional fast startup cache */ }
+      }
+      toast(`Applied “${bundle.name}”`);
+      onDone();
+    } catch (e) {
+      error.textContent = `Could not apply this setup. ${(e as Error).message}`;
+      error.hidden = false;
+    } finally { apply.disabled = false; }
   };
+  apply.addEventListener('click', () => void go());
   const saveIt = async () => {
     const list = await getSaved();
     list.unshift({ id: uid('st_'), name: bundle.name, saved: Date.now(), bundle });
@@ -763,6 +779,7 @@ function applyDialog(bundle: SetupBundle, onDone: () => void): HTMLElement {
   };
   box.append(
     h('div', { class: 'card-title' }, bundle.name),
+    error,
     h('div', { class: 'card-detail' }, [describe(bundle) || 'Settings', bundle.from ? `made in ${bundle.from}` : '', new Date(bundle.created).toLocaleDateString()].filter(Boolean).join(', ')),
     h(
       'div',
@@ -776,7 +793,7 @@ function applyDialog(bundle: SetupBundle, onDone: () => void): HTMLElement {
     h(
       'div',
       { class: 'setup-actions' },
-      h('button', { class: 'btn primary', type: 'button', onclick: go }, 'Apply to this browser'),
+      apply,
       h('button', { class: 'btn', type: 'button', onclick: saveIt }, 'Save to my setups'),
       h('button', { class: 'btn ghost', type: 'button', onclick: onDone }, 'Cancel'),
     ),
@@ -801,8 +818,10 @@ async function setupsSection(): Promise<HTMLElement> {
   // Save what you have now.
   const nameIn = h('input', { class: 'text-input', type: 'text', placeholder: 'Name, like Work or Home', maxlength: 60, 'aria-label': 'Setup name' });
   const withPics = h('input', { type: 'checkbox' });
+  const withChats = h('input', { type: 'checkbox' });
+  const portableParts = (): SetupPart[] => ['apps', 'looks', 'reading', 'todos', 'notes', ...(withChats.checked ? ['chats' as const] : [])];
   const saveNow = async () => {
-    const parts: SetupPart[] = ['apps', 'looks', 'reading', 'todos', ...(withPics.checked ? (['pictures'] as SetupPart[]) : [])];
+    const parts: SetupPart[] = [...portableParts(), ...(withPics.checked ? (['pictures'] as SetupPart[]) : [])];
     const b = await currentSetup(nameIn.value || `${browserLabel()} setup`, parts);
     const list = await getSaved();
     list.unshift({ id: uid('st_'), name: b.name, saved: Date.now(), bundle: b });
@@ -879,11 +898,12 @@ async function setupsSection(): Promise<HTMLElement> {
       h('div', { class: 'setup-h' }, 'Save this browser’s setup'),
       h('div', { class: 'setup-save' }, nameIn, h('button', { class: 'btn primary', type: 'button', onclick: saveNow }, 'Save')),
       h('label', { class: 'setup-check' }, withPics, h('span', {}, 'Include your uploaded pictures (makes files larger; codes never include them)')),
+      h('label', { class: 'setup-check' }, withChats, h('span', {}, 'Include chat history and attached page text')),
       h(
         'div',
         { class: 'setup-actions' },
-        h('button', { class: 'btn', type: 'button', onclick: async () => download(await currentSetup(nameIn.value || `${browserLabel()} setup`, ['apps', 'looks', 'reading', 'todos', ...(withPics.checked ? (['pictures'] as SetupPart[]) : [])])) }, 'Export file'),
-        h('button', { class: 'btn', type: 'button', onclick: async () => void copyCode(await currentSetup(nameIn.value || `${browserLabel()} setup`, ['apps', 'looks', 'reading', 'todos'])) }, 'Copy setup code'),
+        h('button', { class: 'btn', type: 'button', onclick: async () => download(await currentSetup(nameIn.value || `${browserLabel()} setup`, [...portableParts(), ...(withPics.checked ? (['pictures'] as SetupPart[]) : [])])) }, 'Export file'),
+        h('button', { class: 'btn', type: 'button', onclick: async () => void copyCode(await currentSetup(nameIn.value || `${browserLabel()} setup`, portableParts())) }, 'Copy setup code'),
       ),
     ),
     h(
