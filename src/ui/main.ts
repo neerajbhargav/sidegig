@@ -162,25 +162,28 @@ async function boot() {
   // Tell pages in this window the panel is open, so the page rail steps
   // aside and the panel's own buttons list takes its place (one sidebar, not two).
   if (kind === 'panel' && where.windowId !== undefined) {
-    const wid = String(where.windowId);
-    const beat = async () => {
-      const map = await getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {});
-      map[wid] = { side, ts: Date.now() };
-      await setLocal('panelOpen', map);
-    };
-    // Opening panel.html as a normal tab is useful for diagnostics, but it is
-    // not an open side panel and must not hide the page rail.
+    const windowId = where.windowId;
+    // Normal panel.html tabs are diagnostics, not native side panels.
     void ext.tabs.getCurrent().catch(() => undefined).then((tab) => {
       if (tab?.id !== undefined) return;
-      void beat();
-      const heartbeat = setInterval(() => void beat(), 15_000);
-      addEventListener('pagehide', () => {
-        clearInterval(heartbeat);
-        void getLocal<Record<string, { side: string; ts: number }>>('panelOpen', {}).then((map) => {
-          delete map[wid];
-          return setLocal('panelOpen', map);
+      let closing = false;
+      let port: chrome.runtime.Port | undefined;
+      let reconnect: ReturnType<typeof setTimeout> | undefined;
+      const connect = () => {
+        if (closing) return;
+        const current = ext.runtime.connect({ name: 'sidegig-panel' });
+        port = current;
+        const beat = () => { try { current.postMessage({ windowId, side }); } catch { /* reconnect on disconnect */ } };
+        beat();
+        const heartbeat = setInterval(beat, 15_000);
+        current.onDisconnect.addListener(() => {
+          void ext.runtime.lastError;
+          clearInterval(heartbeat);
+          if (!closing) reconnect = setTimeout(connect, 250);
         });
-      }, { once: true });
+      };
+      addEventListener('pagehide', () => { closing = true; clearTimeout(reconnect); port?.disconnect(); }, { once: true });
+      connect();
     });
   }
 
