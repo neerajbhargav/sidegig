@@ -360,11 +360,13 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
 
   // Controls first: they apply to whatever you pick.
   const live = (prop: string, value: string) => document.querySelector<HTMLElement>('.nt-wall')?.style.setProperty(prop, value);
+  const dimValue = h('output', { class: 'cz-val' }, `${bg.dim}%`);
+  const blurValue = h('output', { class: 'cz-val' }, `${bg.blur} px`);
   const dim = h('input', { type: 'range', min: 0, max: 90, value: bg.dim, 'aria-label': 'Fade' });
-  dim.addEventListener('input', () => live('--wall-dim', String(Number(dim.value) / 100)));
+  dim.addEventListener('input', () => { live('--wall-dim', String(Number(dim.value) / 100)); dimValue.textContent = `${dim.value}%`; });
   dim.addEventListener('change', () => setBg({ dim: Number(dim.value) }));
   const blur = h('input', { type: 'range', min: 0, max: 24, value: bg.blur, 'aria-label': 'Soften' });
-  blur.addEventListener('input', () => live('--wall-blur', `${blur.value}px`));
+  blur.addEventListener('input', () => { live('--wall-blur', `${blur.value}px`); blurValue.textContent = `${blur.value} px`; });
   blur.addEventListener('change', () => setBg({ blur: Number(blur.value) }));
   wrap.append(
     h('p', { class: 'cz-lede' }, 'The picture behind everything, and how it’s drawn. Changing it never changes your colours.'),
@@ -375,13 +377,14 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
       bg.kind === 'collection'
         ? h('div', { class: 'cz-row' }, h('span', {}, 'New picture'), seg(bg.rotate ?? 'tab', [['tab', 'Every tab'], ['hour', 'Hourly'], ['day', 'Daily']], (v) => setBg({ rotate: v })))
         : null,
-      h('div', { class: 'cz-row' }, h('span', {}, 'Fade'), dim),
-      h('div', { class: 'cz-row' }, h('span', {}, 'Soften'), blur),
+      h('div', { class: 'cz-row' }, h('span', {}, 'Fade'), dim, dimValue),
+      h('div', { class: 'cz-row' }, h('span', {}, 'Soften'), blur, blurValue),
+      h('button', { type: 'button', class: 'btn', onclick: () => setBg({ dim: 0, blur: 0, treatment: 'photo' }) }, 'Reset picture effects'),
       h('p', { class: 'cz-hint' }, 'Fade washes the picture toward your page colour; Soften blurs it. Drop any image on the new tab to use it.'),
     ),
   );
 
-  wrap.append(await collectionsSection(ctx, bg, is));
+  wrap.append(surfaceControl(ctx), await collectionsSection(ctx, bg, is));
 
   const section = (title: string, ...kids: Node[]) => h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, title), h('div', { class: 'cz-grid' }, ...kids));
   const day = Math.floor(Date.now() / 86_400_000);
@@ -653,6 +656,9 @@ const WIDGETS: WidgetItem[] = [
   { group: 'Focus', title: 'To-do', note: 'Done tasks go on the spike; it clears each morning', thumb: () => figThumb(SPIKE.width, SPIKE.height, SPIKE.base + SPIKE.segs.join('') + SPIKE.slips.slice(0, 3).join('') + SPIKE.tip), get: (s) => s.newtab.todo, put: (s, v) => void (s.newtab.todo = v) },
   { group: 'Focus', title: 'Notes', note: 'Sticky notes, kept on this device', thumb: () => figThumb(PAD.width, PAD.height, PAD.art), get: (s) => s.newtab.widgets.notes, put: (s, v) => void (s.newtab.widgets.notes = v) },
   { group: 'Browse', title: 'Bookmarks', note: 'Your sites and folders under the search box', thumb: () => glyphThumb('bookmark'), get: (s) => s.newtab.widgets.bookmarks, put: (s, v) => void (s.newtab.widgets.bookmarks = v) },
+  { group: 'Focus', title: 'Calculator', note: 'Quick arithmetic without leaving your new tab', thumb: () => glyphThumb('grid'), get: (s) => s.newtab.widgets.calculator, put: (s, v) => void (s.newtab.widgets.calculator = v) },
+  { group: 'Browse', title: 'Reading list', note: 'Articles, videos and books you saved in For you', thumb: () => glyphThumb('book'), get: (s) => s.newtab.widgets.reading, put: (s, v) => void (s.newtab.widgets.reading = v) },
+  { group: 'Browse', title: 'Open tabs', note: 'Switch to a page or close a tab', thumb: () => glyphThumb('tab'), get: (s) => s.newtab.widgets.tabs, put: (s, v) => void (s.newtab.widgets.tabs = v) },
   { group: 'Browse', title: 'For you', note: 'Your edition: a short, finite set of picks', thumb: () => glyphThumb('edition'), get: (s) => s.newtab.widgets.feed, put: (s, v) => void (s.newtab.widgets.feed = v) },
   { group: 'Browse', title: 'Greeting', note: 'Good morning, at the top of the search box', thumb: () => glyphThumb('home'), get: (s) => s.newtab.widgets.greeting, put: (s, v) => void (s.newtab.widgets.greeting = v) },
   { group: 'Browse', title: 'Search and Ask switch', note: 'Ask any assistant from the same box', thumb: () => glyphThumb('ask'), get: (s) => s.newtab.aiTab, put: (s, v) => void (s.newtab.aiTab = v) },
@@ -694,10 +700,18 @@ function addWidgets(ctx: Ctx): HTMLElement {
 }
 
 const SURFACE_NOTE = {
-  clear: 'No boxes. Each widget reads the picture behind it, picks white or dark text, and dims only where the picture is bright or busy.',
+  clear: 'Lightly tinted panels keep the wallpaper visible and the text readable. No shadows or halos.',
   frosted: 'Frosted glass panels: calm over any picture.',
   solid: 'Solid panels in your colours.',
 } as const;
+
+/** Wallpaper owns the surface material; Layout owns widget placement and size. */
+function surfaceControl(ctx: Ctx): HTMLElement {
+  return h('section', { class: 'cz-sec cz-surface' },
+    h('div', { class: 'cz-sec-h' }, 'Widget surfaces'),
+    seg(ctx.settings.newtab.panels, [['clear', 'Clear'], ['frosted', 'Glass'], ['solid', 'Solid']], (v) => (play('key'), set((s) => void (s.newtab.panels = v)))),
+    h('p', { class: 'cz-hint' }, SURFACE_NOTE[ctx.settings.newtab.panels]));
+}
 
 /** One Size control: live while you drag, saved when you let go. */
 function sizeSlider(ctx: Ctx): HTMLElement {
@@ -722,13 +736,6 @@ function layoutTab(ctx: Ctx): HTMLElement {
     h(
       'section',
       { class: 'cz-sec' },
-      h('div', { class: 'cz-sec-h' }, 'Widgets sit'),
-      seg(st.newtab.panels, [['clear', 'Clear'], ['frosted', 'Glass'], ['solid', 'Solid']], (v) => (play('key'), set((s) => void (s.newtab.panels = v)))),
-      h('p', { class: 'cz-hint' }, SURFACE_NOTE[st.newtab.panels]),
-    ),
-    h(
-      'section',
-      { class: 'cz-sec' },
       h('div', { class: 'cz-sec-h' }, 'Arrange'),
       h(
         'div',
@@ -736,7 +743,7 @@ function layoutTab(ctx: Ctx): HTMLElement {
         h('button', { type: 'button', class: 'btn primary', onclick: () => (document.querySelector<HTMLElement>('.nt-cz .nt-gear[aria-label="Close"]')?.click(), dispatchEvent(new Event('nt-arrange'))) }, ico('arrange', 18), 'Arrange widgets'),
         h('button', { type: 'button', class: 'btn', onclick: () => (play('dismiss'), set((s) => void (s.newtab.layout = {}))) }, 'Reset layout'),
       ),
-      h('p', { class: 'cz-hint' }, 'Drag widgets to move them and change their size. Small ones open up when you click them.'),
+      h('p', { class: 'cz-hint' }, 'Drag widgets to move them and change their size. Click a widget’s surface to expand it.'),
       sizeSlider(ctx),
     ),
     addWidgets(ctx),

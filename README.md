@@ -116,7 +116,7 @@ test/                  node:test unit tests
 - **Type:** Google Sans Flex (SIL OFL), Latin subset, 36 KB, bundled.
 - **Icons:** Material Symbols Rounded (Apache-2.0), fetched by `scripts/fetch-assets.mjs`.
 - **Color:** three inputs to an OKLCH palette, Linear-style; Google blue `#0b57d0` by default; neutral surfaces; contrast tested (body text ≥ 7:1, secondary ≥ 4.5:1).
-- **Shape and motion:** 10 px radius, soft elevation only on floating surfaces, 120–220 ms transitions, respects reduced motion.
+- **Shape and motion:** 10 px radius, bounded surfaces without drop shadows, 120–220 ms transitions, respects reduced motion.
 
 ## Privacy
 
@@ -156,3 +156,5 @@ aside repl "$(cat scripts/product-smoke.js)"
 ```
 
 The smoke test uses the local preview. It checks setup choices, note editing and reload, updates across two tabs, task completion, settings search, offline model discovery, sidebar assistant access and direct address navigation. It makes no paid model calls. Browser integrations and signed-in app frames need a separate installed-extension check.
+
+Additional fixture checks: run `aside repl "$(cat scripts/responsive-smoke.js)"` for screen sizes and `aside repl "$(cat scripts/refinement-smoke.js)"` for widget expansion, bookmarks, For you, daily tools, badges and single-sidebar behavior. Both use the development preview.

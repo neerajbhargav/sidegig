@@ -22,7 +22,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
   const nav = h('nav', { class: 'prail', 'aria-label': 'sidegig' });
   nav.append(btn('Home', [ico('logo', 22)], () => ctx.go('home'), current.name === 'home'), h('div', { class: 'psep' }));
 
-  const apps = h('div', { class: 'papps' });
+  const apps = h('div', { class: 'papps', role: 'group', 'aria-label': 'Pinned apps' });
   for (const a of s.apps) {
     const n = a.badge ? badges[a.id] ?? 0 : 0;
     apps.append(
@@ -31,6 +31,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
         [appFavicon(a, 'fav pfav'), n !== 0 ? h('span', { class: 'badge', ...(n < 0 ? { 'data-dot': '' } : {}) }, badgeLabel(n)) : null],
         () => openApp(ctx, a),
         current.name === 'app' && current.app === a.id,
+        'app',
       ),
     );
   }

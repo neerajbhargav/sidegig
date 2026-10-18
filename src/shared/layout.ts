@@ -1,11 +1,10 @@
 // Where each widget sits on the new tab: a 12 × 8 grid that fills one screen.
-// Widgets keep to the edges by default so the middle of the wallpaper stays
-// open. Moving one onto another slides the other to the nearest free spot.
+// The default arrangement uses the available space without empty bands. Moving one onto another slides the other to the nearest free spot.
 
 export const COLS = 12;
 export const ROWS = 8;
 
-export type WidgetId = 'clock' | 'weather' | 'calendar' | 'pomodoro' | 'todo' | 'notes' | 'search' | 'bookmarks';
+export type WidgetId = 'clock' | 'weather' | 'calendar' | 'pomodoro' | 'todo' | 'notes' | 'search' | 'bookmarks' | 'reading' | 'tabs' | 'calculator';
 /** In grid cells, 0-based. */
 export interface Box {
   x: number;
@@ -17,6 +16,9 @@ export type Layout = Partial<Record<WidgetId, Box>>;
 
 /** The sizes each widget comes in (the first is its usual one), as [columns, rows]. */
 export const SIZES: Record<WidgetId, [number, number][]> = {
+  reading: [[4, 2], [2, 2], [4, 4]],
+  tabs: [[4, 2], [2, 2], [4, 4]],
+  calculator: [[3, 3], [2, 2], [4, 4]],
   clock: [[4, 2], [2, 2], [6, 3]],
   weather: [[4, 2], [2, 2], [4, 3]],
   calendar: [[2, 2], [4, 2], [4, 4]],
@@ -43,20 +45,23 @@ export function sizeClass(b: Box): 's' | 'm' | 'l' {
   return 'l';
 }
 
-/** Edges first, middle open: clock top left, weather top right, search and bookmarks in the centre, the small ones along the bottom. */
+/** Search and bookmarks lead; daily tools fill the remaining grid. */
 export const DEFAULT_LAYOUT: Record<WidgetId, Box> = {
+  reading: { x: 4, y: 6, w: 2, h: 2 },
+  tabs: { x: 6, y: 6, w: 2, h: 2 },
+  calculator: { x: 6, y: 0, w: 2, h: 2 },
   clock: { x: 0, y: 0, w: 4, h: 2 },
-  weather: { x: 8, y: 0, w: 4, h: 2 },
-  search: { x: 2, y: 2, w: 8, h: 2 },
-  bookmarks: { x: 2, y: 4, w: 8, h: 2 },
-  calendar: { x: 0, y: 6, w: 2, h: 2 },
-  pomodoro: { x: 2, y: 6, w: 2, h: 2 },
-  todo: { x: 8, y: 6, w: 2, h: 2 },
-  notes: { x: 10, y: 6, w: 2, h: 2 },
+  weather: { x: 0, y: 2, w: 4, h: 2 },
+  search: { x: 4, y: 0, w: 8, h: 2 },
+  bookmarks: { x: 4, y: 2, w: 8, h: 2 },
+  calendar: { x: 0, y: 4, w: 4, h: 4 },
+  pomodoro: { x: 4, y: 4, w: 4, h: 2 },
+  todo: { x: 8, y: 4, w: 4, h: 4 },
+  notes: { x: 4, y: 6, w: 4, h: 2 },
 };
 
 /** Who gets their spot first when two want the same place. */
-export const PRIORITY: WidgetId[] = ['search', 'bookmarks', 'clock', 'weather', 'calendar', 'pomodoro', 'todo', 'notes'];
+export const PRIORITY: WidgetId[] = ['search', 'bookmarks', 'clock', 'weather', 'calendar', 'pomodoro', 'todo', 'notes', 'reading', 'tabs', 'calculator'];
 
 export const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const fits = (b: Box) => b.x >= 0 && b.y >= 0 && b.x + b.w <= COLS && b.y + b.h <= ROWS;
@@ -99,11 +104,33 @@ export function resolve(layout: Layout, shown: WidgetId[]): { boxes: Partial<Rec
   for (const id of order) {
     const stored = layout[id];
     let want = stored && validSize(id, stored) ? clampBox(stored) : { ...DEFAULT_LAYOUT[id] };
+    if (!stored) {
+      for (let y = 0; y < want.y; y++) {
+        const earlier = { ...want, y };
+        if (!taken.some((box) => overlaps(box, earlier))) { want = earlier; break; }
+      }
+    }
     let spot = taken.some((t) => overlaps(t, want)) ? nearestFree(want, taken) : want;
     // Shrink before giving up.
     if (!spot) {
       for (const [w, h] of [...SIZES[id]].sort((a, b) => a[0] * a[1] - b[0] * b[1])) {
         want = { ...want, w, h };
+        spot = nearestFree(clampBox(want), taken);
+        if (spot) break;
+      }
+    }
+    // Adding a tool may need a smaller default neighbour. Keep user-arranged
+    // boxes intact; only compact widgets that are still using defaults.
+    if (!spot) {
+      const [w, h] = [...SIZES[id]].sort((a, b) => a[0] * a[1] - b[0] * b[1])[0];
+      want = { ...want, w, h };
+      for (const previous of [...order].reverse()) {
+        const box = boxes[previous];
+        if (!box || layout[previous] || previous === 'search') continue;
+        const smaller = [...SIZES[previous]].filter(([w, h]) => w * h < box.w * box.h).sort((a, b) => a[0] * a[1] - b[0] * b[1])[0];
+        if (!smaller) continue;
+        boxes[previous] = { ...box, w: smaller[0], h: smaller[1] };
+        taken.splice(0, taken.length, ...Object.values(boxes) as Box[]);
         spot = nearestFree(clampBox(want), taken);
         if (spot) break;
       }

@@ -98,7 +98,11 @@ const mock: any = {
     },
     async update(id: number, p: any) {
       log.push({ type: 'tabs.update', id, ...p });
-      return {};
+      const tab = tabs.find((t: any) => t.id === id);
+      if (p.active) for (const t of tabs) t.active = t.id === id;
+      if (tab) Object.assign(tab, p);
+      mock.tabs.onUpdated.fire(id, p, tab);
+      return structuredClone(tab ?? {});
     },
     async create(p: any) {
       log.push({ type: 'tabs.create', ...p });
@@ -106,6 +110,9 @@ const mock: any = {
     },
     async remove(id: number) {
       log.push({ type: 'tabs.remove', id });
+      const index = tabs.findIndex((t: any) => t.id === id);
+      if (index >= 0) tabs.splice(index, 1);
+      mock.tabs.onRemoved.fire(id, {});
     },
     async discard() {},
     async group() {

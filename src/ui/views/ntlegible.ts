@@ -1,7 +1,7 @@
-// Keep widget text readable straight on the wallpaper (the Clear surface).
+// Keep widget text readable on the Clear surface.
 // We keep a small copy of the wallpaper as it's drawn on screen (fit, blur and
 // veil included), then for each widget read the patch behind it and set its
-// text tone, dimming and blur (see shared/legible.ts for the maths).
+// text tone for its bounded tint (see shared/legible.ts for the maths).
 import { colorsIn, legibilityFor, patchOf, patchOfColors, type Patch } from '../../shared/legible.ts';
 import { onArranged } from './ntgrid.ts';
 
@@ -98,41 +98,6 @@ async function sampleOf(wall: HTMLElement, root: HTMLElement): Promise<Sample | 
   }
 }
 
-/** The box around what's actually drawn in a widget: its text, pictures and controls (not empty space). */
-export function contentRect(el: HTMLElement): { left: number; top: number; right: number; bottom: number } | null {
-  let l = Infinity;
-  let t = Infinity;
-  let r = -Infinity;
-  let b = -Infinity;
-  const add = (rc: DOMRect) => {
-    if (rc.width < 1 || rc.height < 1) return;
-    l = Math.min(l, rc.left);
-    t = Math.min(t, rc.top);
-    r = Math.max(r, rc.right);
-    b = Math.max(b, rc.bottom);
-  };
-  const range = document.createRange();
-  const walk = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-    acceptNode(n) {
-      if (n.nodeType === Node.TEXT_NODE) return n.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
-      const e = n as Element;
-      if (e.matches('.gw-more, .gw-chrome, .sr-only')) return NodeFilter.FILTER_REJECT;
-      // Whole drawn things count as one box.
-      if (e.matches('svg, img, input, textarea, .nt-cap, .todo-check, .note, .fold-art, .btn, .nt-chip')) return NodeFilter.FILTER_ACCEPT;
-      return NodeFilter.FILTER_SKIP;
-    },
-  });
-  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-    if (n.nodeType === Node.TEXT_NODE) {
-      range.selectNodeContents(n);
-      add(range.getBoundingClientRect());
-    } else {
-      add((n as Element).getBoundingClientRect());
-    }
-  }
-  return l < r && t < b ? { left: l, top: t, right: r, bottom: b } : null;
-}
-
 /**
  * Start keeping widgets readable. Returns a stop function. Only runs for the
  * Clear surface on a wallpaper; otherwise it clears any tones it set.
@@ -153,32 +118,21 @@ export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: bo
     if (!root.isConnected) return;
     if (!sample) {
       // The picture couldn't be read (it hasn't loaded, or its host won't share pixels):
-      // Apple's fallback for clear glass, a 35% dimming layer, with text to match.
+      // Fall back to the page tone and its bounded panel surface.
       if (!failed) return;
       const dark = document.documentElement.dataset.pal === 'dark' || matchMedia('(prefers-color-scheme: dark)').matches;
       for (const w of widgets()) {
         w.dataset.tone = dark ? 'light' : 'dark';
-        w.style.setProperty('--lg-dim', '0.35');
-        w.style.setProperty('--lg-blur', '10px');
       }
       return;
     }
     for (const w of widgets()) {
       const r = w.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      // Measure (and dim) only around what's drawn, clipped to the widget.
-      const c = contentRect(w) ?? r;
-      const box = { left: Math.max(r.left, c.left - 8), top: Math.max(r.top, c.top - 6), right: Math.min(r.right, c.right + 8), bottom: Math.min(r.bottom, c.bottom + 6) };
-      w.style.setProperty('--lg-l', `${Math.round(box.left - r.left)}px`);
-      w.style.setProperty('--lg-t', `${Math.round(box.top - r.top)}px`);
-      w.style.setProperty('--lg-r', `${Math.round(r.right - box.right)}px`);
-      w.style.setProperty('--lg-b', `${Math.round(r.bottom - box.bottom)}px`);
-      const frac = { x: box.left / innerWidth, y: box.top / innerHeight, w: (box.right - box.left) / innerWidth, h: (box.bottom - box.top) / innerHeight };
+      const frac = { x: r.left / innerWidth, y: r.top / innerHeight, w: r.width / innerWidth, h: r.height / innerHeight };
       const patch = 'flat' in sample ? sample.flat : patchOf(sample.px, sample.W, sample.H, frac);
       const l = legibilityFor(patch);
       w.dataset.tone = l.tone;
-      w.style.setProperty('--lg-dim', String(l.dim));
-      w.style.setProperty('--lg-blur', `${l.blur}px`);
       w.dataset.ratio = String(l.ratio);
     }
     root.dataset.readable = 'true';
@@ -188,6 +142,7 @@ export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: bo
     clearTimeout(pending);
     pending = setTimeout(async () => {
       sample = await sampleOf(wall, root);
+      if (signal.aborted) return;
       // Only call it failed once there's a picture that should have been readable.
       failed = !sample && !!wall.querySelector('img[src]');
       refresh();
@@ -210,6 +165,5 @@ export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: bo
     soon = setTimeout(refresh, 250);
   });
   if (grid) content.observe(grid, { subtree: true, childList: true, characterData: true });
-  signal.addEventListener('abort', () => content.disconnect());
-  signal.addEventListener('abort', () => mo.disconnect());
+  signal.addEventListener('abort', () => { clearTimeout(pending); clearTimeout(soon); content.disconnect(); mo.disconnect(); }, { once: true });
 }

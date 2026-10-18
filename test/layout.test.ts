@@ -10,15 +10,13 @@ const noOverlap = (boxes: Record<string, { x: number; y: number; w: number; h: n
   for (const b of v) assert.ok(b.x >= 0 && b.y >= 0 && b.x + b.w <= COLS && b.y + b.h <= ROWS);
 };
 
-test('the default layout fits, leaves the middle open and uses valid sizes', () => {
+test('the default layout fits every available widget and uses valid sizes', () => {
   const { boxes, hidden } = resolve({}, ALL);
   assert.deepEqual(hidden, []);
   noOverlap(boxes as never);
   for (const id of ALL) assert.ok(SIZES[id].some(([w, h]) => w === boxes[id]!.w && h === boxes[id]!.h), id);
-  // The middle of the top and bottom bands is free.
-  const used = Object.values(boxes);
-  assert.ok(!used.some((b) => overlaps(b!, { x: 4, y: 0, w: 4, h: 2 })));
-  assert.ok(!used.some((b) => overlaps(b!, { x: 4, y: 6, w: 4, h: 2 })));
+  assert.equal(boxes.search?.y, 0, 'search does not leave an empty band above it');
+  assert.ok(Object.values(boxes).reduce((sum, box) => sum + box!.w * box!.h, 0) >= 80, 'the grid uses available space');
 });
 
 test('stored spots win; clashes slide to the nearest free spot; junk is repaired', () => {
@@ -34,9 +32,10 @@ test('stored spots win; clashes slide to the nearest free spot; junk is repaired
 
 test('moving a widget onto another bumps it aside; no room means no move', () => {
   const start = resolve({}, ALL).boxes;
-  const moved = place(start, 'calendar', { x: 8, y: 6, w: 2, h: 2 });
+  const target = { ...start.todo!, w: 2, h: 2 };
+  const moved = place(start, 'calendar', target);
   assert.ok(moved);
-  assert.deepEqual(moved!.calendar, { x: 8, y: 6, w: 2, h: 2 });
+  assert.deepEqual(moved!.calendar, target);
   noOverlap(moved as never);
   assert.notDeepEqual(moved!.todo, start.todo);
   // A whole-grid widget can't fit.

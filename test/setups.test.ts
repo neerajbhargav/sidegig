@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings, appFromCatalog } from '../src/shared/defaults.ts';
-import { applySetup, describe, makeSetup, parseSetup, toBundle, toCode, fileName, PARTS } from '../src/shared/setups.ts';
+import { applySetup, describe, makeSetup, parseSetup, toBundle, toCode, fileName, setupFile, PARTS } from '../src/shared/setups.ts';
 
 const mine = () => {
   const s = defaultSettings();
@@ -109,4 +109,42 @@ test('pictures include your albums and every album image, and codes leave them o
   const back = await parseSetup(await toCode(b));
   assert.equal(back.local['ntImg:ns-1'], undefined);
   assert.equal(back.local.ntAlbums, undefined);
+});
+
+test('portable data round-trips notes and optional chat history without connection credentials', async () => {
+  const notes = [{ id: 'n1', text: 'Keep this idea', color: 2 }];
+  const chats = [{ id: 'c1', title: 'A useful chat', model: 'local:fixture', created: 1, updated: 2, messages: [{ role: 'user', content: 'Hello' }, { role: 'assistant', content: 'Saved answer' }] }];
+  const source = { ...local, ntNotes: notes, aiChats: chats, aiKeys: { openai: 'private-key' }, bridgeConnection: { token: 'private-pairing' }, mcpAuth: { token: 'private-mcp' } };
+  const b = makeSetup('Portable', mine(), source, ['notes', 'chats']);
+  assert.deepEqual(Object.keys(b.local).sort(), ['aiChats', 'ntNotes']);
+  const back = await parseSetup(await toCode(b));
+  const applied = applySetup(defaultSettings(), back, ['notes', 'chats']);
+  assert.deepEqual(applied.local.ntNotes, notes);
+  assert.deepEqual(applied.local.aiChats, chats);
+  assert.match(describe(back), /1 note/);
+  assert.match(describe(back), /1 chat/);
+});
+
+test('an oversized decompressed setup code is rejected before parsing', async () => {
+  const b = makeSetup('Large', mine(), { ntNotes: [{ text: 'x'.repeat(13 * 1024 * 1024) }] }, ['notes']);
+  const stream = new Blob([JSON.stringify(b)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  const code = Buffer.from(await new Response(stream).arrayBuffer()).toString('base64url');
+  await assert.rejects(parseSetup('sidegig1:' + code), /too big/i);
+});
+
+
+test('malformed notes and chats cannot overwrite working local data', () => {
+  for (const local of [{ ntNotes: null }, { ntNotes: [{ id: 'n', text: 'Idea', color: 9 }] }, { aiChats: {} }, { aiChats: [{ id: 'c', title: 'Chat', model: 'local:fixture', created: 1, updated: 1, messages: [{ role: 'user', content: 'Hello', tabs: 'bad' }] }] }]) {
+    assert.throws(() => toBundle({ kind: 'sidegig-setup', format: 1, settings: {}, parts: ['notes', 'chats'], local }), /invalid notes|invalid chat history/);
+    const bundle = makeSetup('Invalid', mine(), {}, ['notes', 'chats']);
+    bundle.local = local;
+    assert.throws(() => applySetup(mine(), bundle, bundle.parts), /invalid notes|invalid chat history/);
+  }
+});
+
+
+test('exports refuse files and codes that cannot fit the import limit', async () => {
+  const b = makeSetup('Large', mine(), { ntNotes: [{ id: 'n', text: 'x'.repeat(13 * 1024 * 1024), color: 0 }] }, ['notes']);
+  await assert.rejects(toCode(b), /too big/i);
+  assert.throws(() => setupFile(b), /too big/i);
 });

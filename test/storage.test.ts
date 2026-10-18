@@ -98,3 +98,29 @@ test('a save follows the newest timestamp already observed, even if the clock is
   assert.ok((local.settings as { savedAt: number }).savedAt > before);
   assert.equal((await loadSettings()).newtab.name, 'Later edit');
 });
+
+test('rapid independent settings updates keep both changes', async () => {
+  const { updateSettings } = await import('../src/shared/storage.ts');
+  await Promise.all([
+    updateSettings((s) => { s.rail.side = 'right'; }),
+    updateSettings((s) => { s.newtab.title = 'My desk'; }),
+  ]);
+  const s = await loadSettings();
+  assert.equal(s.rail.side, 'right');
+  assert.equal(s.newtab.title, 'My desk');
+});
+
+test('local and sync echoes notify a settings subscriber only once', async () => {
+  const { onSettingsChanged } = await import('../src/shared/storage.ts');
+  let calls = 0;
+  const stop = onSettingsChanged(() => { calls++; });
+  try {
+    await saveSettings(defaultSettings());
+    for (const event of ['local', 'sync']) for (const listener of listeners) listener({ settings: {} }, event);
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(calls, 1);
+    for (const listener of listeners) listener({ settings: {} }, 'sync');
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(calls, 1, 'unchanged settings do not redraw the page');
+  } finally { stop(); }
+});
