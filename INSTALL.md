@@ -36,8 +36,8 @@ Reopen sidegig pages and refresh existing web pages. Your saved settings and not
 
 To remove sidegig, use **Remove** on the extensions page. Your real browser bookmarks remain yours.
 Export a setup in **Settings → Setups** before removing the extension if you want to keep a backup.
-Setups include preferences and tasks. They do not include notes, chat history or API keys.
-Copy any notes or conversations you need before removing the extension.
+Setups include preferences, tasks and notes. Select **Include chat history and attached page text** to keep conversations too.
+API keys, passwords and connection tokens stay out of setup files and codes. Keep connection credentials separately.
 
 ## Other browser builds
 

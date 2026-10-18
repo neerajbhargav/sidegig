@@ -136,3 +136,17 @@ Commit `d908f1a` on branch `product/core-experience` (plus uncommitted work).
 <img src="2026-10-16-15-local-model-failure-keeps-connection-set.jpg" width="49%" alt="Local model failure keeps connection settings and offers retry">
 <img src="2026-10-16-16-weather-search-failure-has-a-clear-retry.jpg" width="49%" alt="Weather search failure has a clear retry state">
 <img src="2026-10-16-17-typed-web-address-leads-search-results-w.jpg" width="49%" alt="Typed web address leads search results with a direct open action">
+
+## 2026-10-17: Refine the adaptive desk, dock and core product flows for 0.3.0
+
+Commit `387d99b` on branch `product/complete-core-flows` (plus uncommitted work).
+
+<img src="2026-10-17-01-adaptive-desk-at-1280-by-720-with-bounde.jpg" width="49%" alt="Adaptive desk at 1280 by 720 with bounded wallpaper surfaces and expandable widgets">
+<img src="2026-10-17-02-for-you-has-its-own-compact-page-with-ca.jpg" width="49%" alt="For you has its own compact page with category filters, descriptions and visible save controls">
+<img src="2026-10-17-03-for-you-on-a-narrow-screen-with-centered.jpg" width="49%" alt="For you on a narrow screen with centered navigation and readable content">
+<img src="2026-10-17-04-optional-calculator-reading-list-and-ope.jpg" width="49%" alt="Optional Calculator, Reading list and Open tabs widgets on the adaptive desk">
+<img src="2026-10-17-05-bookmarks-expands-into-a-complete-inline.jpg" width="49%" alt="Bookmarks expands into a complete inline form with room for labels, validation and actions">
+<img src="2026-10-17-06-wallpaper-customization-groups-effects-v.jpg" width="49%" alt="Wallpaper customization groups effects, values, reset and widget surfaces with centered controls">
+<img src="2026-10-17-07-dock-inspired-page-rail-with-grouped-app.jpg" width="49%" alt="Dock-inspired page rail with grouped app plates, reserved badge space and a rounded gutter">
+<img src="2026-10-17-08-taskbar-style-active-marker-and-badge-wi.jpg" width="49%" alt="Taskbar-style active marker and badge with app content starting below one compact toolbar">
+<img src="2026-10-17-09-setups-includes-notes-and-optional-chat.jpg" width="49%" alt="Setups includes notes and optional chat history while leaving connection credentials out">

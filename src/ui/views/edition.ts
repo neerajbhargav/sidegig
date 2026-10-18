@@ -18,7 +18,6 @@ import {
   learnFromOpen,
   sanitizeProfile,
 } from '../../shared/edition/profile.ts';
-import { leadOf, groupByKind } from '../../shared/edition/rank.ts';
 import { xSearchUrl } from '../../shared/edition/sources.ts';
 import { h, ico, iconButton, faviconOnly, hostOf, toast, ago } from '../dom.ts';
 import { type Ctx, openApp, send } from '../ctx.ts';
@@ -235,7 +234,7 @@ function card(i: EdItem, a: Actions, lead = false): HTMLElement {
       { class: 'ed-body' },
       h('div', { class: 'ed-kicker' }, lead ? h('span', { class: 'ed-lead-tag' }, 'Front page') : null, faviconOnly(i.url, 'fav xs'), h('span', {}, [i.by, i.meta].filter(Boolean).join(', ') || i.source)),
       link('ed-title', i.title),
-      lead && i.summary ? h('p', { class: 'ed-sum' }, i.summary) : null,
+      i.summary ? h('p', { class: 'ed-sum' }, i.summary) : null,
       why ? h('div', { class: 'ed-why' }, h('span', {}, why)) : null,
       i.discuss || i.alt
         ? h(
@@ -301,7 +300,7 @@ function setupCard(ctx: Ctx, rerender: () => void): HTMLElement {
   );
 }
 
-function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions, rerender: () => void): HTMLElement {
+function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions, rerender: () => void, filter: { kind: EdKind | 'all' }): HTMLElement {
   const wrap = h('div', { class: 'ed-today' });
   if (!a.profile.interests.length) return wrap.appendChild(setupCard(ctx, rerender)), wrap;
   if (!ed || !ed.items.length) {
@@ -315,19 +314,12 @@ function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions
     if (!st?.building && !ed) void send({ type: 'edition-build' }).catch(() => undefined);
     return wrap;
   }
-  const lead = leadOf(ed.items);
-  if (lead) wrap.append(card(lead, a, true));
-  const rest = ed.items.filter((i) => i !== lead);
-  for (const [kind, items] of groupByKind(rest)) {
-    wrap.append(
-      h(
-        'section',
-        { class: 'ed-sec', dataset: { kind } },
-        secHead(KIND_LABEL[kind], KIND_COLOR[kind], `${pad2(items.length)} ${items.length === 1 ? 'item' : 'items'}`),
-        h('div', { class: 'ed-grid', dataset: { kind } }, items.map((i) => card(i, a))),
-      ),
-    );
-  }
+  const kinds = ED_KINDS.filter((kind) => ed.items.some((item) => item.kind === kind));
+  if (filter.kind !== 'all' && !kinds.includes(filter.kind)) filter.kind = 'all';
+  wrap.append(h('nav', { class: 'chips ed-kind-nav', 'aria-label': 'Filter For you' },
+    (['all', ...kinds] as const).map((kind) => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(filter.kind === kind), onclick: () => { filter.kind = kind; rerender(); } }, kind === 'all' ? `All ${ed.items.length}` : `${KIND_LABEL[kind]} ${ed.items.filter((i) => i.kind === kind).length}`))));
+  const shown = ed.items.filter((item) => filter.kind === 'all' || item.kind === filter.kind);
+  wrap.append(h('div', { class: 'ed-grid ed-front' }, shown.map((item) => card(item, a))));
   const topics = a.profile.interests.filter((i) => !i.kinds?.length).sort((x, y) => y.weight - x.weight).slice(0, 5);
   if (topics.length) {
     wrap.append(
@@ -575,7 +567,8 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
     },
   };
   let tab: Tab = remember.get() || 'today';
-  const filter: { kind: EdKind | 'all' } = { kind: 'all' };
+  const todayFilter: { kind: EdKind | 'all' } = { kind: 'all' };
+  const savedFilter: { kind: EdKind | 'all' } = { kind: 'all' };
   let rebuildTimer = 0;
   const rebuildSoon = () => {
     clearTimeout(rebuildTimer);
@@ -594,6 +587,7 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
         getProfile(),
         getLocal<SavedItem[]>('edSaved', []),
       ]);
+      if (ctx.signal?.aborted) return;
       const savedIds = new Set(saved.map((s) => s.id));
       const actions: Actions = {
         saved: savedIds,
@@ -669,9 +663,9 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
       );
       const body =
         tab === 'today'
-          ? todayView(ctx, ed, st, actions, () => void render())
+          ? todayView(ctx, ed, st, actions, () => void render(), todayFilter)
           : tab === 'saved'
-            ? savedView(saved, () => void render(), filter)
+            ? savedView(saved, () => void render(), savedFilter)
             : await interestsView(ctx, profile, rebuildSoon);
       root.replaceChildren(head, body);
 
@@ -719,13 +713,19 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
       void render();
     }, 120);
   };
-  const offs = ['edition', 'edStatus', 'edProfile', 'edSaved'].map((k) => onLocalChanged(k, () => (root.isConnected ? changed() : offs.forEach((off) => off()))));
+  const offs = ['edition', 'edStatus', 'edProfile', 'edSaved'].map((k) => onLocalChanged(k, () => { if (!ctx.signal?.aborted) changed(); }));
+  ctx.signal?.addEventListener('abort', () => { clearTimeout(pending); clearTimeout(rebuildTimer); offs.forEach((off) => off()); }, { once: true });
   offs.push(
     onLocalChanged('edStatus', (v) => {
       const imp = (v as EdStatus | null)?.imported;
       if (root.isConnected && imp && Date.now() - imp.at < 5000) toast(`Got ${imp.count} interests from ${imp.host}`);
     }),
   );
+  root.addEventListener('ed-select', (e) => {
+    const next = (e as CustomEvent<Tab>).detail;
+    if (!['today', 'saved', 'interests'].includes(next)) return;
+    tab = next; remember.set(next); void render();
+  });
   await render();
   return root;
 }

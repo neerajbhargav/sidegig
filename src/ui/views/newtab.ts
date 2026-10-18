@@ -1,7 +1,6 @@
-// The new tab: your day on the left (time, weather, calendar, focus timer,
-// to-do, notes), one box in the middle to search or ask AI, with your apps and
-// your edition under it, and your bookmarks on the right. Cards sit over the
-// wallpaper as frosted glass, clear glass, or solid; each one can be turned off.
+// The new tab: an adaptive widget desk, wallpaper customization, Search/Ask
+// and a separate finite For you page.
+import { calculatorCard, readingCard, tabsCard } from './ntextra.ts';
 import { widgetGrid, type GridItem } from './ntgrid.ts';
 import type { Settings } from '../../shared/types.ts';
 import { keepReadable } from './ntlegible.ts';
@@ -259,11 +258,12 @@ function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
   );
 }
 
-function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arrange: HTMLElement): HTMLElement {
+function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arrange: HTMLElement, pages: HTMLElement): HTMLElement {
   return h(
     'header',
     { class: 'nt-top' },
     brandEl(ctx),
+    pages,
     h(
       'div',
       { class: 'nt-meta' },
@@ -351,25 +351,22 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const ai = aiOn ? await aiParts(ctx, () => void setMode('home')) : null;
   const searchGo = h('button', { type: 'button', class: 'ask-go round', title: 'Search', 'aria-label': 'Search', onclick: () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) }, ico('forward', 20));
   const feedOn = w.feed && ctx.settings.edition.enabled;
+  let page: 'desk' | 'edition' = 'desk';
+  try { if (sessionStorage.getItem('sidegig.page') === 'edition' && feedOn) page = 'edition'; } catch { /* optional preference */ }
+  const pages = segmented<'desk' | 'edition'>('New tab pages', [['desk', 'Desk', ''], ['edition', 'For you', '']], page, (p) => setPage(p));
+  pages.el.classList.add('nt-pages');
+  pages.el.hidden = !feedOn;
   const feedToggle = h(
     'button',
     {
       type: 'button',
       class: 'ask-feed',
-      role: 'switch',
-      'aria-checked': String(feedOn),
-      title: feedOn ? 'Hide your edition' : 'Show your edition: a short, finite set of picks from what you’re into',
-      onclick: () => {
-        play(feedOn ? 'off' : 'on');
-        void updateSettings((s) => {
-          s.newtab.widgets.feed = !feedOn;
-          if (!feedOn) s.edition.enabled = true;
-        });
-      },
+      hidden: !feedOn,
+      title: 'Open For you',
+      onclick: () => setPage('edition'),
     },
     ico('feed', 18),
     h('span', {}, 'For you'),
-    h('i', { class: 'ask-sw', 'aria-hidden': 'true' }),
   );
   const seg = aiOn
     ? segmented<Mode>('Search or ask', [['home', 'Search', ''], ['ai', 'Ask', '']], mode, (m) => void setMode(m))
@@ -388,22 +385,42 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
 
   // ------------------------------------------------ the grid
   // Every widget sits on one 12 × 8 grid that fills the screen (see ntgrid.ts);
-  // the edition, when it's on, follows underneath.
-  const feedHost = h('div', { class: 'nt-feed' });
+  // For you has its own page beside the desk.
+  const feedHost = h('div', { class: 'nt-feed nt-card', hidden: page !== 'edition' }, h('p', { role: 'status' }, 'Loading For you…'));
+  let editionReady: Promise<void> | undefined;
+  const loadEdition = () => editionReady ??= editionSection(ctx).then((ed) => { if (!signal.aborted) feedHost.replaceChildren(ed); }).catch(() => {
+    editionReady = undefined;
+    if (!signal.aborted) feedHost.replaceChildren(h('p', {}, 'For you could not load.'), h('button', { class: 'btn', type: 'button', onclick: () => void loadEdition() }, 'Try again'));
+  });
+  function setPage(next: 'desk' | 'edition') {
+    dispatchEvent(new Event('nt-widget-dismiss'));
+    page = next;
+    try { sessionStorage.setItem('sidegig.page', next); } catch { /* optional preference */ }
+    root.dataset.page = next;
+    pages.set(next);
+    dash.hidden = next === 'edition';
+    feedHost.hidden = next !== 'edition';
+    if (next === 'edition') void loadEdition();
+    window.scrollTo(0, 0);
+    if (next === 'desk') requestAnimationFrame(() => dispatchEvent(new Event('resize')));
+  }
   const off = (put: (s: Settings) => void) => () => void updateSettings(put);
   const items: GridItem[] = [];
   const push = (id: GridItem['id'], label: string, el: HTMLElement | null, more: Partial<GridItem> = {}) => el && items.push({ id, label, el, ...more });
-  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.brief ? await briefEl(ctx) : null) : null, { remove: off((s) => void (s.newtab.clock = false)) });
+  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.brief ? await briefEl(ctx) : null) : null, { expandable: true, remove: off((s) => void (s.newtab.clock = false)) });
   push('weather', 'Weather', w.weather ? weatherCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.weather = false)) });
   push('search', 'Search', h('div', { class: 'gw-search' }, box, results, ai ? h('div', { class: 'nt-ai-host' }, ai.below) : null));
-  push('bookmarks', 'Bookmarks', w.bookmarks ? await bookmarkShelf(ctx) : null, { remove: off((s) => void (s.newtab.widgets.bookmarks = false)) });
+  push('bookmarks', 'Bookmarks', w.bookmarks ? await bookmarkShelf(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.bookmarks = false)) });
   push('calendar', 'Calendar', w.calendar ? calendarCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.calendar = false)) });
   push('pomodoro', 'Pomodoro', w.pomodoro ? await pomodoroCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.pomodoro = false)) });
   push('todo', 'To-do', await todoSection(ctx), { expandable: true, remove: off((s) => void (s.newtab.todo = false)) });
   push('notes', 'Notes', w.notes ? await notesCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.notes = false)) });
+  push('reading', 'Reading list', w.reading ? readingCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.reading = false)) });
+  push('tabs', 'Open tabs', w.tabs ? tabsCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.tabs = false)) });
+  push('calculator', 'Calculator', w.calculator ? calculatorCard() : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.calculator = false)) });
   const grid = widgetGrid(ctx, items);
   const choice = await choiceCard(ctx, browser);
-  const dash = h('div', { class: 'nt-dash' }, choice ? h('div', { class: 'nt-choice-float' }, choice) : null, grid.el, h('div', { class: 'nt-below' }, feedHost));
+  const dash = h('div', { class: 'nt-dash', hidden: page === 'edition' }, choice ? h('div', { class: 'nt-choice-float' }, choice) : null, grid.el);
 
   const setMode = async (m: Mode) => {
     if (!aiOn) m = 'home';
@@ -422,7 +439,8 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const cz = customize(ctx);
   if (wall) root.append(wall);
   const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 18));
-  root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall, arrange), dash), cz.panel);
+  root.dataset.page = page;
+  root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall, arrange, pages.el), dash, feedHost), cz.panel);
   if (ai) root.append(ai.chat.view);
   root.dataset.mode = mode;
   document.documentElement.dataset.mode = mode;
@@ -455,8 +473,15 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     true,
   );
 
-  // The edition, under your apps.
-  if (feedOn) void editionSection(ctx).then((ed) => (feedHost.classList.add('nt-card'), feedHost.append(ed)));
+  addEventListener('nt-open-edition', async (e) => {
+    const tab = (e as CustomEvent<string>).detail;
+    try { sessionStorage.setItem('sidegig.edTab', tab); } catch { /* optional preference */ }
+    pages.el.hidden = false;
+    setPage('edition');
+    await loadEdition();
+    feedHost.querySelector('.ed')?.dispatchEvent(new CustomEvent('ed-select', { detail: tab }));
+  }, { signal });
+  if (page === 'edition') void loadEdition();
 
   // Clear widgets read the wallpaper behind them to stay readable.
   keepReadable(root, wall, n.panels === 'clear', signal);

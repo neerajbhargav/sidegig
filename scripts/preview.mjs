@@ -1,6 +1,7 @@
 // Developer-only pages. None of these files enter an extension package.
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { configureScenes } from './preview-scenes.mjs';
 
 export async function configurePreview(outdir) {
   for (const file of ['newtab.html', 'panel.html', 'drawer.html', 'options.html']) {
@@ -51,11 +52,12 @@ window.fetch=(url,init)=>String(url).includes('fixture.invalid')?new Promise((re
 <style>html,body{margin:0;background:#ddd}iframe{border:0;display:block}</style><iframe id="subject"></iframe>
 <script>const q=new URLSearchParams(location.search),f=document.getElementById('subject');f.width=q.get('w')||1280;f.height=q.get('h')||720;f.src=q.get('page')||'newtab.html';</script>`);
   await writeFile(path.join(outdir, 'qa-destination.html'), '<!doctype html><title>Address opened directly</title><h1>Address opened directly</h1>');
+  await configureScenes(outdir);
   // Rebuilds can happen within one HTTP Last-Modified second. Keep preview QA
   // on the current bundle instead of a previously cached script or stylesheet.
   const revision = Date.now();
   for (const file of (await readdir(outdir)).filter((file) => file.endsWith('.html'))) {
     const page = path.join(outdir, file);
-    await writeFile(page, (await readFile(page, 'utf8')).replace(/(src|href)="((?:ui|options|shim|nt-boot)\.js|ui\.css)"/g, `$1="$2?v=${revision}"`));
+    await writeFile(page, (await readFile(page, 'utf8')).replace(/(src|href)="((?:ui|options|shim|nt-boot|rail)\.js|ui\.css)"/g, `$1="$2?v=${revision}"`));
   }
 }

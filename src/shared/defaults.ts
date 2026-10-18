@@ -65,7 +65,7 @@ export function defaultSettings(): Settings {
       sounds: false,
       weather: { enabled: false, place: '', lat: 0, lon: 0, units: 'f' },
       todo: true,
-      widgets: { greeting: true, brief: false, weather: true, calendar: true, pomodoro: true, notes: true, apps: true, bookmarks: true, feed: true },
+      widgets: { greeting: true, brief: false, weather: true, calendar: true, pomodoro: true, notes: true, apps: true, bookmarks: true, reading: false, tabs: false, calculator: false, feed: true },
       panels: 'clear',
       layout: {},
       folderTones: {},
