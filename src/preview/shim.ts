@@ -94,7 +94,7 @@ const mock: any = {
       return structuredClone(tabs.find((t: any) => t.id === id) ?? tabs[0]);
     },
     async getCurrent() {
-      return structuredClone(tabs.find((t: any) => t.active) ?? tabs[0]);
+      return structuredClone(tabs.find((t: any) => t.active) ?? tabs[0] ?? { id: 9000, windowId: 1, url: location.href });
     },
     async update(id: number, p: any) {
       log.push({ type: 'tabs.update', id, ...p });
