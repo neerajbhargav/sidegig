@@ -153,8 +153,17 @@ export const setIconStyle = (s: 'original' | 'themed') => void (iconStyle = s);
 let favMissing = new Set<string>();
 export const setFavMissing = (ids: string[]) => void (favMissing = new Set(ids));
 
+/** Large site icons for apps whose cached icon is small (filled in by the background check). */
+let sharpIcons: Record<string, string> = {};
+export const setSharpIcons = (m: Record<string, string>) => void (sharpIcons = m);
+
 /** An app's icon: its own site icon; the bundled logo if the browser has none yet. */
 export function appFavicon(app: { id: string; catalogId?: string; url: string; name: string }, cls = 'fav'): HTMLElement {
+  if (sharpIcons[app.id] && iconStyle === 'original' && !favMissing.has(app.id)) {
+    const img = h('img', { class: cls, src: sharpIcons[app.id], alt: '', decoding: 'async' });
+    fitOnLoad(img, app.url, app.name, cls, app.catalogId ?? app.id);
+    return img;
+  }
   if (favMissing.has(app.id)) {
     const g = (ext as { runtime?: unknown } | undefined)?.runtime ? glyphFor(app.url, app.catalogId ?? app.id) : null;
     return g ? glyphEl(g, cls) : letterTile(app.name, cls);

@@ -7,7 +7,7 @@ import type { Ctx, Kind, ViewName } from './ctx.ts';
 import { send } from './ctx.ts';
 import { panelRail } from './views/prail.ts';
 import { updateSettings, setLocal } from '../shared/storage.ts';
-import { iconButton, setFavMissing, setIconStyle } from './dom.ts';
+import { iconButton, setFavMissing, setIconStyle, setSharpIcons } from './dom.ts';
 import { applyScale } from '../shared/scale.ts';
 import { h } from './dom.ts';
 import { homeView } from './views/home.ts';
@@ -78,6 +78,7 @@ async function boot() {
   // Match the browser we're in (fonts, corner radius) so sidegig never looks alien.
   void getLocal<{ id?: string } | null>('browserInfo', null).then((b) => b?.id && (document.body.dataset.browser = b.id));
   setFavMissing(await getLocal<string[]>('favMissing', []));
+  setSharpIcons(await getLocal<Record<string, string>>('sharpIcons', {}));
   const themeStyle = h('style');
   document.head.append(themeStyle);
   let pageMode: 'light' | 'dark' | null = (params.get('mode') as 'light' | 'dark' | null) ?? null;
@@ -219,6 +220,10 @@ async function boot() {
     // Re-render data-driven views; leave search alone so typing isn't interrupted.
     if (current.name !== 'search') void render(current.name, { app: current.app });
     void renderHint();
+  });
+  onLocalChanged('sharpIcons', (v) => {
+    setSharpIcons((v as Record<string, string> | undefined) ?? {});
+    if (kind === 'panel') void renderRail();
   });
   onLocalChanged('favMissing', (v) => {
     setFavMissing((v as string[] | undefined) ?? []);
