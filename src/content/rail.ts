@@ -301,7 +301,7 @@ class Rail {
   private renderRail() {
     const s = this.s;
     this.rail.textContent = '';
-    this.rail.append(this.tool('home', 'Home', iconNode('logo', 22), 'logo'));
+    this.rail.append(this.tool('home', 'Home', iconNode('logo', 24), 'logo'));
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
 
     const apps = document.createElement('div');

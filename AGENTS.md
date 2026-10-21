@@ -43,6 +43,7 @@ The session is done only when all four hold:
 ## Rules
 
 - Product and design decisions are listed in `docs/STATUS.md` under "Key decisions". Follow them; ask the owner before changing one.
+- UI work uses the design system in `docs/DESIGN.md`: tokens, components and widget anatomy. `test/design.test.ts` fails on a raw value.
 - Mark temporary debugging code with the comment `DIAGNOSTIC (temporary)` and remove it before merging to `main`.
 - Third-party code needs a licence entry in `THIRD_PARTY_NOTICES.md`. Write AI and site integrations clean-room from public docs.
 - To understand a third-party site's shipped scripts (for example why Gmail fails in a frame), use the REA skill (`reverse-engineer-anything`, CLI `rea`): save the page's scripts to a folder, then run `rea analyze-javascript-application <folder>` or search the saved files.

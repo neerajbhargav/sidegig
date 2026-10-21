@@ -22,7 +22,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
 
   const nav = h('nav', { class: 'prail', 'aria-label': 'sidegig' });
   arrowNav(nav);
-  nav.append(btn('Home', [ico('logo', 22)], () => ctx.go('home'), current.name === 'home', '', { view: 'home' }), h('div', { class: 'psep' }));
+  nav.append(btn('Home', [ico('logo', 24)], () => ctx.go('home'), current.name === 'home', '', { view: 'home' }), h('div', { class: 'psep' }));
 
   const apps = h('div', { class: 'papps', role: 'group', 'aria-label': 'Pinned apps' });
   for (const a of s.apps) {

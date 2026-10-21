@@ -7,7 +7,7 @@
 // - On narrow or short windows the grid becomes one column you scroll.
 import { onSettingsChanged, updateSettings } from '../../shared/storage.ts';
 import { PRIORITY, COLS, ROWS, SIZES, nearestFree, nextSize, place, resizeAround, resolve, sizeClass, sizeName, type Box, type WidgetId } from '../../shared/layout.ts';
-import { h, ico, toast } from '../dom.ts';
+import { DUR, EASE, h, ico, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
 import { play } from '../sound.ts';
 
@@ -81,7 +81,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
       const dx = a.left - b.left;
       const dy = a.top - b.top;
       if (Math.abs(dx) + Math.abs(dy) < 1 && Math.abs(a.width - b.width) < 1) continue;
-      w.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 180, easing: 'ease-out' });
+      w.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: DUR.change, easing: EASE });
     }
   };
 
@@ -140,7 +140,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     w.dataset.size = 'l';
     Object.assign(w.style, { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px` });
     scrim.hidden = false;
-    if (!still()) w.animate([{ opacity: 0.7 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
+    if (!still()) w.animate([{ opacity: 0.7 }, { opacity: 1 }], { duration: DUR.press, easing: EASE });
     (w.querySelector<HTMLElement>('input, textarea, button:not(.gw-btn)') ?? w).focus({ preventScroll: true });
   };
   const close = () => {
@@ -235,7 +235,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     );
     const openLabel = it.id === 'tabs' ? 'Expand Open tabs' : `Open ${it.label}`;
     const more = it.expandable ? h('button', { type: 'button', class: 'gw-more', title: openLabel, 'aria-label': openLabel, onclick: () => open(it.id) }, ico('expand', 16)) : null;
-    const dismiss = it.expandable ? h('button', { type: 'button', class: 'gw-close', 'aria-label': `Close ${it.label}`, onclick: close }, ico('close', 18)) : null;
+    const dismiss = it.expandable ? h('button', { type: 'button', class: 'gw-close', 'aria-label': `Close ${it.label}`, onclick: close }, ico('close', 20)) : null;
     const w = h('div', { class: 'gw', dataset: { w: it.id }, 'aria-label': it.label, role: 'group' }, it.el, more, dismiss, chrome);
     wraps.set(it.id, w);
     setBox(it.id, boxes[it.id]);
@@ -295,7 +295,7 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
         layoutTo(boxes, it.id);
         setBox(it.id, boxes[it.id]);
         const after = w.getBoundingClientRect();
-        if (!still()) w.animate([{ transform: `translate(${before.left - after.left}px, ${before.top - after.top}px)` }, { transform: 'none' }], { duration: 200, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+        if (!still()) w.animate([{ transform: `translate(${before.left - after.left}px, ${before.top - after.top}px)` }, { transform: 'none' }], { duration: DUR.change, easing: EASE });
         if (changed) {
           play('key');
           save();

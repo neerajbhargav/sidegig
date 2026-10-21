@@ -108,7 +108,7 @@ export function generateTokens(mode: Mode, input: ThemeInput): Tokens {
       accent: a(0.74, Math.min(acc.c, 0.17)),
       accentFg: a(0.2, Math.min(acc.c, 0.06)),
       accentSoft: a(bg + 0.09, Math.min(acc.c, 0.06)),
-      badge: oklchHex({ l: 0.68, c: 0.19, h: 25 }),
+      badge: oklchHex({ l: 0.56, c: 0.19, h: 25 }),
       badgeFg: '#ffffff',
       scrim: 'rgba(0,0,0,0.45)',
     };
@@ -125,7 +125,7 @@ export function generateTokens(mode: Mode, input: ThemeInput): Tokens {
     accent: a(0.53, Math.min(acc.c, 0.2)),
     accentFg: '#ffffff',
     accentSoft: a(0.94, Math.min(acc.c, 0.05)),
-    badge: oklchHex({ l: 0.6, c: 0.21, h: 25 }),
+    badge: oklchHex({ l: 0.56, c: 0.21, h: 25 }),
     badgeFg: '#ffffff',
     scrim: 'rgba(0,0,0,0.18)',
   };

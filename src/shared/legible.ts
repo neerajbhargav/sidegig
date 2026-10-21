@@ -21,6 +21,22 @@ export const luminance = (r: number, g: number, b: number) => 0.2126 * lin(r) + 
 /** WCAG contrast ratio of two luminances. */
 export const contrast = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 
+/**
+ * A button filled with the accent: the text colour that reads better on it, and the accent
+ * nudged darker (or lighter) just enough for that text to reach 4.5:1. Mid-tone accents
+ * such as #2f6bff otherwise land a hair under with either white or near-black.
+ */
+export function accentFill(rgb: [number, number, number]): { fill: [number, number, number]; on: '#ffffff' | '#111111' } {
+  const dark = luminance(17, 17, 17);
+  const L = luminance(...rgb);
+  const on = contrast(L, 1) >= contrast(L, dark) ? '#ffffff' : '#111111';
+  const toward = on === '#ffffff' ? 0 : 255;
+  const ink = on === '#ffffff' ? 1 : dark;
+  let fill = rgb;
+  for (let t = 0; t <= 1 && contrast(luminance(...fill), ink) < 4.5; t += 0.02) fill = rgb.map((v) => Math.round(v + (toward - v) * t)) as [number, number, number];
+  return { fill, on };
+}
+
 export interface Patch {
   /** Luminance percentiles of the patch: darkest tenth, middle, brightest tenth. */
   p10: number;

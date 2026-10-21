@@ -103,7 +103,7 @@ async function sampleOf(wall: HTMLElement, root: HTMLElement): Promise<Sample | 
  * Clear surface on a wallpaper; otherwise it clears any tones it set.
  */
 export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: boolean, signal: AbortSignal) {
-  const widgets = () => [...root.querySelectorAll<HTMLElement>('.gw:not([data-w="search"]):not(.is-open)')];
+  const widgets = () => [...root.querySelectorAll<HTMLElement>('.gw:not(.is-open)')];
   if (!on || !wall) {
     delete root.dataset.deskTone;
     for (const w of widgets()) {

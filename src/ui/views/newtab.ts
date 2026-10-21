@@ -4,6 +4,7 @@ import { calculatorCard, readingCard, tabsCard } from './ntextra.ts';
 import { widgetGrid, type GridItem } from './ntgrid.ts';
 import type { Settings } from '../../shared/types.ts';
 import { keepReadable } from './ntlegible.ts';
+import { accentFill } from '../../shared/legible.ts';
 import { ext } from '../../shared/api.ts';
 import { getLocal, updateSettings, setLocal } from '../../shared/storage.ts';
 import type { NtLook } from '../../shared/types.ts';
@@ -41,10 +42,11 @@ const saveMode = (m: Mode) => {
 
 
 /** "auto" = match the browser (native); the others are sidegig's own studio looks. */
-/** Text on the accent colour: whichever of near-black or white reads better on it. */
+/** Text on the accent colour, and the accent fill that text reaches 4.5:1 on (see accentFill). */
 export function fitOnSignal() {
   const root = document.documentElement;
   root.style.removeProperty('--c-on-signal');
+  root.style.removeProperty('--c-signal-fill');
   if (!document.body) return;
   const probe = document.createElement('i');
   probe.style.cssText = 'position:absolute;width:0;height:0;color:var(--c-signal)';
@@ -52,14 +54,9 @@ export function fitOnSignal() {
   const m = getComputedStyle(probe).color.match(/[\d.]+/g);
   probe.remove();
   if (!m) return;
-  const lin = (v: number) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const L = 0.2126 * lin(+m[0]) + 0.7152 * lin(+m[1]) + 0.0722 * lin(+m[2]);
-  const onDark = (L + 0.05) / (0.0056 + 0.05); // against #111
-  const onWhite = 1.05 / (L + 0.05);
-  root.style.setProperty('--c-on-signal', onWhite >= onDark ? '#ffffff' : '#111111');
+  const { fill, on } = accentFill([+m[0], +m[1], +m[2]]);
+  root.style.setProperty('--c-on-signal', on);
+  root.style.setProperty('--c-signal-fill', `rgb(${fill.join(' ')})`);
 }
 
 export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }) {
@@ -132,7 +129,7 @@ function soundToggle(ctx: Ctx): HTMLElement {
         void updateSettings((s) => void (s.newtab.sounds = !on));
       },
     },
-    ico(on ? 'soundOn' : 'soundOff', 17),
+    ico(on ? 'soundOn' : 'soundOff', 20),
   );
 }
 
@@ -238,7 +235,7 @@ function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
               ctx.go('home');
             },
           },
-          ico('next', 18),
+          ico('next', 20),
         )
       : null,
     col && pic
@@ -255,7 +252,7 @@ function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
               ctx.go('home');
             },
           },
-          ico('notFor', 18),
+          ico('notFor', 20),
         )
       : null,
   );
@@ -275,7 +272,7 @@ function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arran
       arrange,
       soundToggle(ctx),
       launcherEl(ctx.signal),
-      h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 18)),
+      h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 20)),
     ),
   );
 }
@@ -324,7 +321,7 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
 /** A two-way switch with a pill that slides to the chosen side. */
 function segmented<T extends string>(label: string, options: [T, string, string][], value: T, onPick: (v: T) => void): { el: HTMLElement; set: (v: T) => void } {
   const el = h('div', { class: 'nt-seg', role: 'tablist', 'aria-label': label, style: { '--n': String(options.length) } });
-  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, icon ? ico(icon, 18) : null, h('span', {}, text)));
+  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, icon ? ico(icon, 20) : null, h('span', {}, text)));
   el.append(...btns);
   const set = (v: T) => {
     const i = Math.max(0, options.findIndex(([o]) => o === v));
@@ -368,7 +365,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       title: 'Open For you',
       onclick: () => setPage('edition'),
     },
-    ico('feed', 18),
+    ico('feed', 20),
     h('span', {}, 'For you'),
   );
   const seg = aiOn
@@ -444,7 +441,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   if (wall) root.dataset.wall = n.background.kind;
   const cz = customize(ctx);
   if (wall) root.append(wall);
-  const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 18));
+  const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 20));
   root.dataset.page = page;
   root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall, arrange, pages.el), dash, feedHost), cz.panel);
   if (ai) root.append(ai.chat.view);

@@ -410,7 +410,7 @@ async function backgroundTab(ctx: Ctx): Promise<HTMLElement> {
   wrap.append(
     section(
       'Yours',
-      tile('Upload', false, () => file.click(), h('span', { class: 'cz-plus' }, ico('plus', 22))),
+      tile('Upload', false, () => file.click(), h('span', { class: 'cz-plus' }, ico('plus', 24))),
       ...ups.map((u) =>
         tile(
           'Your picture',
@@ -647,7 +647,7 @@ function pomodoroSettings(ctx: Ctx): HTMLElement {
 // Widgets as a list you add from (each with its little object), grouped, searchable.
 type WidgetItem = { group: string; title: string; note: string; thumb: () => string; get: (s: Settings) => boolean; put: (s: Settings, v: boolean) => void };
 const figThumb = (w: number, hgt: number, art: string) => figureSvg(w, hgt, art);
-const glyphThumb = (name: string) => `<span class="cz-w-ico">${icon(name, 22)}</span>`;
+const glyphThumb = (name: string) => `<span class="cz-w-ico">${icon(name, 24)}</span>`;
 const WIDGETS: WidgetItem[] = [
   { group: 'Your day', title: 'Clock', note: 'A pocket watch and the date', thumb: () => figThumb(WATCH.width, WATCH.height, WATCH.below + WATCH.above), get: (s) => s.newtab.clock, put: (s, v) => void (s.newtab.clock = v) },
   { group: 'Your day', title: 'Weather', note: 'A weather station: now and four days', thumb: () => figThumb(STATION.width, STATION.height, STATION.back + STATION.mastUpper + STATION.gauge + STATION.thermoSvg), get: (s) => s.newtab.widgets.weather, put: (s, v) => void (s.newtab.widgets.weather = v) },
@@ -686,7 +686,7 @@ function addWidgets(ctx: Ctx): HTMLElement {
               h('span', { class: 'cz-w-thumb iso', html: w.thumb() }),
               h('span', { class: 'cz-w-text' }, h('b', {}, w.title), h('span', {}, w.note)),
               on
-                ? h('button', { type: 'button', class: 'cz-w-on', title: `Remove ${w.title} from the page`, 'aria-label': `${w.title} is on the page. Remove it`, onclick: () => (play('off'), set((s) => w.put(s, false))) }, ico('check', 18), 'On page')
+                ? h('button', { type: 'button', class: 'cz-w-on', title: `Remove ${w.title} from the page`, 'aria-label': `${w.title} is on the page. Remove it`, onclick: () => (play('off'), set((s) => w.put(s, false))) }, ico('check', 20), 'On page')
                 : h('button', { type: 'button', class: 'cz-w-add', title: `Add ${w.title}`, 'aria-label': `Add ${w.title}`, onclick: () => (play('on'), set((s) => w.put(s, true))) }, ico('plus', 20)),
             );
           }),
@@ -741,7 +741,7 @@ function layoutTab(ctx: Ctx): HTMLElement {
       h(
         'div',
         { class: 'cz-btnrow' },
-        h('button', { type: 'button', class: 'btn primary', onclick: () => (document.querySelector<HTMLElement>('.nt-cz .nt-gear[aria-label="Close"]')?.click(), dispatchEvent(new Event('nt-arrange'))) }, ico('arrange', 18), 'Arrange widgets'),
+        h('button', { type: 'button', class: 'btn primary', onclick: () => (document.querySelector<HTMLElement>('.nt-cz .nt-gear[aria-label="Close"]')?.click(), dispatchEvent(new Event('nt-arrange'))) }, ico('arrange', 20), 'Arrange widgets'),
         h('button', { type: 'button', class: 'btn', onclick: () => (play('dismiss'), set((s) => void (s.newtab.layout = {}))) }, 'Reset layout'),
       ),
       h('p', { class: 'cz-hint' }, 'Drag widgets to move them and change their size. Click a widget’s surface to expand it.'),
@@ -759,7 +759,7 @@ function layoutTab(ctx: Ctx): HTMLElement {
 export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement } {
   const body = h('div', { class: 'cz-body', role: 'tabpanel', id: 'customize-content' });
   const tabs = h('div', { class: 'cz-tabs', role: 'tablist', 'aria-label': 'Customize sections' });
-  const panel = h('aside', { class: 'nt-cz', role: 'dialog', 'aria-label': 'Customize', hidden: true }, h('header', { class: 'cz-head' }, h('b', {}, 'Customize'), tabs, h('button', { type: 'button', class: 'nt-gear', 'aria-label': 'Close', onclick: () => close() }, ico('close', 18))), body);
+  const panel = h('aside', { class: 'nt-cz', role: 'dialog', 'aria-label': 'Customize', hidden: true }, h('header', { class: 'cz-head' }, h('b', {}, 'Customize'), tabs, h('button', { type: 'button', class: 'nt-gear', 'aria-label': 'Close', onclick: () => close() }, ico('close', 20))), body);
   const OLD: Record<string, string> = { theme: 'colours', background: 'wallpaper', widgets: 'layout' };
   let tab = OLD[recalled()] ?? (recalled() || 'wallpaper');
   let showToken = 0;
@@ -810,7 +810,7 @@ export function customize(ctx: Ctx): { button: HTMLElement; panel: HTMLElement }
   const button = h(
     'button',
     { type: 'button', class: 'nt-gear nt-cz-btn', title: 'Customize: wallpaper, colours and layout', 'aria-label': 'Customize', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', onclick: () => (panel.hidden ? open() : close()) },
-    ico('palette', 18),
+    ico('palette', 20),
     h('i', { class: 'cz-dot', 'aria-hidden': 'true', style: { background: `linear-gradient(135deg, ${bg} 50%, ${ink} 50%)`, boxShadow: `0 0 0 1.5px ${accent}` } }),
   );
   if (recalled()) queueMicrotask(open);
