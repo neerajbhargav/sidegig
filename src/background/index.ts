@@ -1,7 +1,7 @@
 // sidegig background worker: routes messages, opens apps, keeps network rules,
 // menus, alarms and badges in sync with settings.
 import { ext, features, TARGET, uid } from '../shared/api.ts';
-import { loadSettings, saveSettings, getLocal, setLocal, onSettingsChanged } from '../shared/storage.ts';
+import { loadSettings, saveSettings, getLocal, setLocal, onSettingsChanged, onLocalChanged } from '../shared/storage.ts';
 import { appFromCatalog, defaultSettings } from '../shared/defaults.ts';
 import { catalogById } from '../shared/catalog.ts';
 import { buildPrompt } from '../shared/prompt.ts';
@@ -13,6 +13,7 @@ import { applyRules, setDrawerTabs, setSideTabs } from './dnr.ts';
 import { pageCookies } from './framecookies.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup, rememberSideWidth } from './open.ts';
 import { mailThread, refreshStatus } from './status.ts';
+import { agentLink, stopAgents } from './agent.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 import { trackPanels } from './panels.ts';
@@ -46,6 +47,7 @@ async function sync(): Promise<void> {
   await setDrawerTabs(await getLocal<number[]>('drawerTabs', [])).catch(() => undefined);
   await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
+  void agentLink();
   setupActionBehavior();
   setupLinkRules();
 }
@@ -257,6 +259,7 @@ ext.runtime.onStartup?.addListener(() => {
   void sync();
 });
 onSettingsChanged(() => void sync());
+onLocalChanged('agentAccess', () => void agentLink());
 (ext as any).permissions?.onAdded?.addListener(() => setupLinkRules());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));
 (ext.windows as any).onBoundsChanged?.addListener((w: chrome.windows.Window) => void rememberSideWidth(w));
@@ -340,6 +343,10 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     case 'refresh-status':
       refreshStatus().then(sendResponse, () => sendResponse([]));
       return true;
+    case 'agent-stop':
+      // The banner's Stop in a tab an agent works in: always allowed, it only turns access off.
+      void stopAgents();
+      return false;
     case 'mail-thread':
       mailThread(msg.mid).then(sendResponse, () => sendResponse(null));
       return true;
@@ -387,6 +394,7 @@ ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'edition') void buildEdition();
   if (a.name === 'walls') void refreshWalls();
   if (a.name === 'favicons') void checkFavicons(now().apps);
+  if (a.name === 'agent') void agentLink();
 });
 
 // Toolbar button where the browser has no side panel behavior.

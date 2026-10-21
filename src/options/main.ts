@@ -17,7 +17,7 @@ import { PACKS } from '../shared/walls.ts';
 import { PARTS, allLocalKeys, isPrefixKey, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
 import { aiSetup } from '../ui/views/ntchat.ts';
 import { getKeys, setKeys, PROVIDERS } from '../shared/ai/providers.ts';
-import { getLocal, setLocal } from '../shared/storage.ts';
+import { getLocal, setLocal, onLocalChanged } from '../shared/storage.ts';
 import { mcpSignIn, mcpSignOut, mcpSignedIn, setMcpToken, type McpServer } from '../shared/ai/mcp.ts';
 import { welcomeView } from './welcome.ts';
 
@@ -218,6 +218,7 @@ async function aiSection(): Promise<HTMLElement> {
     h('label', { class: 'label', for: 'ai-instructions' }, 'Custom instructions for the built-in chat'),
     h('textarea', { class: 'text-input', id: 'ai-instructions', rows: 4, style: { width: '100%' }, placeholder: 'How would you like the assistant to respond?', onchange: (e: Event) => commit((x) => void (x.ai.instructions = (e.target as HTMLTextAreaElement).value)) }, s.ai.instructions),
     await mcpSettings(),
+    await agentSettings(),
     h('div', { class: 'label' }, 'AI sites'),
     h(
       'div',
@@ -238,6 +239,38 @@ async function aiSection(): Promise<HTMLElement> {
     area(s.ai.selectionTemplate, (v) => commit((x) => void (x.ai.selectionTemplate = v))),
     h('div', { class: 'label' }, 'Prompt for a whole page'),
     area(s.ai.pageTemplate, (v) => commit((x) => void (x.ai.pageTemplate = v))),
+  );
+}
+
+/** Agents on this computer (Claude Code, Codex, Cursor) using this browser through the bridge. */
+async function agentSettings(): Promise<HTMLElement> {
+  const status = h('p', { class: 'muted', role: 'status' });
+  const paintStatus = async () => {
+    const link = await getLocal<{ state?: string; error?: string } | null>('agentLink', null);
+    status.textContent =
+      link?.state === 'connected' ? 'Connected to the sidegig bridge. Agents can use this browser as allowed above.'
+      : link?.state === 'waiting' ? `Waiting for the bridge. Start it with node bridge/sidegig-bridge.mjs and paste its pairing code below.${link.error ? ` (${link.error})` : ''}`
+      : '';
+  };
+  onLocalChanged('agentLink', () => void paintStatus());
+  await paintStatus();
+  const code = h('input', { class: 'text-input', placeholder: 'Pairing code, like K7QM-2XRP', 'aria-label': 'Bridge pairing code', autocomplete: 'off', spellcheck: 'false', value: await getLocal<string>('bridgeCode', '') }) as HTMLInputElement;
+  const codeForm = h('form', { class: 'ai-row' }, code, h('button', { class: 'btn', type: 'submit' }, 'Save code'));
+  codeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await setLocal('bridgeCode', code.value.trim().toUpperCase());
+    toast('Pairing code saved on this device');
+  });
+  const access = await getLocal<'off' | 'read' | 'full'>('agentAccess', 'off');
+  return h(
+    'section',
+    { class: 'ai-tools-settings', 'aria-label': 'Agents' },
+    h('div', { class: 'label' }, 'Agents on this computer'),
+    h('p', { class: 'muted' }, 'Claude Code, Codex, Cursor and other MCP agents can use this browser through the sidegig bridge. Read only lets them list and read tabs, search history and take screenshots. Full also lets them open, click, type in and close tabs. Every tab an agent uses shows a banner with Stop.'),
+    opt('Agent access', 'Kept on this device; it never syncs', seg(access, [['off', 'Off'], ['read', 'Read only'], ['full', 'Full']], (v) => void setLocal('agentAccess', v))),
+    codeForm,
+    h('p', { class: 'muted' }, 'To connect an agent, run node bridge/sidegig-bridge.mjs setup and use the command it prints.'),
+    status,
   );
 }
 

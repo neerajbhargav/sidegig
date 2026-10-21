@@ -13,6 +13,7 @@ export type ToBackground =
   | { type: 'tab-info' }
   | { type: 'drawer-frames' }
   | { type: 'mail-thread'; mid: string }
+  | { type: 'agent-stop' }
   | { type: 'save-workspace'; name: string }
   | { type: 'restore-workspace'; id: string }
   | { type: 'sleep-tabs' }
