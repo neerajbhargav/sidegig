@@ -67,6 +67,17 @@ test('gmail atom feed parsing', () => {
   assert.equal(r.entries[1].title, '(no subject)');
 });
 
+test('gmail feed entries carry the preview, time, sender address and message id', () => {
+  const xml = `<feed><fullcount>1</fullcount><entry><title>Your verification code</title><summary>Enter 482913 to finish signing in.</summary>
+    <link rel="alternate" href="https://mail.google.com/mail?account_id=me@example.com&amp;message_id=1a15fd7317beb608&amp;view=conv&amp;extsrc=atom" type="text/html" />
+    <issued>2026-10-21T19:40:00Z</issued><id>tag:gmail.google.com,2004:1</id><author><name>Acme</name><email>no-reply@acme.example</email></author></entry></feed>`;
+  const [e] = parseGmailFeed(xml).entries;
+  assert.equal(e.summary, 'Enter 482913 to finish signing in.');
+  assert.equal(e.at, Date.parse('2026-10-21T19:40:00Z'));
+  assert.equal(e.email, 'no-reply@acme.example');
+  assert.equal(e.mid, '1a15fd7317beb608');
+});
+
 test('restricted pages', () => {
   assert.ok(isRestricted('chrome://settings'));
   assert.ok(isRestricted('chrome-extension://abc/options.html'));

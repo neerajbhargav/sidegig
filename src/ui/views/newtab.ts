@@ -21,6 +21,7 @@ import { hideWall } from '../../shared/collect.ts';
 import { customize } from './ntcustom.ts';
 import { configureSound, play } from '../sound.ts';
 import { detectBrowser, type DetectedBrowser } from '../browser.ts';
+import { codePill } from './status.ts';
 
 type Mode = 'home' | 'ai';
 const getMode = (): Mode => {
@@ -381,6 +382,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     greet ? h('div', { class: 'ask-head' }, greet) : null,
     h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
     h('div', { class: 'ask-bar' }, seg?.el ?? null, ai?.pickers ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
+    codePill(ctx),
   );
 
   // ------------------------------------------------ the grid

@@ -180,7 +180,8 @@ export interface StatusCard {
   value: string;
   detail: string;
   url: string;
-  items: { title: string; meta: string; url: string; state?: 'ok' | 'warn' | 'error' | 'busy' }[];
+  /** Gmail rows also carry the sign-in code found in them, when they arrived, the message id and the sender's address. */
+  items: { title: string; meta: string; url: string; state?: 'ok' | 'warn' | 'error' | 'busy'; code?: string; at?: number; mid?: string; email?: string }[];
   /** Changes whenever there is something new to look at. */
   signature: string;
   error?: string;

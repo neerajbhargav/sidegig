@@ -2433,3 +2433,25 @@ button { text-align: center !important; }
   .pitem { width: max(44px, calc(38px * var(--ui-s, 1))); height: max(44px, calc(38px * var(--ui-s, 1))); }
   .btn { min-height: max(44px, calc(40px * var(--ui-s, 1))); }
 }
+
+/* Mail layer: sign-in codes (the code is the button) and Gmail row actions. */
+.code-pills:empty { display: none; }
+.code-pills { padding: 0 calc(12px * var(--ui-s, 1)) calc(8px * var(--ui-s, 1)); }
+.code-pill { display: flex; align-items: center; gap: calc(8px * var(--ui-s, 1)); padding: calc(4px * var(--ui-s, 1)) calc(4px * var(--ui-s, 1)) calc(4px * var(--ui-s, 1)) calc(12px * var(--ui-s, 1)); border-radius: 999px; background: var(--m-accent-soft); color: var(--m-fg-muted); }
+.code-pill .code-from { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(13px * var(--ui-s, 1)); }
+.code-copy { all: unset; flex: none; display: inline-flex; align-items: center; justify-content: center; gap: calc(6px * var(--ui-s, 1)); min-height: calc(32px * var(--ui-s, 1)); padding: 0 calc(12px * var(--ui-s, 1)); border-radius: 999px; cursor: pointer; color: var(--m-accent); background: var(--m-surface); font: 600 calc(15px * var(--ui-s, 1))/1 var(--f-mono); letter-spacing: 0.08em; }
+.code-copy:hover { background: var(--m-hover); }
+.code-copy:focus-visible { outline: calc(2px * var(--ui-s, 1)) solid var(--m-accent); outline-offset: 1px; }
+.code-copy[data-copied] { color: var(--m-fg); }
+.nt-ask .code-pills { padding: calc(8px * var(--ui-s, 1)) 0 0; }
+.nt-ask .code-pill { background: var(--c-panel); color: var(--c-mute); }
+.nt-ask .code-copy { color: var(--c-signal-text); background: var(--c-card); }
+.nt-ask .code-copy:hover { background: var(--hov); }
+.nt-ask .code-copy:focus-visible { outline-color: var(--c-signal); }
+.nt-ask .code-copy[data-copied] { color: var(--c-ink); }
+.mail-acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: calc(6px * var(--ui-s, 1)); padding: 0 calc(8px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)) calc(28px * var(--ui-s, 1)); }
+.mail-out { padding: 0 calc(8px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)) calc(28px * var(--ui-s, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-s, 1)); }
+.mail-out[hidden] { display: none; }
+.mail-out .mail-acts { padding: 0; }
+.mail-text { font-size: calc(13.5px * var(--ui-s, 1)); line-height: 1.45; color: var(--m-fg); }
+.mail-draft { width: 100%; box-sizing: border-box; font-family: var(--f-text, inherit); }
