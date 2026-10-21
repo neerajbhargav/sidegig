@@ -42,6 +42,8 @@ export interface AppEntry {
   badge: boolean;
   /** Catalog id when this came from the built-in catalog. */
   catalogId?: string;
+  /** Never unload its frame while hidden. Unset: messaging apps keep running. */
+  keepAlive?: boolean;
 }
 
 export interface LinkRule {

@@ -190,3 +190,12 @@ test('null and primitive app entries do not crash old migrations', () => {
     assert.equal(stored.apps.length, 4, 'the source list stays untouched');
   }
 });
+
+test('messengers keep running while hidden unless you say otherwise', async () => {
+  const { keepsRunning, appFromCatalog } = await import('../src/shared/defaults.ts');
+  assert.equal(keepsRunning(appFromCatalog('whatsapp')), true);
+  assert.equal(keepsRunning(appFromCatalog('claude')), false);
+  assert.equal(keepsRunning({ ...appFromCatalog('whatsapp'), keepAlive: false }), false);
+  assert.equal(keepsRunning({ keepAlive: true }), true, 'a custom app you switched on');
+  assert.equal(keepsRunning({}), false);
+});

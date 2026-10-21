@@ -1,16 +1,19 @@
 // App viewer for the browser sidebar (and the drawer for "drawer" apps).
 // Frames live in one container that is never moved in the DOM (moving an
 // iframe reloads it), so chats stay alive while you switch apps. Frames you
-// haven't looked at for 30 minutes are unloaded to free memory.
+// haven't looked at for 30 minutes are unloaded to free memory, unless the app
+// keeps running (messengers by default; a switch per app in settings).
 import { ext } from '../../shared/api.ts';
 import { updateSettings } from '../../shared/storage.ts';
 import type { AppEntry } from '../../shared/types.ts';
 import { h, iconButton, appFavicon } from '../dom.ts';
 import { type Ctx, send } from '../ctx.ts';
 import { NO_FRAME } from '../../shared/catalog.ts';
+import { keepsRunning } from '../../shared/defaults.ts';
 
 const SLEEP_MS = 30 * 60_000;
 const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number }>();
+let alive = new Set<string>();
 export const framesHost = h('div', { class: 'frames', hidden: true });
 
 /** Frames that have said hello (the frame helper runs inside them), by app id. */
@@ -71,7 +74,7 @@ function reload(app: AppEntry) {
 
 setInterval(() => {
   for (const [id, f] of frames) {
-    if (!f.el.hidden || Date.now() - f.lastShown < SLEEP_MS) continue;
+    if (!f.el.hidden || alive.has(id) || Date.now() - f.lastShown < SLEEP_MS) continue;
     f.el.remove();
     frames.delete(id);
   }
@@ -192,6 +195,7 @@ function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
 }
 
 function attach(ctx: Ctx, app: AppEntry, url?: string) {
+  alive = new Set(ctx.settings.apps.filter(keepsRunning).map((a) => a.id));
   const el = frameFor(ctx, app);
   if (url && sameSite(url, app.url)) el.src = url;
   for (const [id, f] of frames) {
