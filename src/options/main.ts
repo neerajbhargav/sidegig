@@ -348,7 +348,7 @@ async function statusSection(): Promise<HTMLElement> {
       opt('Vercel', 'Latest deployments and failures', toggle(s.status.vercel, (v) => commit((x) => void (x.status.vercel = v)), 'Vercel card')),
       s.status.vercel ? opt('Vercel token', null, secretInput('vercelToken', 'Vercel access token')) : null,
       s.status.vercel ? opt('Vercel team id', 'Optional', secretInput('vercelTeamId', 'team_…', false)) : null,
-      opt('Gmail', 'Unread count, using the Google account signed in to this browser', toggle(s.status.gmail, (v) => commit((x) => void (x.status.gmail = v)), 'Gmail card')),
+      opt('Gmail', 'Unread mail, sign-in codes you copy in one click, and thread summaries and reply drafts from your chat model. Uses the Google account signed in to this browser; mail goes only to the model you picked.', toggle(s.status.gmail, (v) => commit((x) => void (x.status.gmail = v)), 'Gmail card')),
       opt(
         'Check every',
         null,

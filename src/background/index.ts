@@ -12,7 +12,7 @@ import type { ToBackground, ToContent } from '../shared/messages.ts';
 import { applyRules, setDrawerTabs, setSideTabs } from './dnr.ts';
 import { pageCookies } from './framecookies.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup, rememberSideWidth } from './open.ts';
-import { refreshStatus } from './status.ts';
+import { mailThread, refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 import { trackPanels } from './panels.ts';
@@ -339,6 +339,9 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       return true;
     case 'refresh-status':
       refreshStatus().then(sendResponse, () => sendResponse([]));
+      return true;
+    case 'mail-thread':
+      mailThread(msg.mid).then(sendResponse, () => sendResponse(null));
       return true;
     case 'edition-build':
       buildEdition().then(sendResponse, () => sendResponse(null));

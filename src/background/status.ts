@@ -2,6 +2,7 @@
 // sign-in; nothing goes through a sidegig server (there isn't one).
 import { loadSecrets, loadSettings, setLocal } from '../shared/storage.ts';
 import type { StatusCard } from '../shared/types.ts';
+import { findCode, parseGmailPrint, type MailThread } from '../shared/mail.ts';
 
 const ago = (ms: number) => {
   const m = Math.round((Date.now() - ms) / 60000);
@@ -72,15 +73,28 @@ export async function vercelCard(token?: string, teamId?: string): Promise<Statu
 const tag = (xml: string, name: string) => xml.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))?.[1]?.trim() ?? '';
 const unescape = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
-export function parseGmailFeed(xml: string): { count: number; entries: { id: string; title: string; from: string; url: string }[] } {
+export interface FeedEntry { id: string; title: string; from: string; url: string; summary: string; at: number; email: string; mid: string }
+
+export function parseGmailFeed(xml: string): { count: number; entries: FeedEntry[] } {
   const count = parseInt(tag(xml, 'fullcount') || '0', 10) || 0;
   const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map((m) => {
     const e = m[1];
+    const url = unescape(e.match(/<link[^>]*href="([^"]+)"/)?.[1] ?? 'https://mail.google.com/');
+    let mid = '';
+    try {
+      mid = new URL(url).searchParams.get('message_id') ?? '';
+    } catch {
+      /* no link */
+    }
     return {
       id: tag(e, 'id'),
       title: unescape(tag(e, 'title')) || '(no subject)',
       from: unescape(tag(tag(e, 'author'), 'name')),
-      url: unescape(e.match(/<link[^>]*href="([^"]+)"/)?.[1] ?? 'https://mail.google.com/'),
+      url,
+      summary: unescape(tag(e, 'summary')),
+      at: Date.parse(tag(e, 'issued')) || 0,
+      email: unescape(tag(tag(e, 'author'), 'email')),
+      mid: /^[0-9a-f]{6,24}$/i.test(mid) ? mid : '',
     };
   });
   return { count, entries };
@@ -97,10 +111,19 @@ export async function gmailCard(): Promise<StatusCard> {
     value: String(count),
     detail: count === 1 ? 'unread email' : 'unread emails',
     url,
-    items: entries.slice(0, 6).map((e) => ({ title: e.title, meta: e.from, url: e.url, state: 'ok' as const })),
+    items: entries.slice(0, 6).map((e) => ({ title: e.title, meta: e.from, url: e.url, state: 'ok' as const, code: findCode(e.title, e.summary) ?? undefined, at: e.at, mid: e.mid, email: e.email })),
     signature: entries.map((e) => e.id).join(','),
     updatedAt: Date.now(),
   };
+}
+
+/** A whole thread, from Gmail's print view, with this browser's Gmail session. */
+export async function mailThread(mid: string): Promise<MailThread | null> {
+  if (!/^[0-9a-f]{6,24}$/i.test(mid)) return null;
+  const res = await fetch(`https://mail.google.com/mail/u/0/?view=pt&search=all&th=${mid}`, { credentials: 'include' });
+  if (!res.ok) return null;
+  const t = parseGmailPrint(await res.text());
+  return t.messages.length ? t : null;
 }
 
 export async function refreshStatus(): Promise<StatusCard[]> {

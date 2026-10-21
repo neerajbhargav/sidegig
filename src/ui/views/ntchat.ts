@@ -8,7 +8,7 @@ import { h, ico, toast, favicon } from '../dom.ts';
 import { play } from '../sound.ts';
 import { openOptions, type Ctx } from '../ctx.ts';
 import { md } from '../../shared/ai/md.ts';
-import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter } from '../../shared/ai/providers.ts';
+import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter, streamTurn } from '../../shared/ai/providers.ts';
 import { runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
 import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
@@ -91,6 +91,23 @@ class Picks {
   effective(): Effort {
     return this.model && this.model.efforts.includes(this.effort) ? this.effort : 'auto';
   }
+}
+
+/**
+ * One answer from the model picked in chat, without tools or history (mail
+ * summaries and drafts). Streams the text so far to `on`. Resolves to '' when
+ * done, 'no-model' when nothing is connected, or an error message.
+ */
+export async function askPicked(prompt: string, on: (text: string) => void, signal: AbortSignal): Promise<string> {
+  const picks = new Picks();
+  await picks.load();
+  if (!picks.model) return 'no-model';
+  let text = '';
+  for await (const d of streamTurn(picks.model, { model: picks.model.id, system: systemPrompt(), messages: [{ role: 'user', content: prompt }], tools: [], effort: picks.effective() }, signal)) {
+    if (d.type === 'text') on((text += d.text));
+    else if (d.type === 'error') return d.message;
+  }
+  return signal.aborted ? 'Stopped.' : '';
 }
 
 // ------------------------------------------------------------ menus

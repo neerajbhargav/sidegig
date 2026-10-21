@@ -4,6 +4,7 @@ import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
 import type { Workspace } from '../../shared/types.ts';
 import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys } from '../dom.ts';
 import { type Ctx, openUrl, switchTo, activeTab, send } from '../ctx.ts';
+import { codePill } from './status.ts';
 
 type Node = chrome.bookmarks.BookmarkTreeNode;
 
@@ -312,7 +313,7 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
     iconButton('sliders', 'Settings', () => ctx.go('settings')),
     ctx.kind === 'drawer' ? iconButton('close', 'Close (Esc)', () => ctx.close()) : null,
   );
-  root.append(bar, search, body);
+  root.append(bar, search, codePill(ctx), body);
   await rerender();
   // Keep tabs and bookmarks fresh while the view is on screen.
   refreshHome = () => root.isConnected && void rerender();

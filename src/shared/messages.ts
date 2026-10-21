@@ -12,6 +12,7 @@ export type ToBackground =
   | { type: 'ask-page' }
   | { type: 'tab-info' }
   | { type: 'drawer-frames' }
+  | { type: 'mail-thread'; mid: string }
   | { type: 'save-workspace'; name: string }
   | { type: 'restore-workspace'; id: string }
   | { type: 'sleep-tabs' }
