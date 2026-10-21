@@ -167,3 +167,10 @@ Commit `ce7f527` on branch `product/premium-1.0` (plus uncommitted work).
 <img src="2026-10-21-04-first-run-setup-as-a-numbered-step-rail.jpg" width="49%" alt="First-run setup as a numbered step rail">
 <img src="2026-10-21-05-agents-on-this-computer-off-read-only-or.jpg" width="49%" alt="Agents on this computer: off, read only or full, with the bridge pairing code">
 <img src="2026-10-21-06-opt-in-weekly-backup-to-downloads-that-s.jpg" width="49%" alt="Opt-in weekly backup to Downloads that survives removing the extension">
+
+## 2026-10-21: One design system for every surface, enforced by a test
+
+Commit `77ce138` on branch `product/premium-1.0` (plus uncommitted work).
+
+<img src="2026-10-21-07-layout-fix-32fe690-fixture-desk-saved-fu.jpg" width="49%" alt="Layout fix (32fe690), fixture desk saved full before three widgets were added. Before: one hidden widget forced the scrolling layout, with light and dark cards mixed. After: the re-pack fits all 11 widgets on one screen in one tone.">
+<img src="2026-10-21-08-design-system-77ce138-before-white-on-wh.jpg" width="49%" alt="Design system (77ce138). Before: white-on-white Find and note text, a light search card, expand buttons on every card edge, four button shapes, titles at five heights. After: one header row, one button, one corner control, every card in the desk tone.">
