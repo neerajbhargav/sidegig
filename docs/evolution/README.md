@@ -156,3 +156,14 @@ Commit `387d99b` on branch `product/complete-core-flows` (plus uncommitted work)
 Commit `945a9d1` on branch `bugfix/panel-close-restore` (plus uncommitted work).
 
 <img src="2026-10-17-10-native-panel-closure-restores-the-page-d.jpg" width="49%" alt="Native panel closure restores the page dock; clean fixture view">
+
+## 2026-10-21: Opt-in weekly backup to Downloads that survives removing the extension
+
+Commit `ce7f527` on branch `product/premium-1.0` (plus uncommitted work).
+
+<img src="2026-10-21-01-desk-with-twelve-weeks-of-focus-history.jpg" width="49%" alt="Desk with twelve weeks of focus history, a second time zone and the day summary as a two-tone greeting">
+<img src="2026-10-21-02-gmail-rows-with-a-sign-in-code-ticket-su.jpg" width="49%" alt="Gmail rows with a sign-in code ticket, Summarize and Draft reply in the sidebar">
+<img src="2026-10-21-03-sidebar-home-with-the-sign-in-code-ticke.jpg" width="49%" alt="Sidebar home with the sign-in code ticket, new stack or space button and outline counts">
+<img src="2026-10-21-04-first-run-setup-as-a-numbered-step-rail.jpg" width="49%" alt="First-run setup as a numbered step rail">
+<img src="2026-10-21-05-agents-on-this-computer-off-read-only-or.jpg" width="49%" alt="Agents on this computer: off, read only or full, with the bridge pairing code">
+<img src="2026-10-21-06-opt-in-weekly-backup-to-downloads-that-s.jpg" width="49%" alt="Opt-in weekly backup to Downloads that survives removing the extension">
