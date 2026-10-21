@@ -53,3 +53,16 @@ Use stable icon plates. Use an edge marker for the active app and a corner badge
 Keep the same plates and spacing inside the native panel. Scroll long app lists and short rails.
 Use the [macOS Dock](https://support.apple.com/guide/mac-help/mh35859/mac) for grouping and location continuity.
 Use the [Windows taskbar](https://support.microsoft.com/windows/experience/personalization/customize-the-taskbar-in-windows) for clear app state and notification badges.
+
+## Owner references, 2026-10-21
+
+The owner's X bookmarks were reviewed again (66 posts, read only; 38 are design references). The frames stay in the local `context/design-refs-2026-10-21/` folder. What was taken, and where:
+
+- Folders with their contents peeking out, in soft tones with a count: [@david_visuals_](https://x.com/david_visuals_/status/2110699870600515737), [@nikolay_dp](https://x.com/nikolay_dp/status/2110040572987654357). New tab folders keep the stitched pocket and gain mint, lavender and butter. Sidebar stack counts are outline pills.
+- A commit-grid card with mono labels over a photo: [@piyushsphere](https://x.com/piyushsphere/status/2111710975074422816). The focus timer shows twelve weeks of focus as a dot grid.
+- A world-time watch: [@kotecinho](https://x.com/kotecinho/status/2104947305275417051). The clock can show a second time zone.
+- Two-tone headlines, ink then grey: [@uisabor](https://x.com/uisabor/status/2109916314450157942). The day summary is the greeting's quieter second sentence.
+- A perforated ticket with a mono code: [@mightbe_dg](https://x.com/mightbe_dg/status/2112551917545205793). Sign-in codes are notched tickets.
+- Steps on a rail: [@irfannnnali](https://x.com/irfannnnali/status/2109792475241972179). First-run setup numbers its three choices on a hairline.
+
+Rules kept: no drop shadows or glows, the wallpaper stays the picture, hairlines and spacing separate.
