@@ -67,6 +67,9 @@ async function copyStatic(outdir) {
   await cp(path.join(root, 'LICENSE'), path.join(outdir, 'LICENSE'));
   await cp(path.join(root, 'THIRD_PARTY_NOTICES.md'), path.join(outdir, 'THIRD_PARTY_NOTICES.md'));
   for (const file of ['INSTALL.md', 'PRIVACY.md', 'README.md']) await cp(path.join(root, file), path.join(outdir, file));
+  // The optional local helper (INSTALL.md, Agents): run with Node, never loaded by the extension.
+  await mkdir(path.join(outdir, 'bridge'), { recursive: true });
+  await cp(path.join(root, 'bridge/sidegig-bridge.mjs'), path.join(outdir, 'bridge/sidegig-bridge.mjs'));
 }
 
 const esbuild = await loadEsbuild();
