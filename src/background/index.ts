@@ -9,7 +9,7 @@ import { findRule, matchPattern, isRestricted } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
 import type { AppEntry, PendingPrompt, Settings } from '../shared/types.ts';
 import type { ToBackground, ToContent } from '../shared/messages.ts';
-import { applyRules, setSideTabs } from './dnr.ts';
+import { applyRules, setDrawerTabs, setSideTabs } from './dnr.ts';
 import { pageCookies } from './framecookies.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
 import { refreshStatus } from './status.ts';
@@ -43,6 +43,7 @@ async function sync(): Promise<void> {
   cache = await loadSettings();
   void checkFavicons(cache.apps);
   await setSideTabs(await getLocal<number[]>('sideTabs', [])).catch(() => undefined);
+  await setDrawerTabs(await getLocal<number[]>('drawerTabs', [])).catch(() => undefined);
   await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
   setupActionBehavior();
@@ -226,8 +227,18 @@ ext.runtime.onInstalled.addListener(async (details) => {
   await sync();
 });
 
+// Tabs whose in-page drawer shows apps (see dnr.ts); tab ids restart with the browser.
+async function drawerTab(id: number, open: boolean) {
+  const ids = (await getLocal<number[]>('drawerTabs', [])).filter((t) => t !== id);
+  if (open) ids.push(id);
+  await setLocal('drawerTabs', ids);
+  await setDrawerTabs(ids);
+}
+ext.tabs.onRemoved.addListener((id) => void drawerTab(id, false));
+
 ext.runtime.onStartup?.addListener(() => {
   void setLocal('panelOpen', {});
+  void setLocal('drawerTabs', []);
   void sync();
 });
 onSettingsChanged(() => void sync());
@@ -285,6 +296,9 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       );
       return true;
     }
+    case 'drawer-frames':
+      if (sender.tab?.id !== undefined) void drawerTab(sender.tab.id, true);
+      return false;
     case 'tab-info': {
       const wid = sender.tab?.windowId;
       if (wid === undefined) {

@@ -51,7 +51,12 @@ const stripFrameHeaders: chrome.declarativeNetRequest.RuleAction = {
   ],
 };
 
-export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: number[] = []): Rule[] {
+/**
+ * `drawerTabs`: tabs whose in-page drawer shows an app. Navigations inside app
+ * frames (rule 2) are only changed there and in the browser sidebar, which has
+ * no tab (-1); an app host framing another app host in a normal page gets nothing.
+ */
+export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: number[] = [], drawerTabs: number[] = []): Rule[] {
   const rules: Rule[] = [];
   let id = 1;
   const appHosts = [...new Set(apps.map((a) => hostOf(a.url)).filter(Boolean))];
@@ -68,7 +73,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: nu
       id: id++,
       priority: 1,
       action: stripFrameHeaders,
-      condition: { resourceTypes: sub, requestDomains: trusted, initiatorDomains: [extensionHost, ...trusted] },
+      condition: { resourceTypes: sub, requestDomains: trusted, initiatorDomains: [extensionHost, ...trusted], tabIds: [-1, ...drawerTabs] },
     });
   }
   // 3. Mobile layout: ask for the phone version, only for frames sidegig shows.
@@ -104,9 +109,14 @@ export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: nu
 
 let lastApps: AppEntry[] = [];
 let sideTabs: number[] = [];
+let drawerTabs: number[] = [];
 /** A docked side window's tab (or none): its pages get the phone layout. */
 export async function setSideTabs(ids: number[]): Promise<void> {
   sideTabs = [...new Set(ids)];
+  await applyRules(lastApps);
+}
+export async function setDrawerTabs(ids: number[]): Promise<void> {
+  drawerTabs = [...new Set(ids)];
   await applyRules(lastApps);
 }
 
@@ -118,6 +128,6 @@ export async function applyRules(apps: AppEntry[]): Promise<void> {
   const existing = await dnr.getSessionRules();
   await dnr.updateSessionRules({
     removeRuleIds: existing.map((r: Rule) => r.id),
-    addRules: buildRules(apps, host, sideTabs),
+    addRules: buildRules(apps, host, sideTabs, drawerTabs),
   });
 }
