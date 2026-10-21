@@ -1,6 +1,6 @@
 // Full settings page.
 import { ext, features, uid, TARGET } from '../shared/api.ts';
-import { loadSettings, saveSettings, onSettingsChanged, loadSecrets, saveSecrets } from '../shared/storage.ts';
+import { loadSettings, saveSettings, updateSettings, onSettingsChanged, loadSecrets, saveSecrets } from '../shared/storage.ts';
 import { defaultSettings, appFromCatalog, keepsRunning } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
@@ -42,8 +42,10 @@ const NAV: [string, string][] = [
 const saved = h('span', { class: 'opts-saved', role: 'status', 'aria-live': 'polite' });
 let savedTimer: ReturnType<typeof setTimeout> | undefined;
 const commit = async (fn: (x: Settings) => void) => {
+  // Show the change now, then apply it to the latest stored settings (another page,
+  // such as a new tab, may have saved since this one loaded) and keep that result.
   fn(s);
-  await saveSettings(s);
+  s = await updateSettings(fn);
   saved.textContent = 'Saved';
   saved.classList.add('on');
   clearTimeout(savedTimer);
