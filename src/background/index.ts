@@ -16,6 +16,7 @@ import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 import { trackPanels } from './panels.ts';
+import { trustSender } from './trust.ts';
 import { checkFavicons } from './favicons.ts';
 import { findCollection, readPool, refreshPool, REFRESH_MS } from '../shared/collect.ts';
 
@@ -233,7 +234,11 @@ onSettingsChanged(() => void sync());
 (ext as any).permissions?.onAdded?.addListener(() => setupLinkRules());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));
 
+const OUR_ORIGIN = new URL(ext.runtime.getURL('/')).origin;
+
 ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
+  const { ok, host } = trustSender(msg?.type, sender, ext.runtime.id, OUR_ORIGIN);
+  if (!ok) return false;
   const windowId = sender.tab?.windowId;
   switch (msg.type) {
     case 'open-app':
@@ -246,17 +251,17 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       return false;
     }
     case 'badge':
-      void onBadge(msg.host, msg.count);
+      void onBadge(host, msg.count);
       return false;
     case 'ai-claim':
-      claim(msg.host).then(sendResponse);
+      claim(host).then(sendResponse);
       return true;
     case 'ask-page':
       // The caller (panel / new tab) opens the AI app itself; we just prepare the prompt.
       void ext.tabs.query({ active: true, lastFocusedWindow: true }).then(([t]) => t && askFromBackground(t, undefined, false));
       return false;
     case 'frame-cookies':
-      void pageCookies(msg.url).then(sendResponse, () => sendResponse(''));
+      void pageCookies(`https://${host}/`).then(sendResponse, () => sendResponse(''));
       return true;
     case 'clear-sw': {
       // A site's service worker answers with "don't frame me" headers that network
@@ -309,7 +314,7 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       buildEdition().then(sendResponse, () => sendResponse(null));
       return true;
     case 'profile-import':
-      importFromAi(msg.text, msg.host).then(sendResponse, () => sendResponse({ ok: false, count: 0 }));
+      importFromAi(msg.text, host).then(sendResponse, () => sendResponse({ ok: false, count: 0 }));
       return true;
   }
   return false;
