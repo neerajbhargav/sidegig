@@ -1,11 +1,19 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-21 (0.4.0 on branch `product/premium-1.0`, installed and live-checked in the owner’s Aside; not merged to `main`).
+Last updated: 2026-10-21 19:10 (0.4.0 on branch `product/premium-1.0`, not merged to `main`; the installed copy in Aside predates the design system).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Jank fixes and one design system, 2026-10-21 evening:** the owner said the sidebar loads apps badly, the new tab layout is janky and nothing feels premium, then asked to "maintain a unified UI UX design system for widgets, icons, components, animations, etc".
+
+- **New tab layout (`32fe690`):** a saved grid that filled all 96 cells hid every widget turned on later, and one hidden widget switched the whole desk to the scrolling layout. The re-pack now shrinks the least important widgets, then tries every size for new widgets and keeps the fullest desk (owner's case: 11 widgets, 96 of 96 cells, no scroll). One desk tone for all cards; the bookmark shelf shows "+N" when it overflows.
+- **Sidebar (`32fe690`):** a themed splash (icon, name, progress line) until an app frame loads; the rail updates in place; a prompt sent to an AI app replaces the composer text. Checked live in Aside before the DevTools socket stopped answering.
+- **Design system (next commit):** tokens for type (7 steps), corners (6), motion (4 durations, 1 curve, digit bounce kept), icons (4 sizes) and spacing (2px grid) replace 56 font sizes, 55 radii, 20 durations and 13 curves. One button, icon button, field, card, empty state and widget anatomy (inset, header row, corner control). Full colour-role sets on every tone fix white-on-white text ("Find", notes). Accent fills reach 4.5:1 (`accentFill`). The search card follows the desk tone. Glows and blurred shadows removed. Rules and how to add a widget: `docs/DESIGN.md`. Enforced by `test/design.test.ts` (it fails on planted violations); `scripts/contrast-probe.js` passes on 19 preview scenes; the responsive smoke assertions pass in headless Chrome at 10 sizes.
+- **Judgment calls to confirm:** the expand control now shows on hover and focus (always on touch), top right, instead of always visible on the card edge; buttons are pills on the new tab; the To-do spike is header-sized.
+- **Aside DevTools socket:** from about 18:20 the WebSocket on port 9222 accepts TCP but never answers, so live checks moved to an isolated headless Chrome (`--user-data-dir` in /tmp, mock keychain) against the preview. The installed extension was not reloaded with this work.
 
 **Premium product pass 0.4.0, 2026-10-21:** the owner asked to "build it as a premium product extension end to end, according to the spec" from the Aside chats, then "do not leave a single detail out", use their X bookmarks for design references, and use REA for complicated features. Answers to the two questions asked: build both (sidegig first, then the GotEmail-style mail layer), and premium means premium quality, still free and GPL. 23 commits on `product/premium-1.0`; version 0.4.0. Not merged: merging to `main` waits for the owner.
 
@@ -101,13 +109,14 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 ## Open work, in priority order
 
-1. **Owner decisions:** merge `product/premium-1.0` to `main` (then `npm run changelog`); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
-2. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
-3. **Live checks still owed:** a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
-4. **Phase 2, typed data:** a typed schema for `chrome.storage.local` and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings`; one typed message protocol (the trust table in `trust.ts` is the start). Simultaneous edits of the same notes or to-do list from two open tabs still save whole lists (the last write wins).
-5. **Phase 3, structure:** a widget registry; one Customize page API; `sync()` redrawing only what changed.
-6. **Phase 4, tests:** a fake `chrome.*` seam from the preview shim; router tests; a manifest snapshot test.
-7. Settings: field-level validation and focus checks; check other compact windows and very large interface sizes.
+1. **Owner, now:** reload sidegig at `chrome://extensions` in Aside to get the design system (`dist/chrome` is rebuilt); clear the leftover test text in the sidebar Claude composer (an agent-test page and an inbox tab title, typed by an earlier check); confirm the three judgment calls above.
+2. **Owner decisions:** merge `product/premium-1.0` to `main` (then `npm run changelog`); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
+3. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
+4. **Live checks still owed:** a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
+5. **Phase 2, typed data:** a typed schema for `chrome.storage.local` and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings`; one typed message protocol (the trust table in `trust.ts` is the start). Simultaneous edits of the same notes or to-do list from two open tabs still save whole lists (the last write wins).
+6. **Phase 3, structure:** a widget registry; one Customize page API; `sync()` redrawing only what changed.
+7. **Phase 4, tests:** a fake `chrome.*` seam from the preview shim; router tests; a manifest snapshot test.
+8. Settings: field-level validation and focus checks; check other compact windows and very large interface sizes.
 
 ## Blocked or limited
 
@@ -129,6 +138,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - Agent access is off by default, per device, never synced; a banner with Stop shows in every tab an agent uses (2026-10-21).
 - Mail features use the browser's own Gmail session (feed and print view), never a Gmail OAuth app; mail text goes only to the model the user picked (2026-10-21).
 - One rail per page: an older rail instance removes itself. Hide the page rail while a native panel is open in that window, on either side (owner, 2026-10-17).
+- Design system: every style uses the tokens and components in `docs/DESIGN.md`; `test/design.test.ts` enforces it (owner, 2026-10-21: "maintain a unified UI UX design system").
 - Controls: center button captions and icon/label groups across appearances. List rows (tabs, status rows, search results, reading list, stack headers) are list items and start-aligned (interpretation made 2026-10-21; owner to confirm). Wallpaper owns surface materials. Use Dock-inspired grouping and taskbar-style active markers without hover magnification or clipped badges (owner, 2026-10-17).
 
 ### Owner decisions from the 2026-10-14 audit round

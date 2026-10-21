@@ -6,7 +6,7 @@ import { getLocal, setLocal, onLocalChanged, updateSettings } from '../../shared
 import { CAL_APPS, eventIcs, feedUrl, monthGrid, occurrences, parseIcs, sameDay, weekStartFor, type CalEvent } from '../../shared/ntcal.ts';
 import { clockText, focusGrid, freshPomo, logFocus, msLeft, next, pause, phaseMs, settle, start, type FocusDone, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
 import { greetingFor, navigationUrl, parseWeather, weatherLabel, weatherUrl, zoneText, type WeatherNow } from '../../shared/ntdata.ts';
-import { h, ico, favicon, faviconOnly, toast } from '../dom.ts';
+import { h, ico, favicon, faviconOnly, iconButton, toast } from '../dom.ts';
 import { type Ctx, openUrl } from '../ctx.ts';
 import { spacesFor } from './home.ts';
 import { analogClockEl, findPlace } from './ntwidgets.ts';
@@ -54,7 +54,6 @@ export function card(cls: string, title: string | null, actions: (Node | null)[]
     ...body.filter(Boolean),
   );
 }
-const iconBtn = (name: string, label: string, onClick: (e: MouseEvent) => void, size = 18) => h('button', { type: 'button', class: 'nt-ib', title: label, 'aria-label': label, onclick: onClick }, ico(name, size));
 
 /** Characters that change roll in (from above, through a blur); the rest stay still. */
 export function rollText(el: HTMLElement, text: string) {
@@ -190,7 +189,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
       } catch { list.textContent = 'Could not reach weather search. Try again.'; }
       finally { searching = false; findButton.disabled = false; }
     };
-    return card('nt-wx', 'Weather', [], h('p', { class: 'wx-setup-hint' }, 'Choose a city for your local forecast.'), h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, findButton), list);
+    return card('nt-wx', 'Weather', [], h('p', { class: 'wx-setup-hint nt-empty' }, 'Choose a city for your local forecast.'), h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, findButton), list);
   }
   const body = h('div', { class: 'wx-body', 'aria-live': 'polite' }, skel('60%', '90%', '75%'));
   // A small weather station: the cups spin with the wind, the vane points into it,
@@ -263,7 +262,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
       h(
         'div',
         { class: 'wx-now' },
-        h('span', { class: 'wx-icon' }, ico(icon, 34)),
+        h('span', { class: 'wx-icon' }, ico(icon, 32)),
         h('span', { class: 'wx-temp', 'aria-label': `${now.temp} degrees` }, String(now.temp), h('span', { class: 'wx-deg', 'aria-hidden': 'true' }, '°')),
         h('span', { class: 'wx-desc' }, h('b', {}, label), h('span', {}, `H ${now.hi}°  L ${now.lo}°`)),
       ),
@@ -330,7 +329,7 @@ export function calendarCard(ctx: Ctx): HTMLElement {
     upNext.replaceChildren(
       ...(evs.length
         ? evs.map((e) => h('button', { type: 'button', class: 'cal-ev', style: { '--c': `var(--feed-${e.feed % 4})` }, title: e.location ?? e.title, onclick: () => (e.url ? void openUrl(ctx, e.url) : openDay(new Date(e.start))) }, h('span', { class: 'cal-ev-t' }, when(e)), h('span', { class: 'cal-ev-n' }, e.title)))
-        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing this week' : 'Your calendar, one click away'), ...(!cal.feeds.length ? [h('button', { class: 'nt-chip', type: 'button', onclick: () => openDay(today) }, 'Open calendar')] : [])]),
+        : [h('div', { class: 'cal-empty nt-empty' }, cal.feeds.length ? 'Nothing this week' : 'Your calendar, one click away'), ...(!cal.feeds.length ? [h('button', { class: 'btn', type: 'button', onclick: () => openDay(today) }, 'Open calendar')] : [])]),
     );
   };
 
@@ -363,7 +362,7 @@ export function calendarCard(ctx: Ctx): HTMLElement {
               h('span', { class: 'cal-ev-n' }, e.title),
             ),
           )
-        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing planned' : 'No events yet')]),
+        : [h('div', { class: 'cal-empty nt-empty' }, cal.feeds.length ? 'Nothing planned' : 'No events yet')]),
       h(
         'div',
         { class: 'cal-day-a' },
@@ -426,9 +425,9 @@ export function calendarCard(ctx: Ctx): HTMLElement {
     h(
       'div',
       { class: 'nt-card-a' },
-      iconBtn('back', 'Previous month', () => step(-1)),
-      iconBtn('forward', 'Next month', () => step(1)),
-      iconBtn('plus', `New event in ${app.name}`, () => newEvent(picked !== null ? new Date(picked) : new Date())),
+      iconButton('back', 'Previous month', () => step(-1)),
+      iconButton('forward', 'Next month', () => step(1)),
+      iconButton('plus', `New event in ${app.name}`, () => newEvent(picked !== null ? new Date(picked) : new Date())),
     ),
   );
   // A two-cube desk calendar shows today; click it to come back to this month.
@@ -561,8 +560,8 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     'nt-pomo',
     'Pomodoro',
     [
-      iconBtn('refresh', 'Reset', () => void save({ ...freshPomo(cfg), rounds: st.rounds }).then(paint)),
-      iconBtn('next', 'Skip to next', () => void save(next(st, cfg)).then(paint)),
+      iconButton('refresh', 'Reset', () => void save({ ...freshPomo(cfg), rounds: st.rounds }).then(paint)),
+      iconButton('next', 'Skip to next', () => void save(next(st, cfg)).then(paint)),
     ],
     h('div', { class: 'pomo-fig iso' }, fig),
     h('div', { class: 'pomo-side' }, h('div', { class: 'pomo-row' }, h('div', { class: 'pomo-read' }, time, phase), dots, go), history),
@@ -637,7 +636,7 @@ export async function notesCard(ctx: Ctx): Promise<HTMLElement> {
                   paint();
                 },
               },
-              ico('close', 14),
+              ico('close', 16),
             ),
           ),
         );
@@ -659,7 +658,7 @@ export async function notesCard(ctx: Ctx): Promise<HTMLElement> {
   paintPad();
   const repaint = paint;
   paint = () => (repaint(), paintPad());
-  const root = card('nt-notes has-fig', 'Notes', [iconBtn('plus', 'New note', add)], pad, grid);
+  const root = card('nt-notes has-fig', 'Notes', [iconButton('plus', 'New note', add)], pad, grid);
   root.append(empty);
   const stop = onLocalChanged('ntNotes', (value) => {
     // Earlier keystrokes can arrive after a newer one. Their echoes must not
@@ -817,7 +816,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     head.replaceChildren(
       ...(trail.length
         ? [
-            iconBtn('back', 'Back', () => (trail.pop(), play('key'), void paint())),
+            iconButton('back', 'Back', () => (trail.pop(), play('key'), void paint())),
             h(
               'nav',
               { class: 'shelf-trail', 'aria-label': 'Folder' },
@@ -862,7 +861,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     });
     // Add, as the last tile (like the first builds): a site or a folder, right where you are.
     tiles.push(
-      tile('Add', h('span', { class: 'nt-cap nt-cap-add' }, ico('plus', 22)), {
+      tile('Add', h('span', { class: 'nt-cap nt-cap-add' }, ico('plus', 24)), {
         class: 'nt-key shelf-addkey',
         title: 'Add a site or a folder here',
         'aria-expanded': String(!form.hidden),
@@ -874,7 +873,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
       }),
     );
     reveal(grid, ...tiles);
-    if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
+    if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty nt-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
     fitShelf();
   };
 

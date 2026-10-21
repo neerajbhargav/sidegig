@@ -366,10 +366,10 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
           say((e as Error).message);
         }
       }, !!keys.openrouter),
-      choice(ico('key', 18), 'An API key', 'OpenAI, Anthropic, Google or OpenRouter', () => show(keyForm), !!(keys.openai || keys.anthropic || keys.google)),
-      choice(ico('window', 18), 'A model on this computer', 'Ollama, LM Studio', () => show(localForm), !!keys.local),
+      choice(ico('key', 20), 'An API key', 'OpenAI, Anthropic, Google or OpenRouter', () => show(keyForm), !!(keys.openai || keys.anthropic || keys.google)),
+      choice(ico('window', 20), 'A model on this computer', 'Ollama, LM Studio', () => show(localForm), !!keys.local),
       builtin !== 'unavailable'
-        ? choice(ico('globe', 18), 'This browser’s own model', builtin === 'available' ? 'Ready: private, free, on this device' : 'Downloads once, then works offline', async () => {
+        ? choice(ico('globe', 20), 'This browser’s own model', builtin === 'available' ? 'Ready: private, free, on this device' : 'Downloads once, then works offline', async () => {
             say(builtin === 'available' ? 'Ready.' : 'It will download the first time you ask something.');
             onDone();
           })
@@ -450,7 +450,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   const paintCtx = () => {
     ctxRow.replaceChildren(
       ...[...attached].map(([id, t]) =>
-        h('span', { class: 'cc-chip', title: t.url }, favicon(t.url, t.title, 'fav xs'), h('span', {}, t.title || t.url), h('button', { type: 'button', 'aria-label': `Remove ${t.title}`, onclick: () => (attached.delete(id), paintCtx()) }, ico('close', 14))),
+        h('span', { class: 'cc-chip', title: t.url }, favicon(t.url, t.title, 'fav xs'), h('span', {}, t.title || t.url), h('button', { type: 'button', 'aria-label': `Remove ${t.title}`, onclick: () => (attached.delete(id), paintCtx()) }, ico('close', 16))),
       ),
       h('button', { type: 'button', class: 'cc-addtab', title: 'Attach an open tab', onclick: (e: MouseEvent) => void tabMenu(e.currentTarget as HTMLElement) }, ico('attach', 16), attached.size ? null : h('span', {}, o.where === 'panel' ? 'Add a tab' : 'Attach tabs')),
     );
@@ -841,7 +841,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
                 'div',
                 { class: 'cc-optrow' },
                 h('button', { type: 'button', role: 'option', class: 'cc-opt', 'aria-selected': String(c.id === chat.id), onclick: () => (loadChat(c), closePop()) }, h('span', { class: 'cc-opt-t' }, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString())),
-                h('button', { type: 'button', class: 'cc-del', title: 'Delete', 'aria-label': `Delete ${c.title}`, onclick: async () => (await deleteChat(c.id), paintList((await loadChats()).filter((x) => x.id !== c.id)), c.id === chat.id && newChat()) }, ico('close', 14)),
+                h('button', { type: 'button', class: 'cc-del', title: 'Delete', 'aria-label': `Delete ${c.title}`, onclick: async () => (await deleteChat(c.id), paintList((await loadChats()).filter((x) => x.id !== c.id)), c.id === chat.id && newChat()) }, ico('close', 16)),
               ),
             )
           : [h('p', { class: 'cc-none' }, 'No chats yet.')]),
@@ -878,10 +878,10 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     { class: 'cv-head' },
     title,
     h('span', { class: 'ask-gap' }),
-    h('button', { type: 'button', class: 'nt-gear', title: 'Chats', 'aria-label': 'Chats', onclick: (e: MouseEvent) => void historyMenu(e.currentTarget as HTMLElement) }, ico('history', 18)),
-    h('button', { type: 'button', class: 'nt-gear', title: 'New chat', 'aria-label': 'New chat', onclick: newChat }, ico('plus', 18)),
-    h('button', { type: 'button', class: 'nt-gear', title: 'AI settings', 'aria-label': 'AI settings', onclick: () => openOptions('ai') }, ico('sliders', 18)),
-    o.where === 'newtab' ? h('button', { type: 'button', class: 'nt-gear', title: 'Close', 'aria-label': 'Close chat', onclick: close }, ico('close', 18)) : null,
+    h('button', { type: 'button', class: 'nt-gear', title: 'Chats', 'aria-label': 'Chats', onclick: (e: MouseEvent) => void historyMenu(e.currentTarget as HTMLElement) }, ico('history', 20)),
+    h('button', { type: 'button', class: 'nt-gear', title: 'New chat', 'aria-label': 'New chat', onclick: newChat }, ico('plus', 20)),
+    h('button', { type: 'button', class: 'nt-gear', title: 'AI settings', 'aria-label': 'AI settings', onclick: () => openOptions('ai') }, ico('sliders', 20)),
+    o.where === 'newtab' ? h('button', { type: 'button', class: 'nt-gear', title: 'Close', 'aria-label': 'Close chat', onclick: close }, ico('close', 20)) : null,
   );
   const composer = h('div', { class: 'cc' }, ctxRow, input, h('div', { class: 'cc-bar' }, pickerBar(picks, () => void showSetup()), toolsNote, h('span', { class: 'ask-gap' }), sendBtn));
   view.append(head, h('div', { class: 'cv-main' }, scroller, setupHost), h('div', { class: 'cv-foot' }, composer));

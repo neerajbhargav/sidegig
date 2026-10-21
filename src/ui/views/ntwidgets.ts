@@ -172,7 +172,7 @@ const GOOGLE_APPS: [string, string][] = [
 
 export function launcherEl(signal?: AbortSignal): HTMLElement {
   const pop = h('div', { class: 'nt-pop nt-launch', role: 'menu', hidden: true }, GOOGLE_APPS.map(([name, url]) => h('a', { class: 'launch-item', href: url, role: 'menuitem' }, favicon(url, name, 'fav'), h('span', {}, name))));
-  const btn = h('button', { class: 'nt-gear', type: 'button', title: 'Google apps', 'aria-label': 'Google apps', 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, ico('grid', 18));
+  const btn = h('button', { class: 'nt-gear', type: 'button', title: 'Google apps', 'aria-label': 'Google apps', 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, ico('grid', 20));
   const close = () => {
     pop.hidden = true;
     btn.setAttribute('aria-expanded', 'false');
@@ -192,7 +192,7 @@ export function launcherEl(signal?: AbortSignal): HTMLElement {
 export function voiceButton(input: HTMLInputElement | HTMLTextAreaElement, onDone?: () => void): HTMLElement | null {
   const SR = (globalThis as any).webkitSpeechRecognition ?? (globalThis as any).SpeechRecognition;
   if (!SR) return null;
-  const btn = h('button', { class: 'nt-mic', type: 'button', title: 'Voice typing', 'aria-label': 'Voice typing', 'aria-pressed': 'false' }, ico('mic', 18));
+  const btn = h('button', { class: 'nt-mic', type: 'button', title: 'Voice typing', 'aria-label': 'Voice typing', 'aria-pressed': 'false' }, ico('mic', 20));
   let rec: any = null;
   btn.addEventListener('click', () => {
     if (rec) return rec.stop();

@@ -16,15 +16,15 @@ const FRESH_MS = 15 * 60_000;
 
 /** The code itself is the button: one click copies it. */
 function codeButton(code: string): HTMLButtonElement {
-  const b = h('button', { type: 'button', class: 'code-copy', title: 'Copy', 'aria-label': `Copy code ${code}` }, h('span', { class: 'code-digits' }, code), ico('copy', 14)) as HTMLButtonElement;
+  const b = h('button', { type: 'button', class: 'code-copy', title: 'Copy', 'aria-label': `Copy code ${code}` }, h('span', { class: 'code-digits' }, code), ico('copy', 16)) as HTMLButtonElement;
   b.addEventListener('click', async (e) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(code);
       b.dataset.copied = '';
       b.setAttribute('aria-label', `Copied ${code}`);
-      b.lastElementChild?.replaceWith(ico('check', 14));
-      setTimeout(() => (delete b.dataset.copied, b.setAttribute('aria-label', `Copy code ${code}`), b.lastElementChild?.replaceWith(ico('copy', 14))), 1500);
+      b.lastElementChild?.replaceWith(ico('check', 16));
+      setTimeout(() => (delete b.dataset.copied, b.setAttribute('aria-label', `Copy code ${code}`), b.lastElementChild?.replaceWith(ico('copy', 16))), 1500);
     } catch {
       toast('Couldn’t copy. Select the code instead.');
     }

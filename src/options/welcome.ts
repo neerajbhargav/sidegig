@@ -14,7 +14,7 @@ export function welcomeView(settings: Settings): HTMLElement {
     h('div', { class: 'welcome-preview-page' }, h('span', {}, 'Your browser, with everything close.'), h('div'), h('div'), h('div')),
     previewApps,
   );
-  const paint = () => previewApps.replaceChildren(ico('logo', 22), ...draft.apps.slice(0, 6).map((app) => appFavicon(app, 'fav')), ico('plus', 20));
+  const paint = () => previewApps.replaceChildren(ico('logo', 24), ...draft.apps.slice(0, 6).map((app) => appFavicon(app, 'fav')), ico('plus', 20));
   paint();
   const apps = h('div', { class: 'welcome-apps', role: 'group', 'aria-label': 'Pinned apps' });
   for (const id of ['gmail', 'whatsapp', 'chatgpt', 'claude', 'gemini', 'telegram', 'notion', 'spotify', 'ytmusic']) {
@@ -49,7 +49,7 @@ export function welcomeView(settings: Settings): HTMLElement {
     h('header', { class: 'welcome-brand' }, h('img', { src: 'icons/32.png', width: 28, height: 28, alt: '' }), h('b', {}, 'sidegig'), h('a', { href: '#appearance' }, 'All settings')),
     h('div', { class: 'welcome-layout' },
       h('section', { class: 'welcome-story' }, h('span', { class: 'welcome-eyebrow' }, 'Welcome to your sidebar'), h('h1', {}, 'Your apps.\nOne sidebar.'), h('p', {}, 'Keep your apps, bookmarks and daily tools close while you browse. No account to create.'), preview,
-        h('p', { class: 'welcome-hint' }, ico('sidebar', 18), 'The rail appears on web pages. Use the toolbar button on browser settings and other protected pages.')),
+        h('p', { class: 'welcome-hint' }, ico('sidebar', 20), 'The rail appears on web pages. Use the toolbar button on browser settings and other protected pages.')),
       h('section', { class: 'welcome-setup', 'aria-label': 'Set up sidegig' },
         h('h2', {}, 'Make it yours'), h('p', { class: 'muted' }, 'A few choices to start. You can change everything later.'),
         // Three steps on a rail: a numbered circle each, joined by a hairline.

@@ -36,6 +36,7 @@ for (const mode of ['light', 'dark'] as const) {
         assert.ok(contrastRatio(t.fgSubtle, surface) >= 3, `subtle on ${surface} (${JSON.stringify(input)})`);
       }
       assert.ok(contrastRatio(t.accentFg, t.accent) >= 4.5, `accent button text (${JSON.stringify(input)})`);
+      assert.ok(contrastRatio(t.badgeFg, t.badge) >= 4.5, `unread badge text (${JSON.stringify(input)})`);
     }
   });
 }
