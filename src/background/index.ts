@@ -170,6 +170,8 @@ async function onBadge(host: string, count: number) {
   const action = (ext as any).action;
   action?.setBadgeText?.({ text: total ? badgeLabel(total) : '' });
   action?.setBadgeBackgroundColor?.({ color: '#e5484d' });
+  // Opera shows sidegig in its own sidebar, with a badge of its own.
+  (globalThis as { opr?: any }).opr?.sidebarAction?.setBadgeText?.({ text: total ? badgeLabel(total) : '' });
 }
 
 // ---------------------------------------------------------------- link rules
