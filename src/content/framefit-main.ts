@@ -52,6 +52,24 @@ import { rewriteFrameChecks, rewriteTopRefs, TOP_REWRITE_HOSTS } from '../shared
   } catch {
     /* leave cookies alone */
   }
+  // A muted app (a switch per app in settings) shows no desktop notifications from
+  // inside sidegig. The other half says whether this app is muted.
+  let muted = false;
+  document.addEventListener('sidegig-mute', (e) => {
+    muted = !!(e as CustomEvent).detail;
+  });
+  const Real = window.Notification;
+  if (Real) {
+    const Quiet = function (title: string, options?: NotificationOptions) {
+      if (!muted) return new Real(title, options);
+      const quiet = Object.assign(new EventTarget(), { title, ...options, onclick: null, onclose: null, onerror: null, onshow: null });
+      return Object.assign(quiet, { close() {} });
+    } as unknown as typeof Notification;
+    Quiet.prototype = Real.prototype;
+    Object.defineProperty(Quiet, 'permission', { get: () => Real.permission });
+    Object.defineProperty(Quiet, 'requestPermission', { value: (...a: Parameters<typeof Real.requestPermission>) => Real.requestPermission(...a) });
+    Object.defineProperty(window, 'Notification', { configurable: true, writable: true, value: Quiet });
+  }
   // Gmail loads its code as <script src> from its own origin, written for a
   // top-level page (`top` is its own window). Load those scripts rewritten, in
   // the order the page added them; if a fetch fails, the original loads instead.

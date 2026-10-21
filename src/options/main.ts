@@ -121,6 +121,8 @@ function appRow(app: AppEntry, i: number): HTMLElement {
     toggle(app.badge, (v) => commit((x) => void (x.apps[i].badge = v)), `Unread badge for ${app.name}`),
     h('span', { class: 'subtle' }, 'Keep running'),
     toggle(keepsRunning(app), (v) => commit((x) => void (x.apps[i].keepAlive = v)), `Keep ${app.name} running while hidden`),
+    h('span', { class: 'subtle' }, 'Mute'),
+    toggle(!!app.muted, (v) => commit((x) => void (x.apps[i].muted = v)), `No notifications from ${app.name}`),
     iconButton('up', 'Move up', () => void move(-1)),
     iconButton('down', 'Move down', () => void move(1)),
     iconButton('trash', 'Remove', () => void commit((x) => void x.apps.splice(i, 1))),

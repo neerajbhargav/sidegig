@@ -2460,3 +2460,9 @@ textarea.mail-draft { width: 100%; box-sizing: border-box; font-family: inherit;
 .mail-acts .btn.ghost { height: auto; min-height: calc(32px * var(--ui-s, 1)); padding: 0 calc(8px * var(--ui-s, 1)); font-size: calc(13px * var(--ui-s, 1)); color: var(--m-accent); }
 .mail-acts .btn.ghost:hover { background: var(--m-hover); }
 .mail-acts .code-copy { min-height: calc(30px * var(--ui-s, 1)); padding: 0 calc(8px * var(--ui-s, 1)); font-size: calc(14px * var(--ui-s, 1)); }
+
+/* New stack or space, inline under the Spaces label. */
+.new-folder { display: flex; flex-wrap: wrap; align-items: center; gap: calc(6px * var(--ui-s, 1)); margin: calc(4px * var(--ui-s, 1)) 0 calc(8px * var(--ui-s, 1)); }
+.new-folder[hidden] { display: none; }
+.new-folder .text-input { flex: 1 1 8rem; }
+.label .iconbtn { width: calc(28px * var(--ui-s, 1)); height: calc(28px * var(--ui-s, 1)); }
