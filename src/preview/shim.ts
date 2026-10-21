@@ -81,6 +81,7 @@ const mock: any = {
       if (m.type === 'refresh-status') return fx.local?.status ?? [];
       if (m.type === 'sleep-tabs') return 4;
       if (m.type === 'ai-claim') return null;
+      if (m.type === 'mail-thread') return fx.mailThread ?? null;
       return undefined;
     },
     onMessage: ev(),
