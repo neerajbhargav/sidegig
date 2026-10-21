@@ -22,6 +22,10 @@ sidegig has no servers, no accounts and no analytics. Nothing you do in sidegig 
 - **Site icons**: in Chrome-family browsers from the browser's own icon cache; in Firefox and Safari from the site's `/favicon.ico`.
 - **The new tab edition**, only once you've given it interests: short search phrases (your interests, never your profile, saves or history) go to the sources you keep on: Hacker News (Algolia), Substack, Google News, YouTube, Apple's iTunes Search, Open Library, arXiv and Reddit. These requests are sent signed out (no cookies), so they don't touch your accounts or their recommendations. Pictures in the edition load from those services.
 
+## Automatic backup
+
+Off unless you turn it on in Settings → Setups. Then, once a week, sidegig saves one file, `Downloads/sidegig/sidegig-backup.json`, replacing the previous one. It holds your settings, notes, to-dos, interests and chats (no uploaded pictures), and never API keys, passwords or connection tokens. It stays on your computer; import it in Settings → Setups to restore.
+
 ## Your AI and the edition
 
 When you click “Ask Claude” (or ChatGPT, Gemini) on the new tab, sidegig types one prompt into that AI asking it to describe your interests as a JSON block, and sends it only if you've turned on auto-send for Ask AI. While that request is pending (up to 20 minutes), sidegig looks on that AI's page for the reply block marked `sidegig_profile` and reads only that. It never reads your other conversations. The prompt asks the AI to leave out anything private or sensitive, and you can edit or delete every interest afterwards.

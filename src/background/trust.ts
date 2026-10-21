@@ -5,7 +5,7 @@ import type { ToBackground } from '../shared/messages.ts';
 type Sender = { id?: string; url?: string; frameId?: number };
 
 /** Only sidegig's own pages (panel, drawer, new tab, settings) send these. */
-const PAGE_ONLY = new Set<ToBackground['type']>(['clear-sw', 'save-workspace', 'restore-workspace', 'sleep-tabs', 'refresh-status', 'edition-build', 'ask-page', 'drawer-frames', 'mail-thread']);
+const PAGE_ONLY = new Set<ToBackground['type']>(['clear-sw', 'save-workspace', 'restore-workspace', 'sleep-tabs', 'refresh-status', 'edition-build', 'ask-page', 'drawer-frames', 'mail-thread', 'backup-now']);
 /** The app-frame helpers send these about the site they run in. */
 const SITE = new Set<ToBackground['type']>(['badge', 'ai-claim', 'profile-import', 'frame-cookies']);
 
