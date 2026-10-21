@@ -21,9 +21,11 @@ addEventListener('message', (e) => {
   for (const [id, f] of frames) if (f.el.contentWindow === e.source) greeted.add(id);
 });
 
-function frameFor(app: AppEntry): HTMLIFrameElement {
+function frameFor(ctx: Ctx, app: AppEntry): HTMLIFrameElement {
   let f = frames.get(app.id);
   if (!f) {
+    // The worker lets sign-in redirects frame only in the sidebar and in tabs whose drawer asked.
+    if (ctx.kind === 'drawer') void send({ type: 'drawer-frames' }).catch(() => undefined);
     const el = h('iframe', {
       // The frame helper (content/framefit.ts) only acts in frames with this name.
       name: `sidegig-app-${app.id}`,
@@ -149,10 +151,10 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
       ),
     );
     const wrap = h('div', { class: 'appbar-wrap' }, bar, note);
-    attach(app);
+    attach(ctx, app);
     return wrap;
   }
-  attach(app);
+  attach(ctx, app);
   if (ctx.kind === 'panel') watchFrame(ctx, app, bar);
   return bar;
 }
@@ -178,8 +180,8 @@ function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
   );
 }
 
-function attach(app: AppEntry) {
-  frameFor(app);
+function attach(ctx: Ctx, app: AppEntry) {
+  frameFor(ctx, app);
   for (const [id, f] of frames) {
     const show = id === app.id;
     if (show) f.lastShown = Date.now();

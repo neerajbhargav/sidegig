@@ -21,6 +21,9 @@ test('frame rules only cover frames sidegig opens and their own navigations', ()
   for (const h of AUTH_HOSTS) assert.ok(nav.condition.requestDomains!.includes(h));
   assert.ok(!nav.condition.initiatorDomains!.includes('evil.example'), 'other sites embedding an app get no change');
   assert.ok(nav.condition.initiatorDomains!.includes(EXT));
+  assert.deepEqual(nav.condition.tabIds, [-1], 'only the browser sidebar until a drawer opens an app');
+  const [, navDrawer] = buildRules([appFromCatalog('claude')], EXT, [], [12]);
+  assert.deepEqual(navDrawer.condition.tabIds, [-1, 12], 'plus tabs whose drawer shows apps');
   const removed = nav.action.responseHeaders!.map((h) => h.header);
   assert.ok(removed.includes('x-frame-options') && removed.includes('content-security-policy'));
   const ids = rules.map((r) => r.id);
@@ -37,7 +40,7 @@ test('mobile rule appears only when an app asks for it', () => {
   assert.deepEqual(ua[0].condition.requestDomains, ['x.com']);
   assert.deepEqual(ua[0].condition.resourceTypes, ['sub_frame']);
   // A docked side window's tab gets it for its whole page.
-  const side = buildRules([mobile], EXT, [42]).filter((r) => r.condition.tabIds);
+  const side = buildRules([mobile], EXT, [42]).filter((r) => r.condition.resourceTypes?.includes('main_frame' as any));
   assert.deepEqual(side[0].condition.tabIds, [42]);
   assert.deepEqual(side[0].condition.resourceTypes, ['main_frame', 'sub_frame']);
 });
