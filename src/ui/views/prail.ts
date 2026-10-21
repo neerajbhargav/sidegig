@@ -7,6 +7,7 @@ import { catalogById } from '../../shared/catalog.ts';
 import type { StatusCard } from '../../shared/types.ts';
 import { h, ico, appFavicon } from '../dom.ts';
 import { type Ctx, type ViewName, openApp, send } from '../ctx.ts';
+import { arrowNav } from '../../shared/arrownav.ts';
 
 export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: string }): Promise<HTMLElement> {
   const [badges, cards, seen] = await Promise.all([
@@ -20,6 +21,7 @@ export async function panelRail(ctx: Ctx, current: { name: ViewName; app?: strin
     h('button', { class: `pitem ${extra}`.trim(), type: 'button', title: label, 'aria-label': label, 'aria-pressed': String(pressed), onclick: onClick }, ...content);
 
   const nav = h('nav', { class: 'prail', 'aria-label': 'sidegig' });
+  arrowNav(nav);
   nav.append(btn('Home', [ico('logo', 22)], () => ctx.go('home'), current.name === 'home'), h('div', { class: 'psep' }));
 
   const apps = h('div', { class: 'papps', role: 'group', 'aria-label': 'Pinned apps' });

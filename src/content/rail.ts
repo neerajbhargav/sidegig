@@ -21,6 +21,7 @@ import { hueOf } from '../ui/dom.ts';
 import { Dock } from './dock.ts';
 import type { AppEntry, Settings, StatusCard } from '../shared/types.ts';
 import type { ToBackground, ToContent, View } from '../shared/messages.ts';
+import { arrowNav } from '../shared/arrownav.ts';
 
 type DrawerView = View | 'app' | 'add';
 
@@ -87,6 +88,7 @@ class Rail {
     this.shell.className = 'shell';
     this.rail.className = 'rail';
     this.rail.setAttribute('aria-label', 'sidegig');
+    arrowNav(this.rail);
     this.drawer.className = 'drawer';
     this.tip.className = 'tip';
     this.flyout.className = 'flyout';
