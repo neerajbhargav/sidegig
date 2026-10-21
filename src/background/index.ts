@@ -62,6 +62,7 @@ async function setupMenus(s: Settings) {
   const ai = aiApp(s)?.name ?? 'AI';
   menus.create({ id: 'ask-selection', title: `Ask ${ai} about "%s"`, contexts: ['selection'] });
   menus.create({ id: 'ask-page', title: `Ask ${ai} about this page`, contexts: ['page'] });
+  menus.create({ id: 'ask-assistant', title: 'Ask the sidegig Assistant about "%s"', contexts: ['selection'] });
   menus.create({ id: 'add-stack', title: 'Add to sidegig stacks', contexts: ['page', 'link'] });
   menus.create({ id: 'link-window', title: 'Open link in a sidegig mini window', contexts: ['link'] });
   if (s.edition.enabled) menus.create({ id: 'save-edition', title: 'Save to your reading list', contexts: ['page', 'link'] });
@@ -351,6 +352,12 @@ ext.commands?.onCommand.addListener((command: string, tab?: chrome.tabs.Tab) => 
   if (!tab) return;
   if (info.menuItemId === 'ask-selection') return askFromBackground(tab, info.selectionText);
   if (info.menuItemId === 'ask-page') return askFromBackground(tab);
+  if (info.menuItemId === 'ask-assistant') {
+    // The sidebar first (needs this click, so before any await); else the page's drawer.
+    if (!openPanel(tab.windowId, { view: 'chat' }) && tab.id !== undefined) void ext.tabs.sendMessage(tab.id, { type: 'open-view', view: 'chat' } satisfies ToContent).catch(() => undefined);
+    void setLocal('chatPrefill', { text: String(info.selectionText ?? ''), ts: Date.now() });
+    return;
+  }
   if (info.menuItemId === 'add-stack') void addToStacks(info.linkUrl ?? info.pageUrl ?? tab.url ?? '', info.linkUrl ? info.selectionText ?? '' : tab.title ?? '');
   if (info.menuItemId === 'save-edition') void saveLink(info.linkUrl ?? info.pageUrl ?? tab.url ?? '', info.linkUrl ? info.linkText ?? info.selectionText ?? '' : tab.title ?? '');
   if (info.menuItemId === 'link-window' && info.linkUrl) void openMiniWindow({ url: info.linkUrl, openIn: 'window', side: now().rail.side }, tab.windowId);

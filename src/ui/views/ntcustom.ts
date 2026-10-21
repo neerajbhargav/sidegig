@@ -660,6 +660,7 @@ const WIDGETS: WidgetItem[] = [
   { group: 'Browse', title: 'Reading list', note: 'Articles, videos and books you saved in For you', thumb: () => glyphThumb('book'), get: (s) => s.newtab.widgets.reading, put: (s, v) => void (s.newtab.widgets.reading = v) },
   { group: 'Browse', title: 'Open tabs', note: 'Switch to a page or close a tab', thumb: () => glyphThumb('tab'), get: (s) => s.newtab.widgets.tabs, put: (s, v) => void (s.newtab.widgets.tabs = v) },
   { group: 'Browse', title: 'For you', note: 'Your edition: a short, finite set of picks', thumb: () => glyphThumb('edition'), get: (s) => s.newtab.widgets.feed, put: (s, v) => void (s.newtab.widgets.feed = v) },
+  { group: 'Your day', title: 'Day summary', note: 'One line under the clock: picks, tasks and unread', thumb: () => glyphThumb('home'), get: (s) => s.newtab.widgets.brief, put: (s, v) => void (s.newtab.widgets.brief = v) },
   { group: 'Browse', title: 'Greeting', note: 'Good morning, at the top of the search box', thumb: () => glyphThumb('home'), get: (s) => s.newtab.widgets.greeting, put: (s, v) => void (s.newtab.widgets.greeting = v) },
   { group: 'Browse', title: 'Search and Ask switch', note: 'Ask any assistant from the same box', thumb: () => glyphThumb('ask'), get: (s) => s.newtab.aiTab, put: (s, v) => void (s.newtab.aiTab = v) },
 ];
