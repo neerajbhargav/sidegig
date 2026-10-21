@@ -166,7 +166,13 @@ class Rail {
   }
 
   private drawerWidth(): number {
-    return parseInt(this.drawer.style.width, 10) || this.s.drawer.width;
+    return parseInt(this.drawer.style.width, 10) || this.widthFor();
+  }
+
+  /** Each app remembers the width you gave it; everything else shares one. */
+  private widthFor(): number {
+    const w = this.view === 'app' && this.drawerApp ? Number(this.s.drawer.apps?.[this.drawerApp]) : 0;
+    return w >= 280 && w <= 720 ? w : this.s.drawer.width;
   }
 
   /** Tell the page how much room to make: the rail, plus the drawer when it's open. */
@@ -188,7 +194,7 @@ class Rail {
     }
     this.applyTheme();
     if (this.built) this.renderRail();
-    if (this.drawer.classList.contains('show')) this.drawer.style.width = `${s.drawer.width}px`;
+    if (this.drawer.classList.contains('show')) this.drawer.style.width = `${this.widthFor()}px`;
     if (this.docked) this.show(false);
     else if (this.open && !this.sticky && !this.view) this.hide();
     this.updateDock();
@@ -506,7 +512,10 @@ class Rail {
     if (d.type === 'close') this.hide();
     if (d.type === 'view' && this.view) {
       this.view = d.view as DrawerView;
+      if (typeof d.app === 'string') this.drawerApp = d.app;
+      this.drawer.style.width = `${this.widthFor()}px`;
       this.markActive();
+      this.updateDock();
     }
     if (d.type === 'ask-ai') this.askAi();
     if (d.type === 'ready') {
@@ -533,7 +542,8 @@ class Rail {
     this.ensureIframe(view, appId);
     if (!fresh) this.post({ type: 'view', view, app: appId });
     this.view = view;
-    this.drawer.style.width = `${this.s.drawer.width}px`;
+    if (appId) this.drawerApp = appId;
+    this.drawer.style.width = `${this.widthFor()}px`;
     this.drawer.classList.add('show');
     this.markActive();
     this.updateDock();
@@ -572,8 +582,9 @@ class Rail {
         handle.classList.remove('drag');
         this.drawer.classList.remove('resizing');
         const width = parseInt(this.drawer.style.width, 10);
+        const app = this.view === 'app' ? this.drawerApp : null;
         this.updateDock();
-        void updateSettings((s) => void (s.drawer.width = width));
+        void updateSettings((s) => void (app ? (s.drawer.apps[app] = width) : (s.drawer.width = width)));
       };
       handle.addEventListener('pointermove', move);
       handle.addEventListener('pointerup', up, { once: true });
