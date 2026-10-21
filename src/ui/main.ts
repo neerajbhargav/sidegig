@@ -127,7 +127,7 @@ async function boot() {
     if (kind !== 'newtab') document.documentElement.dataset.ui = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
   };
 
-  async function render(name: ViewName, opts: { app?: string; q?: string } = {}) {
+  async function render(name: ViewName, opts: { app?: string; q?: string; url?: string } = {}) {
     const my = ++token;
     renderLife?.abort();
     const life = new AbortController();
@@ -141,7 +141,7 @@ async function boot() {
     else if (name === 'settings') el = await quickView(viewCtx);
     else if (name === 'add') el = await addView(viewCtx);
     else if (name === 'chat') el = (await chatUi(viewCtx, { where: 'panel' })).view;
-    else if (name === 'app') el = await appBar(viewCtx, current.app);
+    else if (name === 'app') el = await appBar(viewCtx, current.app, opts.url);
     else el = await homeView(viewCtx);
     if (my !== token) return;
     view.replaceChildren(el);
@@ -239,9 +239,9 @@ async function boot() {
   // Panel: requests from the rail or background ("show Claude").
   if (kind === 'panel') {
     const handle = (r: unknown) => {
-      const req = r as { appId?: string; view?: ViewName; ts?: number } | null;
+      const req = r as { appId?: string; view?: ViewName; url?: string; ts?: number } | null;
       if (!req || !req.ts || Date.now() - req.ts > 15_000) return false;
-      if (req.appId) void render('app', { app: req.appId });
+      if (req.appId) void render('app', { app: req.appId, url: req.url });
       else if (req.view) void render(req.view);
       return true;
     };
