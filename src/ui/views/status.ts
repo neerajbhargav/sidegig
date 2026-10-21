@@ -68,13 +68,14 @@ export async function statusView(ctx: Ctx): Promise<HTMLElement> {
     await setLocal('statusSeen', Object.fromEntries(list.map((c) => [c.id, c.signature])));
   };
   const refresh = iconButton('refresh', 'Refresh', async () => {
-    refresh.style.animation = 'spin 0.8s linear infinite';
+    refresh.classList.add('spinning');
+    refresh.setAttribute('aria-busy', 'true');
     const cards = (await send({ type: 'refresh-status' }).catch(() => undefined)) as StatusCard[] | undefined;
-    refresh.style.animation = '';
+    refresh.classList.remove('spinning');
+    refresh.removeAttribute('aria-busy');
     await render(cards);
   });
   root.append(
-    h('style', {}, '@keyframes spin{to{transform:rotate(360deg)}}'),
     h(
       'div',
       { class: 'bar' },
