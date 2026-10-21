@@ -1,6 +1,6 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-21 19:10 (0.4.0 on branch `product/premium-1.0`, not merged to `main`; the installed copy in Aside predates the design system).
+Last updated: 2026-10-21 19:23 (0.4.0 on branch `product/premium-1.0`, not merged to `main`; installed in the owner's Aside from `8761b3e`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
@@ -13,7 +13,8 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - **Sidebar (`32fe690`):** a themed splash (icon, name, progress line) until an app frame loads; the rail updates in place; a prompt sent to an AI app replaces the composer text. Checked live in Aside before the DevTools socket stopped answering.
 - **Design system (next commit):** tokens for type (7 steps), corners (6), motion (4 durations, 1 curve, digit bounce kept), icons (4 sizes) and spacing (2px grid) replace 56 font sizes, 55 radii, 20 durations and 13 curves. One button, icon button, field, card, empty state and widget anatomy (inset, header row, corner control). Full colour-role sets on every tone fix white-on-white text ("Find", notes). Accent fills reach 4.5:1 (`accentFill`). The search card follows the desk tone. Glows and blurred shadows removed. Rules and how to add a widget: `docs/DESIGN.md`. Enforced by `test/design.test.ts` (it fails on planted violations); `scripts/contrast-probe.js` passes on 19 preview scenes; the responsive smoke assertions pass in headless Chrome at 10 sizes.
 - **Judgment calls to confirm:** the expand control now shows on hover and focus (always on touch), top right, instead of always visible on the card edge; buttons are pills on the new tab; the To-do spike is header-sized.
-- **Aside DevTools socket:** from about 18:20 the WebSocket on port 9222 accepts TCP but never answers, so live checks moved to an isolated headless Chrome (`--user-data-dir` in /tmp, mock keychain) against the preview. The installed extension was not reloaded with this work.
+- **Aside DevTools socket:** from about 18:20 the WebSocket on port 9222 accepted TCP but never answered, so checks moved to an isolated headless Chrome (`--user-data-dir` in /tmp, mock keychain) against the preview. Aside restarted at 19:20 and the socket answered again.
+- **Deployed to Aside, 19:21 (owner: "deploy to aside"):** `dist/chrome` rebuilt from `8761b3e` and reloaded with `chrome.runtime.reload()`; `ui.js f6a209b2…`, `ui.css 6dd32b16…`, `background.js d5ed8e71…`, `rail.js b8234feb…` and the manifest served by Aside match the build. Live new tab at 1512x814 (picture look): 11 widgets, no scrolling, none below the fold, one desk tone, one title offset, pill buttons, corner controls hidden until hover, contrast probe 0 failures and no loose text.
 
 **Premium product pass 0.4.0, 2026-10-21:** the owner asked to "build it as a premium product extension end to end, according to the spec" from the Aside chats, then "do not leave a single detail out", use their X bookmarks for design references, and use REA for complicated features. Answers to the two questions asked: build both (sidegig first, then the GotEmail-style mail layer), and premium means premium quality, still free and GPL. 23 commits on `product/premium-1.0`; version 0.4.0. Not merged: merging to `main` waits for the owner.
 
@@ -109,7 +110,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 ## Open work, in priority order
 
-1. **Owner, now:** reload sidegig at `chrome://extensions` in Aside to get the design system (`dist/chrome` is rebuilt); clear the leftover test text in the sidebar Claude composer (an agent-test page and an inbox tab title, typed by an earlier check); confirm the three judgment calls above.
+1. **Owner, now:** clear the leftover test text in the sidebar Claude composer (an agent-test page and an inbox tab title, typed by an earlier check); confirm the three judgment calls above.
 2. **Owner decisions:** merge `product/premium-1.0` to `main` (then `npm run changelog`); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
 3. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
 4. **Live checks still owed:** a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
