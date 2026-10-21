@@ -12,7 +12,7 @@ import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, 
 import { runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
 import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
-import { bridgeStatus } from '../../shared/ai/bridge.ts';
+import { openBridge, type BridgeHello } from '../../shared/ai/bridge.ts';
 import { modelKey, type Effort, type ModelInfo, type Msg, type ProviderId } from '../../shared/ai/types.ts';
 
 // ------------------------------------------------------------ saved chats and picks
@@ -285,20 +285,34 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
   });
 
   // Your ChatGPT plan, through Codex and the bridge.
+  const pairCode = h('input', { class: 'text-input', placeholder: 'Pairing code, like K7QM-2XRP', 'aria-label': 'Bridge pairing code', autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
+  void getLocal<string>('bridgeCode', '').then((c) => (pairCode.value = c));
   const bridgeHelp = h(
     'div',
     { class: 'ai-keyform', hidden: true },
     h('p', { class: 'ai-note' }, 'This uses the official Codex app, so OpenAI handles the sign-in. In a terminal:'),
-    h('ol', { class: 'ai-steps' }, h('li', {}, 'Install Codex and sign in with ChatGPT: ', h('code', {}, 'npm i -g @openai/codex && codex login')), h('li', {}, 'Start the sidegig bridge from the sidegig folder: ', h('code', {}, 'node bridge/sidegig-bridge.mjs'))),
+    h(
+      'ol',
+      { class: 'ai-steps' },
+      h('li', {}, 'Install Codex and sign in with ChatGPT: ', h('code', {}, 'npm i -g @openai/codex && codex login')),
+      h('li', {}, 'Start the sidegig bridge from the sidegig folder: ', h('code', {}, 'node bridge/sidegig-bridge.mjs')),
+      h('li', {}, 'Paste the pairing code it prints. Only this browser can then use it.'),
+    ),
+    h('div', { class: 'ai-row' }, pairCode),
     h(
       'button',
       {
         type: 'button',
         class: 'btn primary',
         onclick: async () => {
+          await setLocal('bridgeCode', pairCode.value.trim().toUpperCase());
           say('Looking for the bridge…');
-          const s = await bridgeStatus();
-          if (!s) return say('The bridge isn’t running yet.');
+          let s: BridgeHello;
+          try {
+            s = (await openBridge('page')).hello;
+          } catch (e) {
+            return say((e as Error).message === 'The sidegig bridge isn’t running.' ? 'The bridge isn’t running yet.' : (e as Error).message);
+          }
           if (!s.codex.installed) return say('The bridge is running, but Codex isn’t installed.');
           if (!s.codex.signedIn) return say('Codex is installed but not signed in. Run: codex login');
           await setKeys({ codex: '1' });
@@ -307,7 +321,7 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
           onDone();
         },
       },
-      'Check again',
+      'Connect',
     ),
   );
   const forms = [keyForm, localForm, bridgeHelp];
