@@ -149,7 +149,7 @@ async function boot() {
     view.style.flex = name === 'app' ? 'none' : '1 1 auto';
     showFrames(name === 'app');
     if (kind === 'panel') void renderRail();
-    if (kind === 'drawer') toRail({ type: 'view', view: name });
+    if (kind === 'drawer') toRail({ type: 'view', view: name, app: current.app });
   }
 
   async function renderRail() {

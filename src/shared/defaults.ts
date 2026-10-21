@@ -22,7 +22,7 @@ export function defaultSettings(): Settings {
       floatOn: [],
       hideInFullscreen: true,
     },
-    drawer: { width: 400 },
+    drawer: { width: 400, apps: {} },
     theme: {
       mode: 'page',
       base: '#808080',

@@ -67,7 +67,8 @@ export interface Settings {
     floatOn: string[];
     hideInFullscreen: boolean;
   };
-  drawer: { width: number };
+  /** `apps`: the width you dragged each app's drawer to; others use `width`. */
+  drawer: { width: number; apps: Record<string, number> };
   theme: {
     mode: ThemeMode;
     base: string;

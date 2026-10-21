@@ -11,7 +11,7 @@ import type { AppEntry, PendingPrompt, Settings } from '../shared/types.ts';
 import type { ToBackground, ToContent } from '../shared/messages.ts';
 import { applyRules, setDrawerTabs, setSideTabs } from './dnr.ts';
 import { pageCookies } from './framecookies.ts';
-import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
+import { openApp, openPanel, openMiniWindow, forgetPopup, rememberSideWidth } from './open.ts';
 import { refreshStatus } from './status.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
@@ -245,6 +245,7 @@ ext.runtime.onStartup?.addListener(() => {
 onSettingsChanged(() => void sync());
 (ext as any).permissions?.onAdded?.addListener(() => setupLinkRules());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));
+(ext.windows as any).onBoundsChanged?.addListener((w: chrome.windows.Window) => void rememberSideWidth(w));
 
 const OUR_ORIGIN = new URL(ext.runtime.getURL('/')).origin;
 
