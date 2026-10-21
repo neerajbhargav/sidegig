@@ -13,6 +13,8 @@
 // Normal tabs are never touched: the check below fails and the script returns.
 import { ext } from '../shared/api.ts';
 import { rewriteFrameChecks, rewriteTopRefs, TOP_REWRITE_HOSTS } from '../shared/framecheck.ts';
+import { loadSettings, onSettingsChanged } from '../shared/storage.ts';
+import type { Settings } from '../shared/types.ts';
 
 const ANCESTOR = (() => {
   try {
@@ -32,6 +34,11 @@ const OURS = (() => {
 const framedByUs = window.top !== window && window.name.startsWith('sidegig-app') && !!OURS && ANCESTOR === OURS;
 
 function start() {
+  // Muted apps: tell the page-world half (framefit-main.ts) to hold notifications back.
+  const appId = window.name.slice('sidegig-app-'.length);
+  const tellMute = (s: Settings) => document.dispatchEvent(new CustomEvent('sidegig-mute', { detail: !!s.apps.find((a) => a.id === appId)?.muted }));
+  void loadSettings().then(tellMute, () => undefined);
+  onSettingsChanged(tellMute);
   // Same-site cookies the page may read but the browser hides inside a frame (X's ct0).
   void ext.runtime
     .sendMessage({ type: 'frame-cookies' })

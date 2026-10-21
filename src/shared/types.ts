@@ -44,6 +44,8 @@ export interface AppEntry {
   catalogId?: string;
   /** Never unload its frame while hidden. Unset: messaging apps keep running. */
   keepAlive?: boolean;
+  /** No desktop notifications from it while it runs inside sidegig. */
+  muted?: boolean;
 }
 
 export interface LinkRule {

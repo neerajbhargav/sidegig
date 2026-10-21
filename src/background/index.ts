@@ -365,8 +365,12 @@ ext.commands?.onCommand.addListener((command: string, tab?: chrome.tabs.Tab) => 
   if (command === 'ask-ai') return askFromBackground(tab);
   const view = command === 'open-search' ? 'search' : 'home';
   if (isRestricted(tab.url)) {
-    // No rail on this page: use the browser sidebar (must stay synchronous).
-    if (!openPanel(tab.windowId, { view })) void ext.runtime.openOptionsPage();
+    // No rail on this page: use the browser sidebar (must stay synchronous); where
+    // there is none (Opera, Safari), sidegig's panel in a side window.
+    if (!openPanel(tab.windowId, { view })) {
+      void setLocal('panelRequest', { view, ts: Date.now() });
+      void openMiniWindow({ url: ext.runtime.getURL('panel.html'), openIn: 'window', side: now().rail.side }, tab.windowId);
+    }
     return;
   }
   const msg: ToContent = command === 'toggle-rail' ? { type: 'toggle-rail' } : { type: 'open-view', view: 'search' };

@@ -1,6 +1,7 @@
 // Home: apps, bookmark stacks (Dia/Arc style), tabs in this window, workspaces.
 import { ext, features } from '../../shared/api.ts';
 import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
+import { seg } from './quick.ts';
 import type { Workspace } from '../../shared/types.ts';
 import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys } from '../dom.ts';
 import { type Ctx, openUrl, switchTo, activeTab, send } from '../ctx.ts';
@@ -95,6 +96,35 @@ async function spaceSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement
     toast(`Added to ${active.title || 'stacks'}`);
     rerender();
   };
+  // A new stack (a folder in this space) or a new space (a folder of its own), as real bookmarks.
+  const name = h('input', { class: 'text-input', placeholder: 'Name', 'aria-label': 'Folder name', maxlength: 60 }) as HTMLInputElement;
+  let kind: 'stack' | 'space' = 'stack';
+  const form = h(
+    'form',
+    { class: 'new-folder', hidden: true },
+    seg<'stack' | 'space'>(kind, [['stack', 'Stack'], ['space', 'Space']], (v) => (kind = v)),
+    name,
+    h('button', { class: 'btn primary', type: 'submit' }, 'Create'),
+  ) as HTMLFormElement;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = name.value.trim();
+    if (!title) return name.focus();
+    if (kind === 'stack') {
+      await ext.bookmarks.create({ parentId: active.id, title });
+      toast(`Stack ${title} added`);
+      rerender();
+      return;
+    }
+    const [tree] = await ext.bookmarks.getTree();
+    const parentId = tree.children?.[1]?.id ?? tree.children?.[0]?.id ?? '1';
+    const folder = await ext.bookmarks.create({ parentId, title });
+    await updateSettings((st) => {
+      st.stacks.spaces = [...new Set([...(st.stacks.spaces.length ? st.stacks.spaces : spaces.map((x) => x.id)), folder.id])];
+      st.stacks.activeSpace = folder.id;
+    });
+    toast(`Space ${title} added`);
+  });
   sec.append(
     h(
       'div',
@@ -102,7 +132,12 @@ async function spaceSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement
       h('span', {}, spaces.length > 1 ? 'Spaces' : active.title || 'Bookmarks'),
       h('span', { class: 'grow' }),
       h('button', { class: 'link', type: 'button', onclick: addPage }, '+ Add page'),
+      iconButton('folder', 'New stack or space', () => {
+        form.hidden = !form.hidden;
+        if (!form.hidden) name.focus();
+      }),
     ),
+    form,
   );
   if (spaces.length > 1) {
     sec.append(
