@@ -19,7 +19,7 @@ sidegig has no servers, no accounts and no analytics. Nothing you do in sidegig 
 - **Vercel API** (`api.vercel.com`) with your token, only if you turn on the Vercel card.
 - **Gmail's unread feed** (`mail.google.com/mail/u/0/feed/atom`) with your existing Google sign-in, only if you turn on the Gmail card. sidegig looks for sign-in codes in each unread email's subject and preview, on this device.
 - **One Gmail thread** (`mail.google.com/mail/u/0/?view=pt`, Gmail's print view) with your existing Google sign-in, only when you click Summarize or Draft reply on that email. The thread's text goes to the model you picked in sidegig's chat (your API key, your local model or your ChatGPT plan through the bridge), and nowhere else.
-- **Site icons**: in Chrome-family browsers from the browser's own icon cache; in Firefox and Safari from the site's `/favicon.ico`. For a rail app whose cached icon is small, sidegig also asks that site for its `/apple-touch-icon.png`, signed out (no cookies), and keeps it only on this device.
+- **Site icons**: in Chrome-family browsers from the browser's own icon cache; in Firefox and Safari from the site's `/favicon.ico`.
 - **The new tab edition**, only once you've given it interests: short search phrases (your interests, never your profile, saves or history) go to the sources you keep on: Hacker News (Algolia), Substack, Google News, YouTube, Apple's iTunes Search, Open Library, arXiv and Reddit. These requests are sent signed out (no cookies), so they don't touch your accounts or their recommendations. Pictures in the edition load from those services.
 
 ## Automatic backup
