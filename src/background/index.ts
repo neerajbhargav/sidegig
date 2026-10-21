@@ -183,7 +183,19 @@ function setupLinkRules() {
     const s = now();
     const rule = findRule(s.rules, d.url);
     if (!rule) return;
-    if (rule.action === 'window') {
+    if (rule.action === 'sidebar') {
+      // The browser opens its sidebar only on a click, so this uses one that is already open.
+      const app = s.apps.find((a) => matchPattern(hostOf(a.url).replace(/^www\./, ''), d.url));
+      const tab = await ext.tabs.get(d.tabId).catch(() => undefined);
+      const panels = await getLocal<Record<string, { ts: number }>>('panelOpen', {});
+      const open = tab?.windowId !== undefined && Date.now() - (panels[String(tab.windowId)]?.ts ?? 0) < 40_000;
+      if (app && open) {
+        await setLocal('panelRequest', { appId: app.id, url: d.url, ts: Date.now() });
+        await ext.tabs.remove(d.tabId).catch(() => undefined);
+        return;
+      }
+    }
+    if (rule.action === 'window' || rule.action === 'sidebar') {
       await openMiniWindow({ url: d.url, openIn: 'window', side: s.rail.side });
       await ext.tabs.remove(d.tabId).catch(() => undefined);
       return;

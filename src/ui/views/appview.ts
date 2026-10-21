@@ -82,7 +82,8 @@ export function showFrames(show: boolean) {
 }
 
 /** Returns the app bar and brings the app's frame to the front. */
-export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
+/** `url`: a page of this app to show (a link rule sent it here). */
+export async function appBar(ctx: Ctx, appId?: string, url?: string): Promise<HTMLElement> {
   const apps = ctx.settings.apps;
   const app = apps.find((a) => a.id === appId) ?? apps.find((a) => a.openIn === 'panel') ?? apps[0];
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
@@ -151,15 +152,25 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
       ),
     );
     const wrap = h('div', { class: 'appbar-wrap' }, bar, note);
-    attach(ctx, app);
+    attach(ctx, app, url);
     return wrap;
   }
-  attach(ctx, app);
+  attach(ctx, app, url);
   if (ctx.kind === 'panel') watchFrame(ctx, app, bar);
   return bar;
 }
 
 let lastWindowed = '';
+
+const sameSite = (url: string, appUrl: string) => {
+  try {
+    const u = new URL(url);
+    const host = new URL(appUrl).hostname.replace(/^www\./, '');
+    return /^https?:$/.test(u.protocol) && (u.hostname === host || u.hostname.endsWith(`.${host}`));
+  } catch {
+    return false;
+  }
+};
 
 
 function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
@@ -180,8 +191,9 @@ function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
   );
 }
 
-function attach(ctx: Ctx, app: AppEntry) {
-  frameFor(ctx, app);
+function attach(ctx: Ctx, app: AppEntry, url?: string) {
+  const el = frameFor(ctx, app);
+  if (url && sameSite(url, app.url)) el.src = url;
   for (const [id, f] of frames) {
     const show = id === app.id;
     if (show) f.lastShown = Date.now();

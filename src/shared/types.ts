@@ -48,7 +48,8 @@ export interface LinkRule {
   id: string;
   /** Hostname or glob, e.g. `notion.so` or `*.figma.com`. */
   pattern: string;
-  action: 'window' | 'reuse-tab';
+  /** `sidebar`: the matching app in the open sidebar, else a mini window. */
+  action: 'window' | 'reuse-tab' | 'sidebar';
   enabled: boolean;
 }
 

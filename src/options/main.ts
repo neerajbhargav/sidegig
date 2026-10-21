@@ -5,7 +5,7 @@ import { defaultSettings, appFromCatalog } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
 import { applyScale, clampScale, SCALE_MIN, SCALE_MAX } from '../shared/scale.ts';
-import type { AppEntry, OpenIn, Settings, StatusCard } from '../shared/types.ts';
+import type { AppEntry, LinkRule, OpenIn, Settings, StatusCard } from '../shared/types.ts';
 import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
 import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
 import { send } from '../ui/ctx.ts';
@@ -384,7 +384,8 @@ function rulesSection(): HTMLElement {
         textInput(r.pattern, (v) => commit((x) => void (x.rules[i].pattern = v.trim())), { style: { flex: '1' }, placeholder: 'notion.so' }),
         h(
           'select',
-          { class: 'text-input', onchange: (e: Event) => commit((x) => void (x.rules[i].action = (e.target as HTMLSelectElement).value as 'window' | 'reuse-tab')) },
+          { class: 'text-input', onchange: (e: Event) => commit((x) => void (x.rules[i].action = (e.target as HTMLSelectElement).value as LinkRule['action'])) },
+          h('option', { value: 'sidebar', selected: r.action === 'sidebar' }, 'Open in the sidebar'),
           h('option', { value: 'window', selected: r.action === 'window' }, 'Open in mini window'),
           h('option', { value: 'reuse-tab', selected: r.action === 'reuse-tab' }, 'Reuse an open tab'),
         ),
@@ -406,7 +407,7 @@ function rulesSection(): HTMLElement {
       });
     },
   }, '+ Add rule');
-  return section('rules', 'Link rules', 'Decide where links to certain sites open, like Arc’s Air Traffic Control. Applies to links that would open a new tab.', list, h('div', { style: { marginTop: '10px' } }, add));
+  return section('rules', 'Link rules', 'Decide where links to certain sites open, like Arc’s Air Traffic Control. Applies to links that would open a new tab. Open in the sidebar uses the app for that site while the sidebar is open, and a mini window otherwise.', list, h('div', { style: { marginTop: '10px' } }, add));
 }
 
 /** Size of everything: a slider with presets, previewed live on this page as you drag. */
