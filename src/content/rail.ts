@@ -78,6 +78,8 @@ class Rail {
   /** Apps whose site icon the browser doesn't have yet. */
   private favMissing = new Set<string>();
   private iconFit: Record<string, IconFit> = {};
+  /** Large site icons for apps whose cached icon is small (background/favicons.ts). */
+  private sharp: Record<string, string> = {};
   private windowId: number | null = null;
 
   constructor(
@@ -226,10 +228,11 @@ class Rail {
     this.built = true;
     this.renderRail();
     void getLocal<Record<string, number>>('badges', {}).then((b) => this.setBadges(b));
-    void Promise.all([getLocal<string[]>('favMissing', []), getLocal<Record<string, IconFit>>('iconFit', {})]).then(([m, f]) => {
+    void Promise.all([getLocal<string[]>('favMissing', []), getLocal<Record<string, IconFit>>('iconFit', {}), getLocal<Record<string, string>>('sharpIcons', {})]).then(([m, f, sharp]) => {
       this.favMissing = new Set(m);
       this.iconFit = f;
-      if (m.length || Object.keys(f).length) this.renderRail();
+      this.sharp = sharp;
+      if (m.length || Object.keys(f).length || Object.keys(sharp).length) this.renderRail();
     });
     void this.refreshNews();
   }
@@ -268,7 +271,7 @@ class Rail {
       glyph.style.setProperty('--brand', g.hex);
       return [glyph, badge];
     }
-    const src = this.favMissing.has(app.id) ? '' : faviconFor(app.url, iconPixels(24));
+    const src = this.favMissing.has(app.id) ? '' : this.sharp[app.id] || faviconFor(app.url, iconPixels(24));
     if (src) {
       const img = document.createElement('img');
       img.alt = '';
@@ -747,6 +750,10 @@ class Rail {
     onLocalChanged('panelOpen', () => void this.checkPanel());
     onLocalChanged('favMissing', (m) => {
       this.favMissing = new Set((m as string[] | undefined) ?? []);
+      if (this.built) this.renderRail();
+    });
+    onLocalChanged('sharpIcons', (v) => {
+      this.sharp = (v as Record<string, string> | undefined) ?? {};
       if (this.built) this.renderRail();
     });
     onLocalChanged('iconFit', (f) => {
