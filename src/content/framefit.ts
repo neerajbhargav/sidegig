@@ -32,13 +32,27 @@ const OURS = (() => {
   }
 })();
 const framedByUs = window.top !== window && window.name.startsWith('sidegig-app') && !!OURS && ANCESTOR === OURS;
+/** An app in a page's drawer: web page > sidegig drawer (ours, possibly at its per-session host) > app. */
+const inDrawer = (() => {
+  if (framedByUs || window.top === window || !window.name.startsWith('sidegig-app')) return false;
+  try {
+    const parent = location.ancestorOrigins?.[0] ?? '';
+    return !!parent && (parent === OURS || parent === new URL(ext.runtime.getURL('drawer.html')).origin);
+  } catch {
+    return false;
+  }
+})();
+
+/** Muted apps: tell the page-world half (framefit-main.ts) to hold notifications back. */
+function tellMute() {
+  const appId = window.name.slice('sidegig-app-'.length);
+  const send = (s: Settings) => document.dispatchEvent(new CustomEvent('sidegig-mute', { detail: !!s.apps.find((a) => a.id === appId)?.muted }));
+  void loadSettings().then(send, () => undefined);
+  onSettingsChanged(send);
+}
 
 function start() {
-  // Muted apps: tell the page-world half (framefit-main.ts) to hold notifications back.
-  const appId = window.name.slice('sidegig-app-'.length);
-  const tellMute = (s: Settings) => document.dispatchEvent(new CustomEvent('sidegig-mute', { detail: !!s.apps.find((a) => a.id === appId)?.muted }));
-  void loadSettings().then(tellMute, () => undefined);
-  onSettingsChanged(tellMute);
+  tellMute();
   // Same-site cookies the page may read but the browser hides inside a frame (X's ct0).
   void ext.runtime
     .sendMessage({ type: 'frame-cookies' })
@@ -85,3 +99,4 @@ function start() {
 }
 
 if (framedByUs) start();
+else if (inDrawer) tellMute();
