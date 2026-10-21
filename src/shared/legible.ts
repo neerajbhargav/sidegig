@@ -129,3 +129,26 @@ export function colorsIn(css: string): [number, number, number][] {
   }
   return out;
 }
+
+/** The tint a card needs behind `tone` text to reach `target` contrast over this patch (0–1). */
+function alphaFor(p: Patch, tone: 'light' | 'dark', target = 5): number {
+  if (tone === 'light') {
+    const maxL = (LIGHT_INK + 0.05) / target - 0.05;
+    const vHi = enc(p.p90);
+    return vHi <= enc(maxL) ? 0 : 1 - enc(maxL) / vHi;
+  }
+  const minL = target * (DARK_INK + 0.05) - 0.05;
+  const vLo = enc(p.p10);
+  return vLo >= enc(minL) ? 0 : (enc(minL) - vLo) / (1 - vLo);
+}
+
+/**
+ * One text tone for every card on the desk (mixed light and dark cards read as
+ * a fault): the tone that needs the least tint over the cards' total area.
+ * Each card keeps the usual 62% tint, or more where its patch needs it, up to 90%.
+ */
+export function deskTone(cards: { patch: Patch; area: number }[]): { tone: 'light' | 'dark'; alphas: number[] } {
+  const cost = (tone: 'light' | 'dark') => cards.reduce((n, c) => n + c.area * alphaFor(c.patch, tone), 0);
+  const tone = cards.length && cost('dark') < cost('light') ? 'dark' : 'light';
+  return { tone, alphas: cards.map((c) => Math.round(Math.min(0.9, Math.max(0.62, alphaFor(c.patch, tone, 4.5))) * 100) / 100) };
+}

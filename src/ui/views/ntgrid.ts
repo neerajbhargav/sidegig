@@ -6,7 +6,7 @@
 //   cycles sizes, arrow keys move the focused widget, Reset puts everything back.
 // - On narrow or short windows the grid becomes one column you scroll.
 import { onSettingsChanged, updateSettings } from '../../shared/storage.ts';
-import { COLS, ROWS, SIZES, nearestFree, nextSize, place, resizeAround, resolve, sizeClass, sizeName, type Box, type WidgetId } from '../../shared/layout.ts';
+import { PRIORITY, COLS, ROWS, SIZES, nearestFree, nextSize, place, resizeAround, resolve, sizeClass, sizeName, type Box, type WidgetId } from '../../shared/layout.ts';
 import { h, ico, toast } from '../dom.ts';
 import type { Ctx } from '../ctx.ts';
 import { play } from '../sound.ts';
@@ -221,7 +221,9 @@ export function widgetGrid(ctx: Ctx, items: GridItem[]): Grid {
     if (on) wraps.get(ids[0])?.focus({ preventScroll: true });
   };
 
-  for (const it of items) {
+  // Most important first: the keyboard reaches search first, and the small-window
+  // columns start with search and bookmarks across the top.
+  for (const it of [...items].sort((a, b) => PRIORITY.indexOf(a.id) - PRIORITY.indexOf(b.id))) {
     const sizeLabel = h('span', {});
     sizeLabels.set(it.id, sizeLabel);
     const chrome = h(
