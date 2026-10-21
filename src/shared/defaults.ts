@@ -56,6 +56,7 @@ export function defaultSettings(): Settings {
       clock: true,
       aiTab: true,
       clockStyle: 'digital',
+      zone2: '',
       name: '',
       title: '',
       tag: '',

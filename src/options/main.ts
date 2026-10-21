@@ -672,6 +672,16 @@ function newtabSection(): HTMLElement {
       opt('Clock', null, toggle(n.clock, (v) => commit((x) => void (x.newtab.clock = v)), 'Clock')),
       opt('Clock style', null, seg(n.clockStyle, [['digital', 'Digital'], ['analog', 'Analog']], (v) => commit((x) => void (x.newtab.clockStyle = v)))),
       opt(
+        'Second time zone',
+        'A second clock under the date, like a world-time watch',
+        h(
+          'select',
+          { class: 'text-input', 'aria-label': 'Second time zone', onchange: (e: Event) => commit((x) => void (x.newtab.zone2 = (e.target as HTMLSelectElement).value)) },
+          h('option', { value: '', selected: !n.zone2 }, 'None'),
+          ((Intl as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? []).map((z) => h('option', { value: z, selected: z === n.zone2 }, z.replace(/_/g, ' '))),
+        ),
+      ),
+      opt(
         'Name on the page',
         'What the new tab calls itself in the corner, instead of “sidegig”. You can also click the name on the new tab to change it.',
         h(

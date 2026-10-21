@@ -1953,6 +1953,9 @@ html[data-arranging] .nt2 .nt-top { opacity: 0.35; pointer-events: none; }
 .fold-art[data-tone="rose"] { --f-back: #ad8790; --f-front: #d2b0b6; }
 .fold-art[data-tone="ink"] { --f-back: #262d3c; --f-front: #3d4760; --f-stitch: rgb(255 255 255 / 0.3); }
 .fold-art[data-tone="graphite"] { --f-back: #3d3d42; --f-front: #5b5b62; --f-stitch: rgb(255 255 255 / 0.3); }
+.fold-art[data-tone="mint"] { --f-back: #8fc4a6; --f-front: #c4e6d1; }
+.fold-art[data-tone="lavender"] { --f-back: #a59ad6; --f-front: #d3cdf2; }
+.fold-art[data-tone="butter"] { --f-back: #d9bd6a; --f-front: #f2e2a6; }
 html[data-look] .nt2 .nt-key.is-folder .fold-art { width: 3.75rem; height: 3.25rem; margin: 0.125rem 0 0; }
 html .fold-art .fold-back { inset: 0.5rem 0 0 0; border-radius: 0.3125rem 0.625rem 0.5625rem 0.5625rem; background: var(--f-back); }
 html .fold-art .fold-back::before { top: -0.3125rem; width: 42%; height: 0.625rem; border-radius: 0.3125rem 0.5rem 0 0; background: var(--f-back); }
@@ -1973,6 +1976,9 @@ html[data-icons="themed"] .fold-art { --f-back: color-mix(in oklab, var(--c-ink)
 .menu-tone[data-tone="clay"] { --f-back: #b58673; --f-front: #d7b09f; }
 .menu-tone[data-tone="rose"] { --f-back: #ad8790; --f-front: #d2b0b6; }
 .menu-tone[data-tone="ink"] { --f-back: #262d3c; --f-front: #3d4760; }
+.menu-tone[data-tone="mint"] { --f-back: #8fc4a6; --f-front: #c4e6d1; }
+.menu-tone[data-tone="lavender"] { --f-back: #a59ad6; --f-front: #d3cdf2; }
+.menu-tone[data-tone="butter"] { --f-back: #d9bd6a; --f-front: #f2e2a6; }
 .menu-tone[data-tone="graphite"] { --f-back: #3d3d42; --f-front: #5b5b62; }
 .menu-tone[aria-pressed="true"] { outline: 2px solid var(--c-signal); outline-offset: 2px; }
 .menu-tone:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 2px; }
@@ -2404,9 +2410,9 @@ html[data-look] .nt2 .nt-feed:not(:empty) { max-width: 76rem; margin: 1rem auto 
 .gw:focus-visible { outline: 2px solid var(--c-signal); outline-offset: 3px; }
 
 /* Shared controls: centred captions and icon/label groups on every appearance. */
-button:not(.row, .stack-head) { text-align: center !important; }
+button:not(.row, .stack-head, .extra-link) { text-align: center !important; }
 /* List rows read as lists: start-aligned, like Google and Apple lists. */
-:is(.row, .stack-head) { text-align: start; }
+:is(.row, .stack-head, .extra-link) { text-align: start; }
 :is(.btn, .nt-chip, .chip, .seg button, .cz-tabs button, .cv-starter, .shelf-trail button, .shelf-menu button) { display: inline-flex; align-items: center; justify-content: center; }
 .btn { box-sizing: border-box; height: auto; min-height: calc(40px * var(--ui-s, 1)); padding-block: calc(8px * var(--ui-s, 1)); line-height: 1.25; }
 :is(.btn, .nt-chip, .chip, .seg button, .cz-tabs button, .cv-starter):active { filter: brightness(0.94); }
@@ -2466,3 +2472,39 @@ textarea.mail-draft { width: 100%; box-sizing: border-box; font-family: inherit;
 .new-folder[hidden] { display: none; }
 .new-folder .text-input { flex: 1 1 8rem; }
 .label .iconbtn { width: calc(28px * var(--ui-s, 1)); height: calc(28px * var(--ui-s, 1)); }
+
+/* Focus history: twelve weeks, a dot a day, darker with more focus (mono labels, like a commit grid). */
+.pomo-history { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; margin-top: 0.75rem; }
+.pomo-hist-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 0.75rem; white-space: nowrap; font: 500 0.75rem/1.2 var(--f-mono); letter-spacing: 0.02em; color: var(--c-mute); }
+.pomo-grid { display: grid; grid-template-rows: repeat(7, auto); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+.pomo-grid i { display: block; aspect-ratio: 1; min-width: 4px; max-width: 12px; border-radius: 2px; background: color-mix(in oklab, var(--c-ink) 10%, transparent); }
+.pomo-grid i[data-l="1"] { background: color-mix(in oklab, var(--c-signal) 35%, transparent); }
+.pomo-grid i[data-l="2"] { background: color-mix(in oklab, var(--c-signal) 55%, transparent); }
+.pomo-grid i[data-l="3"] { background: color-mix(in oklab, var(--c-signal) 78%, transparent); }
+.pomo-grid i[data-l="4"] { background: var(--c-signal); }
+.pomo-grid i[data-today] { outline: 1.5px solid var(--c-ink); outline-offset: 1px; }
+.pomo-grid i[data-future] { background: transparent; }
+.gw[data-w="pomodoro"][data-size="s"] .pomo-history { display: none; }
+
+/* Two-tone greeting: the day summary is the quieter second sentence. */
+.nt-greet.two-tone .nt-brief { display: inline; margin: 0; font: inherit; letter-spacing: inherit; color: var(--c-mute); }
+.nt-greet.two-tone .nt-brief b { color: var(--c-ink); font-weight: inherit; }
+.nt-timetext .nt-brief { display: block; }
+
+/* Second time zone: city in grey, time in ink, mono like a watch's city ring. */
+.nt-zone2 { font: 500 0.8125rem/1.4 var(--f-mono); letter-spacing: 0.04em; color: var(--c-mute); margin-top: 0.25rem; }
+.nt-zone2[hidden] { display: none; }
+.nt-zone2 .z-time { color: var(--c-ink); }
+html[data-look="native"] .nt-zone2 { font-family: var(--f-text); letter-spacing: 0; font-size: 0.9375rem; }
+
+/* The timer's controls and its history share one column beside the figure. */
+.pomo-side { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.pomo-side .pomo-history { margin-top: 0; }
+/* Illustrated looks: at medium size the timer figure is the picture. */
+html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-history { display: none; }
+/* Native look (no figure): controls on the left, twelve weeks of focus on the right. */
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .nt-pomo { grid-template-columns: minmax(0, 1fr); }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-fig { display: none; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side { flex-direction: row; align-items: center; gap: 1.5rem; height: 100%; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side .pomo-row { flex: 0 0 auto; }
+html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-history { display: flex; flex: 1 1 auto; max-width: 20rem; }

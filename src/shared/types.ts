@@ -122,6 +122,8 @@ export interface Settings {
     /** A Home | AI switch: your browser's own AI and every assistant's chats, one tab away. */
     aiTab: boolean;
     clockStyle: 'digital' | 'analog';
+    /** A second clock, like a world-time watch: a time zone such as Asia/Kolkata, or '' for none. */
+    zone2: string;
     /** Your name for the greeting. */
     name: string;
     /** What the new tab calls itself in the top corner (empty = sidegig). */

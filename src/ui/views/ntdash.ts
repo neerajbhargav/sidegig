@@ -4,8 +4,8 @@
 import { ext } from '../../shared/api.ts';
 import { getLocal, setLocal, onLocalChanged, updateSettings } from '../../shared/storage.ts';
 import { CAL_APPS, eventIcs, feedUrl, monthGrid, occurrences, parseIcs, sameDay, weekStartFor, type CalEvent } from '../../shared/ntcal.ts';
-import { clockText, freshPomo, msLeft, next, pause, phaseMs, settle, start, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
-import { greetingFor, navigationUrl, parseWeather, weatherLabel, weatherUrl, type WeatherNow } from '../../shared/ntdata.ts';
+import { clockText, focusGrid, freshPomo, logFocus, msLeft, next, pause, phaseMs, settle, start, type FocusDone, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
+import { greetingFor, navigationUrl, parseWeather, weatherLabel, weatherUrl, zoneText, type WeatherNow } from '../../shared/ntdata.ts';
 import { h, ico, favicon, faviconOnly, toast } from '../dom.ts';
 import { type Ctx, openUrl } from '../ctx.ts';
 import { spacesFor } from './home.ts';
@@ -86,20 +86,32 @@ const skel = (...widths: string[]) => h('div', { class: 'skel-stack', 'aria-hidd
 // ---------------------------------------------------------------- time
 
 /** The line over the search: your own message, or a greeting with your name. */
-export function greetingLine(ctx: Ctx): HTMLElement | null {
+export function greetingLine(ctx: Ctx, brief: HTMLElement | null = null): HTMLElement | null {
   const n = ctx.settings.newtab;
   if (!n.widgets.greeting) return null;
   const name = n.name.trim();
-  return h('h1', { class: 'nt-greet' }, n.message.trim() || `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}`);
+  const text = n.message.trim() || `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}`;
+  if (!brief) return h('h1', { class: 'nt-greet' }, text);
+  return h('h1', { class: 'nt-greet two-tone' }, /[.!?]$/.test(text) ? text : `${text}.`, ' ', brief);
 }
 
 export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLElement {
   const n = ctx.settings.newtab;
   const date = h('div', { class: 'nt-date' });
-  const paintDate = () => (date.textContent = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' }));
+  const zone = h('div', { class: 'nt-zone2', hidden: !n.zone2 });
+  const paintDate = () => {
+    date.textContent = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+    const z = n.zone2 ? zoneText(n.zone2, new Date(), locale) : null;
+    zone.hidden = !z;
+    if (z) zone.replaceChildren(h('span', { class: 'z-city' }, z.city), ' ', h('span', { class: 'z-time' }, z.time));
+  };
   paintDate();
-  if (!n.clock) return h('section', { class: 'nt-timeblock nt-card' }, date);
-  if (n.clockStyle === 'analog') return h('section', { class: 'nt-timeblock nt-card analog' }, analogClockEl(), date);
+  if (!n.clock) return h('section', { class: 'nt-timeblock nt-card' }, date, zone);
+  if (n.clockStyle === 'analog') {
+    const tickA = () => setTimeout(() => (date.isConnected ? (paintDate(), tickA()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
+    tickA();
+    return h('section', { class: 'nt-timeblock nt-card analog' }, analogClockEl(), date, zone);
+  }
   const digits = h('span', { class: 'nt-hm' });
   const ampmEl = h('span', { class: 'nt-ampm' });
   const time = h('div', { class: 'nt-time' }, digits, ampmEl);
@@ -127,7 +139,7 @@ export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLEleme
   paint();
   const tick = () => setTimeout(() => (time.isConnected ? (paint(), tick()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
   tick();
-  return h('section', { class: 'nt-timeblock nt-card has-fig', 'aria-label': 'Clock' }, watch, h('div', { class: 'nt-timetext' }, time, date, brief));
+  return h('section', { class: 'nt-timeblock nt-card has-fig', 'aria-label': 'Clock' }, watch, h('div', { class: 'nt-timetext' }, time, date, zone, brief));
 }
 
 // ---------------------------------------------------------------- weather
@@ -498,6 +510,10 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     const now = Date.now();
     const done = settle(st, cfg, now);
     if (done.finished) {
+      if (done.finished === 'focus') {
+        const end = st.endsAt;
+        void getLocal<FocusDone[]>('ntFocusLog', []).then((log) => setLocal('ntFocusLog', logFocus(log, end, cfg.focus)));
+      }
       void save(done.state);
       play('arrive');
       // The bell rings: it shakes for a moment.
@@ -527,6 +543,20 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
   };
   go.addEventListener('click', toggle);
   fig.addEventListener('click', toggle);
+  // Your focus over twelve weeks, a dot a day: the darker, the more focus.
+  const history = h('div', { class: 'pomo-history' });
+  const paintHistory = async () => {
+    const g = focusGrid(await getLocal<FocusDone[]>('ntFocusLog', []), new Date(), 12);
+    history.replaceChildren(
+      h('div', { class: 'pomo-hist-head' }, h('span', {}, `This week ${g.thisWeek} min`), h('span', {}, `Last week ${g.lastWeek} min`)),
+      h(
+        'div',
+        { class: 'pomo-grid', role: 'img', 'aria-label': `Focus over the last twelve weeks: ${g.thisWeek} minutes this week, ${g.lastWeek} last week` },
+        ...g.days.map((d) => h('i', { dataset: { l: String(d.level), ...(d.today ? { today: '' } : {}), ...(d.future ? { future: '' } : {}) }, title: d.future ? undefined : `${d.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${d.min} min` })),
+      ),
+    );
+  };
+  void paintHistory();
   const root = card(
     'nt-pomo',
     'Pomodoro',
@@ -535,7 +565,7 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
       iconBtn('next', 'Skip to next', () => void save(next(st, cfg)).then(paint)),
     ],
     h('div', { class: 'pomo-fig iso' }, fig),
-    h('div', { class: 'pomo-row' }, h('div', { class: 'pomo-read' }, time, phase), dots, go),
+    h('div', { class: 'pomo-side' }, h('div', { class: 'pomo-row' }, h('div', { class: 'pomo-read' }, time, phase), dots, go), history),
   );
   paint();
   const timer = setInterval(() => (root.isConnected ? paint() : clearInterval(timer)), 1000);
@@ -544,7 +574,8 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     st = v as PomoState;
     paint();
   });
-  const dispose = () => { clearInterval(timer); stop(); };
+  const stopHistory = onLocalChanged('ntFocusLog', () => root.isConnected && void paintHistory());
+  const dispose = () => { clearInterval(timer); stop(); stopHistory(); };
   if (ctx.signal?.aborted) dispose();
   else ctx.signal?.addEventListener('abort', dispose, { once: true });
   return root;
@@ -666,6 +697,10 @@ export const FOLDER_TONES: [string, string][] = [
   ['rose', 'Rose'],
   ['ink', 'Ink'],
   ['graphite', 'Graphite'],
+  // Soft pastels, for folders you want to find at a glance.
+  ['mint', 'Mint'],
+  ['lavender', 'Lavender'],
+  ['butter', 'Butter'],
 ];
 /** A folder's colour: the one you picked, or a steady one from its id. */
 export function folderTone(ctx: Ctx, id: string): string {
