@@ -1,7 +1,7 @@
 // Full settings page.
 import { ext, features, uid, TARGET } from '../shared/api.ts';
 import { loadSettings, saveSettings, onSettingsChanged, loadSecrets, saveSecrets } from '../shared/storage.ts';
-import { defaultSettings, appFromCatalog } from '../shared/defaults.ts';
+import { defaultSettings, appFromCatalog, keepsRunning } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
 import { applyScale, clampScale, SCALE_MIN, SCALE_MAX } from '../shared/scale.ts';
@@ -119,6 +119,8 @@ function appRow(app: AppEntry, i: number): HTMLElement {
     toggle(app.mobile, (v) => commit((x) => void (x.apps[i].mobile = v)), `Mobile layout for ${app.name}`),
     h('span', { class: 'subtle' }, 'Badge'),
     toggle(app.badge, (v) => commit((x) => void (x.apps[i].badge = v)), `Unread badge for ${app.name}`),
+    h('span', { class: 'subtle' }, 'Keep running'),
+    toggle(keepsRunning(app), (v) => commit((x) => void (x.apps[i].keepAlive = v)), `Keep ${app.name} running while hidden`),
     iconButton('up', 'Move up', () => void move(-1)),
     iconButton('down', 'Move down', () => void move(1)),
     iconButton('trash', 'Remove', () => void commit((x) => void x.apps.splice(i, 1))),

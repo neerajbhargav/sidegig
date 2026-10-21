@@ -9,6 +9,9 @@ export function appFromCatalog(id: string): AppEntry {
   return { id: c.id, name: c.name, url: c.url, openIn: 'panel', mobile: PHONE_FIT.has(c.id), badge: c.badge !== 'none', catalogId: c.id };
 }
 
+/** Messengers keep running while hidden so their messages and badges stay current. */
+export const keepsRunning = (a: Pick<AppEntry, 'keepAlive' | 'catalogId'>): boolean => a.keepAlive ?? catalogById(a.catalogId ?? '')?.category === 'Messaging';
+
 export function defaultSettings(): Settings {
   return {
     version: SETTINGS_VERSION,
