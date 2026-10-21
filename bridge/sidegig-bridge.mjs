@@ -120,16 +120,17 @@ async function checkCodex() {
   return codex;
 }
 
-const runs = new Map();
+const runs = new Map(); // "<socket>:<run id>" -> child process: ids are only unique per socket
+let sockets = 0;
 const MAX_RUNS = 3; // Codex runs one socket may have going at once
-function codexRun(send, id, prompt, model, effort) {
+function codexRun(send, key, id, prompt, model, effort) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sidegig-codex-'));
   const args = ['exec', '--json', '--ephemeral', '--skip-git-repo-check', '-s', 'read-only', '-C', dir];
   if (model) args.push('-m', model);
   if (effort) args.push('-c', `model_reasoning_effort="${effort}"`);
   args.push('-');
   const child = spawn('codex', args, { env: ENV, cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
-  runs.set(id, child);
+  runs.set(key, child);
   let buf = '';
   let err = '';
   child.stdout.on('data', (d) => {
@@ -149,7 +150,7 @@ function codexRun(send, id, prompt, model, effort) {
   child.stderr.on('data', (d) => (err = (err + d).slice(-2000)));
   child.on('error', (e) => send({ type: 'codex.error', id, message: `Couldn’t start Codex: ${e.message}` }));
   child.on('close', (code) => {
-    runs.delete(id);
+    runs.delete(key);
     fs.rm(dir, { recursive: true, force: true }, () => {});
     if (code && code !== 0 && !child.killed) send({ type: 'codex.error', id, message: (err.trim().split('\n').filter((l) => !/Reading additional input/.test(l)).pop() || `Codex stopped (${code}).`).slice(0, 400) });
     send({ type: 'codex.done', id });
@@ -276,6 +277,9 @@ function wsAccept(req, socket) {
       }
     }
   });
+  // The upgraded socket stays half-open when the peer hangs up without a close frame
+  // (a crash, a dropped connection): end ours too, so 'close' fires and runs stop.
+  socket.on('end', () => socket.end());
   socket.on('close', () => handlers.close());
   socket.on('error', () => handlers.close());
   return ws;
@@ -338,6 +342,7 @@ function serve() {
     const mine = new Set(); // this socket's Codex runs
     let role = 'page';
     let paired = false;
+    const sid = ++sockets;
     // No hello with the right code within 5 s: goodbye.
     const knock = setTimeout(() => !paired && ws.close(), 5000);
     ws.on('message', async (m) => {
@@ -367,18 +372,18 @@ function serve() {
         p.done({ content: m.content ?? [{ type: 'text', text: '' }], isError: !!m.isError });
       } else if (m.type === 'codex.run') {
         const id = String(m.id ?? '');
-        if (!id || runs.has(id)) return;
+        if (!id || mine.has(id)) return;
         if (mine.size >= MAX_RUNS) return ws.send({ type: 'codex.error', id, message: 'Too many Codex runs at once. Wait for one to finish.' }), ws.send({ type: 'codex.done', id });
         mine.add(id);
-        codexRun((x) => (x.type === 'codex.done' && mine.delete(id), ws.send(x)), id, String(m.prompt ?? ''), String(m.model ?? ''), String(m.effort ?? ''));
+        codexRun((x) => (x.type === 'codex.done' && mine.delete(id), ws.send(x)), `${sid}:${id}`, id, String(m.prompt ?? ''), String(m.model ?? ''), String(m.effort ?? ''));
       } else if (m.type === 'codex.stop') {
-        if (mine.has(m.id)) runs.get(m.id)?.kill('SIGTERM');
+        if (mine.has(m.id)) runs.get(`${sid}:${m.id}`)?.kill('SIGTERM');
       }
     });
     ws.on('close', () => {
       clearInterval(ping);
       clearTimeout(knock);
-      for (const id of mine) runs.get(id)?.kill('SIGTERM');
+      for (const id of mine) runs.get(`${sid}:${id}`)?.kill('SIGTERM');
       if (host === ws) {
         host = null;
         log('browser disconnected');

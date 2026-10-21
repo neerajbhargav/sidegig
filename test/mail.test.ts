@@ -23,6 +23,7 @@ test('dates, prices, order numbers and ordinary mail are not codes', () => {
 test('html becomes readable text', () => {
   assert.equal(htmlText('<div>Hi&nbsp;there,<br>Line two</div><p>Para &amp; more</p><style>.x{}</style><!-- c -->'), 'Hi there,\nLine two\nPara & more');
   assert.equal(htmlText('&#39;quoted&#39; &#x27;hex&#x27; &lt;b&gt;'), "'quoted' 'hex' <b>");
+  assert.equal(htmlText('a &#999999999; b &#xFFFFFFF; c'), 'a &#999999999; b &#xFFFFFFF; c', 'an impossible character stays as written instead of breaking the thread');
 });
 
 const PRINT = `<html><body><div class="bodycontainer"><table><tr><td>logo</td></tr></table><hr><div class="maincontent"><table width=100% cellpadding=0 cellspacing=0 border=0><tr><td><font size=+1><b>Plans for the launch</b></font><br><font size=-1 color=#777>2 messages</font></td></tr></table><hr>

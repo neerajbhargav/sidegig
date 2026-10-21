@@ -34,9 +34,12 @@ export function htmlText(html: string): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(new RegExp(`</?(${BLOCK})\\b[^>]*>`, 'gi'), '\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) =>
-      e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : ENTITIES[e.toLowerCase()] ?? m,
-    )
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
+      if (e[0] !== '#') return ENTITIES[e.toLowerCase()] ?? m;
+      const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      // An impossible character stays as written rather than breaking the whole thread.
+      return n <= 0x10ffff ? String.fromCodePoint(n) : m;
+    })
     .replace(/[ \t ]+/g, ' ')
     .replace(/ ?\n\s*/g, '\n')
     .trim();
