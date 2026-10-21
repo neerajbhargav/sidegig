@@ -53,21 +53,22 @@ function waitFor(selectors: string[], timeout = 20_000): Promise<HTMLElement | n
   });
 }
 
+/**
+ * Put a question in the composer, replacing what's there: AI sites keep unsent
+ * text, so appending piled up old prompts from earlier asks.
+ */
 export function insertText(el: HTMLElement, text: string): boolean {
   el.focus();
   if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
     const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-    const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-    const next = el.value ? `${el.value}\n\n${text}` : text;
-    setter?.call(el, next);
+    Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(el, text);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     return el.value.includes(text.slice(0, 40));
   }
-  // Rich editors (ProseMirror, Quill): move the caret to the end, then insert.
+  // Rich editors (ProseMirror, Quill): select everything, then type over it.
   const sel = window.getSelection();
   const range = document.createRange();
   range.selectNodeContents(el);
-  range.collapse(false);
   sel?.removeAllRanges();
   sel?.addRange(range);
   const probe = text.slice(0, 40);

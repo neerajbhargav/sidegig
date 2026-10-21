@@ -12,9 +12,34 @@ import { NO_FRAME } from '../../shared/catalog.ts';
 import { keepsRunning } from '../../shared/defaults.ts';
 
 const SLEEP_MS = 30 * 60_000;
-const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number }>();
+const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number; ready: boolean }>();
 let alive = new Set<string>();
 export const framesHost = h('div', { class: 'frames', hidden: true });
+
+// While an app's page loads, a quiet splash in sidegig's own colours (its icon,
+// its name, a thin moving line) instead of a blank white frame.
+const splash = h('div', { class: 'frame-splash', hidden: true, role: 'status' });
+framesHost.append(splash);
+let splashFor = '';
+function showSplash(app: AppEntry) {
+  const f = frames.get(app.id);
+  splashFor = app.id;
+  if (!f || f.ready) {
+    splash.hidden = true;
+    return;
+  }
+  splash.replaceChildren(appFavicon(app, 'fav splash-icon'), h('span', { class: 'splash-name' }, `Opening ${app.name}`), h('span', { class: 'splash-bar', 'aria-hidden': 'true' }));
+  splash.classList.remove('out');
+  splash.hidden = false;
+}
+function frameReady(id: string) {
+  const f = frames.get(id);
+  if (!f || f.ready) return;
+  f.ready = true;
+  if (splashFor !== id || splash.hidden) return;
+  splash.classList.add('out');
+  setTimeout(() => splash.classList.contains('out') && (splash.hidden = true), 180);
+}
 
 /** Frames that have said hello (the frame helper runs inside them), by app id. */
 const greeted = new Set<string>();
@@ -36,9 +61,12 @@ function frameFor(ctx: Ctx, app: AppEntry): HTMLIFrameElement {
       allow: 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; storage-access',
       referrerpolicy: 'strict-origin-when-cross-origin',
     });
-    f = { el, lastShown: Date.now() };
+    f = { el, lastShown: Date.now(), ready: false };
     frames.set(app.id, f);
     framesHost.append(el);
+    el.addEventListener('load', () => frameReady(app.id));
+    // Some apps never finish loading every resource: don't keep the splash up forever.
+    setTimeout(() => frameReady(app.id), 12_000);
     // Sites with service workers (Gmail, X) answer from them with "don't frame me";
     // clear the worker first, then load. Others load straight away.
     if (NO_FRAME.has(app.catalogId ?? '')) void send({ type: 'clear-sw', url: app.url }).catch(() => undefined).finally(() => (el.src = app.url));
@@ -69,7 +97,11 @@ function watchFrame(ctx: Ctx, app: AppEntry, host: HTMLElement) {
 
 function reload(app: AppEntry) {
   const f = frames.get(app.id);
-  if (f) f.el.src = app.url;
+  if (!f) return;
+  f.ready = false;
+  f.el.src = app.url;
+  showSplash(app);
+  setTimeout(() => frameReady(app.id), 12_000);
 }
 
 setInterval(() => {
@@ -203,6 +235,7 @@ function attach(ctx: Ctx, app: AppEntry, url?: string) {
     if (show) f.lastShown = Date.now();
     f.el.hidden = !show;
   }
+  showSplash(app);
 }
 
 /** Built-in apps you sign in to (all but Translate). Custom sites usually work in a page. */

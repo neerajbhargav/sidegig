@@ -1766,10 +1766,10 @@ html[data-look] .nt2 .gw[data-size="s"] > .nt-card { padding: 0.75rem 0.875rem; 
 .nt-grid[data-edit] .gw-more, .nt-grid[data-flow="true"] .gw-more { display: none; }
 
 /* One column you scroll, on narrow or short windows. */
-.nt-grid[data-flow="true"] { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); grid-template-rows: none; align-items: start; height: auto; min-height: 0; }
-.nt-grid[data-flow="true"] .gw { grid-column: auto; grid-row: auto; }
-.nt-grid[data-flow="true"] .gw[data-w="search"] { grid-column: 1 / -1; order: -2 !important; }
-.nt-grid[data-flow="true"] .gw[data-w="bookmarks"] { grid-column: 1 / -1; order: -1 !important; }
+/* Small windows: balanced columns, so short cards don't leave gaps the height of their tallest neighbour. */
+.nt-grid[data-flow="true"] { display: block; columns: 20rem; column-gap: clamp(0.625rem, 1vw, 1rem); height: auto; min-height: 0; }
+.nt-grid[data-flow="true"] > .gw { break-inside: avoid; margin: 0 0 clamp(0.625rem, 1vw, 1rem); }
+.nt-grid[data-flow="true"] > .gw:is([data-w="search"], [data-w="bookmarks"]) { column-span: all; }
 .nt-grid[data-flow="true"] .gw { container-type: inline-size; }
 html[data-look] .nt2 .nt-grid[data-flow="true"] .gw > .nt-card { height: auto; overflow: visible; }
 .nt-grid[data-flow="true"] .gw[data-w="clock"], .nt-grid[data-flow="true"] .gw[data-w="weather"] { min-height: 9rem; }
@@ -1790,7 +1790,9 @@ html[data-look] .nt2 .gw-search > .nt-ask { width: 100%; margin: 0; }
 html[data-look] .nt2 .gw-search > .nt-results { position: absolute; left: 0; right: 0; top: calc(100% + 0.5rem); z-index: 30; width: auto; margin: 0; max-height: 60vh; overflow: auto; }
 .gw-search > .nt-ai-host { position: absolute; left: 0; right: 0; top: calc(100% + 0.5rem); z-index: 30; max-height: calc(100dvh - 22rem); overflow: auto; border-radius: var(--r-cardx); }
 .nt2[data-mode="home"] .gw-search > .nt-ai-host { display: none; }
-html[data-look] .nt2 .nt-grid[data-flow="true"] .gw-search > :is(.nt-results, .nt-ai-host) { position: static; max-height: none; margin-top: 0.75rem; }
+html[data-look] .nt2 .nt-grid[data-flow="true"] .gw-search > .nt-results { position: static; max-height: none; margin-top: 0.75rem; }
+/* Recent chats: a menu while the box has focus, never a panel over the desk. */
+.nt2 .gw-search:not(:focus-within) > .nt-ai-host, .nt2 .nt-ai-host:has(> [hidden]:only-child) { display: none; }
 .nt-choice-float { position: fixed; z-index: 40; left: 50%; bottom: 1.25rem; transform: translateX(-50%); width: min(40rem, calc(100% - 2rem)); }
 
 /* Clock. Medium: the big time, the date and the day's line, straight on the picture. */
@@ -1870,7 +1872,7 @@ html[data-look] .nt2[data-wall][data-panels="clear"] .gw:not([data-w="search"]):
 /* Uniform bounded surfaces separate the wallpaper without floating halos. */
 .gw::before { content: none; }
 html[data-look] .nt2[data-wall][data-panels="clear"] .gw[data-tone]:not(.is-open) > .nt-card {
-  background: rgb(var(--lg-rgb) / 0.62); border: 1px solid var(--card-line);
+  background: rgb(var(--lg-rgb) / var(--lg-a, 0.62)); border: 1px solid var(--card-line);
   -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none;
 }
 .nt2[data-panels="clear"] :is(.gw[data-tone="light"], .gw[data-tone="light"] .nt-card) {
@@ -1897,7 +1899,7 @@ html .nt2[data-panels="clear"] .gw[data-tone="dark"] .iso {
   --anatomy-shade-2: color-mix(in oklab, var(--fig-paper) 92%, var(--c-ink)); --anatomy-shade-3: color-mix(in oklab, var(--fig-paper) 96%, var(--c-ink));
 }
 /* Bookmark tiles keep a plate so coloured logos read; their labels follow the tone. */
-html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .nt-shelf .nt-cap { background: color-mix(in oklab, #fff 86%, transparent); box-shadow: none; }
+html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .nt-shelf .nt-cap:not(.nt-cap-add) { background: color-mix(in oklab, #fff 86%, transparent); box-shadow: none; --c-ink: #141414; }
 html[data-look] .nt2[data-panels="clear"] .gw[data-tone] .nt-shelf .nt-label { color: var(--c-ink); }
 
 /* ======================================================================
@@ -2015,7 +2017,7 @@ html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="clock"] .nt-time { f
 html[data-look] .nt2 .nt-grid[data-flow="true"] .gw[data-w="calendar"] .fig-cubes { position: static; width: 8rem; height: auto; margin: 0 auto; }
 /* Bookmarks fill the allocated cell, with their tiles centred inside it. */
 html[data-look] .nt2 .gw[data-w="bookmarks"] > .nt-shelf.nt-card { height: 100%; max-height: 100%; }
-.gw[data-w="bookmarks"] .shelf-grid { align-content: center; padding: 0.75rem 0.5rem; }
+.gw[data-w="bookmarks"] .shelf-grid { align-content: safe center; padding: 0.75rem 0.5rem; }
 html[data-look] .nt2 .gw-search > .nt-ask { height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
 
 /* ======================================================================
@@ -2193,7 +2195,6 @@ html[data-look="native"] .cv-empty h3 { font: 500 1.75rem/1.2 var(--f-text); let
 /* On the new tab: the search card's Ask side and what drops below it. */
 .nt2 .ask-bar .cc-picks { margin-left: 0.25rem; }
 .nt2 .nt-ai .ai-recent { display: flex; flex-direction: column; }
-.nt2 .nt-ai .ai-elsewhere { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; }
 html[data-chat] .nt2 .nt-page, html[data-chat] .nt2 .gw-scrim { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .cv-newtab, .cc-pop { animation: none; } .cm-wait::after, .cm-tool[data-state="running"] .cm-tool-dot { animation: none; } }
 .nt2 .nt-ai .ai-sec:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
@@ -2531,3 +2532,42 @@ html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-histor
 .welcome-steps > li:not(:last-child)::after { content: ""; position: absolute; left: 0.8125rem; top: 1.75rem; bottom: -1.25rem; width: 1px; background: var(--m-border); }
 .welcome-steps > li.welcome-row:not(:last-child)::after { top: 3rem; }
 .welcome-steps > li.welcome-row { border-top: 0; }
+
+/* Fields inside a toned card follow the card: no bright boxes on a dark tint, or dark ones on a light tint. */
+.nt2[data-panels="clear"] .gw[data-tone] :is(input.text-input, textarea.text-input, select.text-input) {
+  background: rgb(var(--lg-rgb) / 0.28); color: var(--c-ink); border-color: var(--c-line);
+}
+.nt2[data-panels="clear"] .gw[data-tone] :is(input, textarea)::placeholder { color: var(--c-mute); }
+
+/* Ask on another assistant: small icons in the search bar, labelled while there is room. */
+.ai-elsewhere-bar { display: inline-flex; align-items: center; gap: 0.125rem; margin-right: 0.25rem; }
+.ai-elsewhere-bar .ai-to-label { margin-right: 0.375rem; font-size: 0.75rem; }
+html .ai-elsewhere-bar .ai-key { width: 2rem; height: 2rem; min-height: 0; padding: 0; justify-content: center; border-radius: 999px; background: transparent; }
+html .ai-elsewhere-bar .ai-key:hover { background: var(--hov); }
+.ai-elsewhere-bar .ai-key .fav.xs { width: 1rem; height: 1rem; }
+.nt2[data-mode="home"] .ai-elsewhere-bar { display: none; }
+@container (max-width: 44rem) { .ai-elsewhere-bar .ai-to-label { display: none; } }
+@container (max-width: 30rem) { .ai-elsewhere-bar { display: none; } }
+
+/* App loading: a quiet splash in the panel's colours until the app's page has loaded. */
+.frame-splash { position: absolute; inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; gap: calc(12px * var(--ui-s, 1)); background: var(--m-bg); color: var(--m-fg-muted); transition: opacity 180ms ease-out; }
+.frame-splash[hidden] { display: none; }
+.frame-splash.out { opacity: 0; pointer-events: none; }
+.frame-splash .splash-icon { width: calc(44px * var(--ui-s, 1)); height: calc(44px * var(--ui-s, 1)); border-radius: calc(12px * var(--ui-s, 1)); }
+.frame-splash .splash-name { font-size: calc(13px * var(--ui-s, 1)); }
+.frame-splash .splash-bar { position: relative; width: calc(96px * var(--ui-s, 1)); height: 2px; border-radius: 2px; overflow: hidden; background: color-mix(in oklab, var(--m-fg) 12%, transparent); }
+.frame-splash .splash-bar::after { content: ""; position: absolute; inset: 0; width: 40%; border-radius: inherit; background: var(--m-accent); animation: splash-run 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite; }
+@keyframes splash-run { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .frame-splash { transition: none; } .frame-splash .splash-bar::after { animation: none; width: 100%; opacity: 0.35; } }
+
+/* "+N" on a full shelf: the rest of the bookmarks are one click away. */
+.shelf-item[hidden] { display: none; }
+.nt-cap-more { display: grid; place-items: center; font: 600 0.875rem/1 var(--f-text); color: var(--c-ink); }
+
+/* The top bar follows the desk's tone on a picture, like the cards below it. */
+.nt2[data-panels="clear"][data-desk-tone="light"] { --desk-rgb: 0 0 0; --desk-ink: #fff; --desk-mute: rgb(255 255 255 / 0.8); --desk-line: rgb(255 255 255 / 0.2); }
+.nt2[data-panels="clear"][data-desk-tone="dark"] { --desk-rgb: 255 255 255; --desk-ink: #141414; --desk-mute: rgb(20 20 20 / 0.72); --desk-line: rgb(20 20 20 / 0.14); }
+.nt2[data-wall][data-panels="clear"][data-desk-tone] :is(.nt-brand, .nt-meta, .nt-pages) {
+  background: rgb(var(--desk-rgb) / 0.55); border-color: var(--desk-line); -webkit-backdrop-filter: none; backdrop-filter: none;
+  --c-ink: var(--desk-ink); --c-mute: var(--desk-mute); color: var(--desk-ink);
+}

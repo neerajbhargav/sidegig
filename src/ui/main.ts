@@ -5,7 +5,7 @@ import { loadSettings, onSettingsChanged, getLocal, onLocalChanged } from '../sh
 import { themeCss } from '../shared/theme.ts';
 import type { Ctx, Kind, ViewName } from './ctx.ts';
 import { send } from './ctx.ts';
-import { panelRail } from './views/prail.ts';
+import { markRail, paintRailBadges, panelRail } from './views/prail.ts';
 import { updateSettings, setLocal } from '../shared/storage.ts';
 import { iconButton, setFavMissing, setIconStyle } from './dom.ts';
 import { applyScale } from '../shared/scale.ts';
@@ -152,7 +152,15 @@ async function boot() {
     if (kind === 'drawer') toRail({ type: 'view', view: name, app: current.app });
   }
 
-  async function renderRail() {
+  // The panel rail is rebuilt only when what it lists changes; switching views
+  // and new unread counts update it in place, so icons don't reload or lose focus.
+  let railKey = '';
+  async function renderRail(force = false) {
+    const t = ctx.settings;
+    const key = JSON.stringify([t.apps.map((a) => [a.id, a.name, a.url, a.badge, a.catalogId]), t.theme.icons, t.ai.defaultApp]);
+    const nav = railHost.firstElementChild as HTMLElement | null;
+    if (nav && !force && key === railKey) return markRail(nav, current);
+    railKey = key;
     railHost.replaceChildren(await panelRail(ctx, current));
   }
 
@@ -224,8 +232,11 @@ async function boot() {
     setFavMissing((v as string[] | undefined) ?? []);
     if (current.name !== 'search') void render(current.name, { app: current.app });
   });
-  onLocalChanged('badges', () => (kind === 'panel' ? void renderRail() : current.name === 'app' && void render('app', { app: current.app })));
-  onLocalChanged('status', () => kind === 'panel' && void renderRail());
+  onLocalChanged('badges', (b) => {
+    const nav = railHost.firstElementChild as HTMLElement | null;
+    if (kind === 'panel' && nav) paintRailBadges(nav, ctx, (b as Record<string, number> | undefined) ?? {});
+  });
+  onLocalChanged('status', () => kind === 'panel' && void renderRail(true));
 
   // Drawer: messages from the rail in the hosting page, over the private port.
   fromRail = (d) => {

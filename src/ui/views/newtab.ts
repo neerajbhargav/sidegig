@@ -152,7 +152,8 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
   const open = ctx.settings.newtab.todo ? todos.filter((t) => !t.done).length : 0;
   if (open) add(`${open} ${open === 1 ? 'task' : 'tasks'}`, ' to do');
   const unread = ctx.settings.apps.reduce((n, a) => n + (a.badge && (badges[a.id] ?? 0) > 0 ? badges[a.id] : 0), 0);
-  if (unread) add(`${unread} unread`, ' across your apps');
+  // Inboxes count in the tens of thousands: "28K", not "28056".
+  if (unread) add(`${new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(unread)} unread`, ' across your apps');
   if (!parts.length) return null;
   const last = parts.lastIndexOf(', ');
   if (last > 0) parts[last] = ' and ';
@@ -375,7 +376,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     : null;
   const searchVoice = voiceButton(input);
   // Which controls belong to which side of the switch.
-  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai'], [ai?.pickers, 'ai']] as const) if (el) el.dataset.for = side;
+  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai'], [ai?.pickers, 'ai'], [ai?.elsewhere, 'ai']] as const) if (el) el.dataset.for = side;
   // With a greeting, the day summary is its second, quieter sentence (two-tone); otherwise it sits under the clock.
   const brief = w.brief ? await briefEl(ctx) : null;
   const greet = greetingLine(ctx, w.greeting ? brief : null);
@@ -384,7 +385,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     { class: 'nt-ask nt-card' },
     greet ? h('div', { class: 'ask-head' }, greet) : null,
     h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
-    h('div', { class: 'ask-bar' }, seg?.el ?? null, ai?.pickers ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
+    h('div', { class: 'ask-bar' }, seg?.el ?? null, ai?.pickers ?? null, h('span', { class: 'ask-gap' }), ai?.elsewhere ?? null, feedToggle, searchGo, ai?.send ?? null),
     codePill(ctx),
   );
 

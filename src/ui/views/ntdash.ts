@@ -875,7 +875,41 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     );
     reveal(grid, ...tiles);
     if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
+    fitShelf();
   };
+
+  // On the desk the shelf shows what fits, and a "+N" tile for the rest that opens
+  // the full shelf; nothing is cut off or scrolled out of reach.
+  const more = h('div', { role: 'listitem', class: 'shelf-item shelf-more-item' });
+  const fitShelf = () => {
+    more.remove();
+    const items = [...grid.querySelectorAll<HTMLElement>(':scope > .shelf-item')];
+    for (const it of items) it.hidden = false;
+    if (!grid.clientHeight || grid.scrollHeight <= grid.clientHeight + 1) return;
+    const bottom = grid.clientHeight;
+    const out = (el: HTMLElement) => el.offsetTop + el.offsetHeight > bottom + 1;
+    let first = items.findIndex(out);
+    if (first < 0) return;
+    const place = () => {
+      items.forEach((it, i) => (it.hidden = i >= first));
+      const rest = items.slice(first).filter((it) => !it.querySelector('.shelf-addkey')).length;
+      more.replaceChildren(
+        h('button', { type: 'button', class: 'nt-key shelf-more', title: 'Show all bookmarks', 'aria-label': `Show all bookmarks, ${rest} more`, onclick: () => (play('key'), root.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'bookmarks' }))) },
+          h('span', { class: 'nt-cap nt-cap-more' }, `+${rest}`),
+          h('span', { class: 'nt-label' }, 'More'),
+        ),
+      );
+      items[first].before(more);
+    };
+    place();
+    while (first > 0 && out(more)) {
+      first--;
+      place();
+    }
+  };
+  const ro = new ResizeObserver(() => fitShelf());
+  ro.observe(grid);
+  ctx.signal?.addEventListener('abort', () => ro.disconnect(), { once: true });
 
   // Add a site (name and address) or a folder (name only), right where you are.
   const nameIn = h('input', { class: 'text-input', type: 'text', placeholder: 'Name', 'aria-label': 'Name', maxlength: 80 });
