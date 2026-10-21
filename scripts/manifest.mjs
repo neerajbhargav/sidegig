@@ -59,6 +59,9 @@ export function manifestFor(target) {
     {
       resources: ['drawer.html', 'ui.js', 'ui.css', 'icons/*', ...(chromium ? ['_favicon/*'] : [])],
       matches: ['<all_urls>'],
+      // Chrome 130+: reachable only at a per-session random URL, so a website can't embed
+      // the drawer (and the apps in it) or probe the favicon cache. Firefox's URL is random already.
+      ...(chromium ? { use_dynamic_url: true } : {}),
     },
   ];
 

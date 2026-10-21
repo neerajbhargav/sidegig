@@ -56,7 +56,7 @@ const stripFrameHeaders: chrome.declarativeNetRequest.RuleAction = {
  * frames (rule 2) are only changed there and in the browser sidebar, which has
  * no tab (-1); an app host framing another app host in a normal page gets nothing.
  */
-export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: number[] = [], drawerTabs: number[] = []): Rule[] {
+export function buildRules(apps: AppEntry[], extensionHosts: string[], sideTabs: number[] = [], drawerTabs: number[] = []): Rule[] {
   const rules: Rule[] = [];
   let id = 1;
   const appHosts = [...new Set(apps.map((a) => hostOf(a.url)).filter(Boolean))];
@@ -64,7 +64,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: nu
   const trusted = [...new Set([...appHosts, ...AUTH_HOSTS])];
 
   // 1. Frames sidegig's own pages open (the sidebar panel, the in-page panel).
-  rules.push({ id: id++, priority: 1, action: stripFrameHeaders, condition: { resourceTypes: sub, initiatorDomains: [extensionHost] } });
+  rules.push({ id: id++, priority: 1, action: stripFrameHeaders, condition: { resourceTypes: sub, initiatorDomains: extensionHosts } });
   // 2. Navigations inside those frames: sign-in redirects and in-app links, started by
   //    the app (or its sign-in page) itself. A third-party site embedding these apps
   //    doesn't match, because it isn't one of the initiators.
@@ -73,7 +73,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: nu
       id: id++,
       priority: 1,
       action: stripFrameHeaders,
-      condition: { resourceTypes: sub, requestDomains: trusted, initiatorDomains: [extensionHost, ...trusted], tabIds: [-1, ...drawerTabs] },
+      condition: { resourceTypes: sub, requestDomains: trusted, initiatorDomains: [...extensionHosts, ...trusted], tabIds: [-1, ...drawerTabs] },
     });
   }
   // 3. Mobile layout: ask for the phone version, only for frames sidegig shows.
@@ -92,7 +92,7 @@ export function buildRules(apps: AppEntry[], extensionHost: string, sideTabs: nu
           { header: 'if-none-match', operation: 'remove' as chrome.declarativeNetRequest.HeaderOperation },
         ],
       },
-      condition: { resourceTypes: sub, requestDomains: mobileHosts, initiatorDomains: [extensionHost, ...trusted] },
+      condition: { resourceTypes: sub, requestDomains: mobileHosts, initiatorDomains: [...extensionHosts, ...trusted] },
     });
     // 4. sidegig's docked side windows (Gmail, X): the whole window is narrow, so the phone layout fits it.
     if (sideTabs.length) {
@@ -124,10 +124,12 @@ export async function applyRules(apps: AppEntry[]): Promise<void> {
   lastApps = apps;
   const dnr = (ext as any).declarativeNetRequest;
   if (!dnr?.updateSessionRules) return;
-  const host = new URL(ext.runtime.getURL('/')).hostname;
+  // The extension's own host, and the drawer's per-session random host (use_dynamic_url):
+  // frames the in-page drawer opens are started from the second one.
+  const hosts = [...new Set(['/', 'drawer.html'].map((p) => new URL(ext.runtime.getURL(p)).hostname))];
   const existing = await dnr.getSessionRules();
   await dnr.updateSessionRules({
     removeRuleIds: existing.map((r: Rule) => r.id),
-    addRules: buildRules(apps, host, sideTabs, drawerTabs),
+    addRules: buildRules(apps, hosts, sideTabs, drawerTabs),
   });
 }
