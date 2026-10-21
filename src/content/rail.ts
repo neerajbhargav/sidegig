@@ -498,7 +498,8 @@ class Rail {
     this.port = ch.port1;
     this.ready = false;
     ch.port1.onmessage = (e) => e.data && this.fromDrawer(e.data);
-    const origin = TARGET === 'preview' ? '*' : new URL(ext.runtime.getURL('/')).origin;
+    // The drawer's own origin (it may be a per-session random host), never '*'.
+    const origin = TARGET === 'preview' ? '*' : new URL(f.src).origin;
     f.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, type: 'port' }, origin, [ch.port2]);
   }
 

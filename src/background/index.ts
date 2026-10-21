@@ -264,10 +264,8 @@ onLocalChanged('agentAccess', () => void agentLink());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));
 (ext.windows as any).onBoundsChanged?.addListener((w: chrome.windows.Window) => void rememberSideWidth(w));
 
-const OUR_ORIGIN = new URL(ext.runtime.getURL('/')).origin;
-
 ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
-  const { ok, host } = trustSender(msg?.type, sender, ext.runtime.id, OUR_ORIGIN);
+  const { ok, host } = trustSender(msg?.type, sender, ext.runtime.id);
   if (!ok) return false;
   const windowId = sender.tab?.windowId;
   switch (msg.type) {
