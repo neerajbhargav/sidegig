@@ -156,7 +156,8 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
   if (!parts.length) return null;
   const last = parts.lastIndexOf(', ');
   if (last > 0) parts[last] = ' and ';
-  return h('p', { class: 'nt-brief' }, ...parts);
+  parts.push('.');
+  return h('span', { class: 'nt-brief' }, ...parts);
 }
 
 export const brandName = (ctx: Ctx) => ctx.settings.newtab.title.trim() || 'sidegig';
@@ -375,7 +376,9 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const searchVoice = voiceButton(input);
   // Which controls belong to which side of the switch.
   for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai'], [ai?.pickers, 'ai']] as const) if (el) el.dataset.for = side;
-  const greet = greetingLine(ctx);
+  // With a greeting, the day summary is its second, quieter sentence (two-tone); otherwise it sits under the clock.
+  const brief = w.brief ? await briefEl(ctx) : null;
+  const greet = greetingLine(ctx, w.greeting ? brief : null);
   const box = h(
     'div',
     { class: 'nt-ask nt-card' },
@@ -409,7 +412,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const off = (put: (s: Settings) => void) => () => void updateSettings(put);
   const items: GridItem[] = [];
   const push = (id: GridItem['id'], label: string, el: HTMLElement | null, more: Partial<GridItem> = {}) => el && items.push({ id, label, el, ...more });
-  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.brief ? await briefEl(ctx) : null) : null, { expandable: true, remove: off((s) => void (s.newtab.clock = false)) });
+  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.greeting ? null : brief) : null, { expandable: true, remove: off((s) => void (s.newtab.clock = false)) });
   push('weather', 'Weather', w.weather ? weatherCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.weather = false)) });
   push('search', 'Search', h('div', { class: 'gw-search' }, box, results, ai ? h('div', { class: 'nt-ai-host' }, ai.below) : null));
   push('bookmarks', 'Bookmarks', w.bookmarks ? await bookmarkShelf(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.bookmarks = false)) });

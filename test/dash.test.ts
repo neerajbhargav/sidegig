@@ -116,3 +116,33 @@ test('wallpaper credit: short and meaningful', () => {
   assert.equal(shortCredit('Your picture'), '');
   assert.equal(shortCredit('NS · your pictures'), '');
 });
+
+test('focus history: one entry per finished session, totals by day, a 12-week grid', async () => {
+  const { logFocus, focusGrid } = await import('../src/shared/ntpomo.ts');
+  const end = new Date(2026, 9, 21, 15, 0).getTime();
+  let log = logFocus([], end, 25);
+  log = logFocus(log, end, 25); // a second open tab finishing the same session
+  log = logFocus(log, end + 3600_000, 25);
+  log = logFocus(log, new Date(2026, 9, 20, 9, 0).getTime(), 50);
+  assert.equal(log.length, 3, 'the same session is logged once');
+  const g = focusGrid(log, new Date(2026, 9, 21, 18, 0), 12);
+  assert.equal(g.days.length, 12 * 7);
+  const today = g.days.find((d) => d.today)!;
+  assert.equal(today.min, 50);
+  assert.equal(g.days[g.days.indexOf(today) - 1].min, 50);
+  assert.equal(g.thisWeek, 100);
+  assert.ok(g.days.every((d) => d.level >= 0 && d.level <= 4));
+  assert.equal(today.level, 4, 'the busiest day is the darkest');
+  assert.equal(g.days[g.days.length - 1].future, true, 'days after today in this week are blank');
+  assert.ok(logFocus(Array.from({ length: 600 }, (_, i) => ({ end: i, min: 1 })), end, 25).length <= 500, 'the log stays bounded');
+});
+
+test('a second time zone names the city and says when it is another day', async () => {
+  const { zoneText } = await import('../src/shared/ntdata.ts');
+  const lateUtc = new Date(Date.UTC(2026, 9, 21, 22, 30));
+  const z = zoneText('Asia/Kolkata', lateUtc, 'en-US', 'UTC');
+  assert.deepEqual(z, { city: 'Kolkata', time: '4:00 am, tomorrow' });
+  assert.deepEqual(zoneText('America/Los_Angeles', new Date(Date.UTC(2026, 9, 21, 3, 0)), 'en-US', 'UTC'), { city: 'Los Angeles', time: '8:00 pm, yesterday' });
+  assert.deepEqual(zoneText('Europe/London', lateUtc, 'en-US', 'UTC'), { city: 'London', time: '11:30 pm' });
+  assert.equal(zoneText('Not/AZone', lateUtc), null);
+});

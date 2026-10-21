@@ -155,3 +155,19 @@ export function shortCredit(credit: string): string {
   if (!source.includes(' ') && source.length <= 10) return source;
   return initials(source) || source.slice(0, 3);
 }
+
+/** "Kolkata 7:19 am, tomorrow": a second time zone under the date, like a world-time watch. `here`: your zone (tests). */
+export function zoneText(zone: string, now: Date, loc?: string, here?: string): { city: string; time: string } | null {
+  let time: string;
+  let theirDay: string;
+  try {
+    time = new Intl.DateTimeFormat(loc, { timeZone: zone, hour: 'numeric', minute: '2-digit' }).format(now).toLowerCase();
+    theirDay = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  } catch {
+    return null;
+  }
+  const ours = new Intl.DateTimeFormat('en-CA', { timeZone: here, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const when = theirDay > ours ? ', tomorrow' : theirDay < ours ? ', yesterday' : '';
+  return { city: zone.split('/').pop()!.replace(/_/g, ' '), time: `${time}${when}` };
+}
+
