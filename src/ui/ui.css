@@ -2508,3 +2508,26 @@ html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-fig { 
 html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side { flex-direction: row; align-items: center; gap: 1.5rem; height: 100%; }
 html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side .pomo-row { flex: 0 0 auto; }
 html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-history { display: flex; flex: 1 1 auto; max-width: 20rem; }
+
+/* Stack counts as an outline pill, quieter than a badge. */
+.stack-count { min-width: calc(20px * var(--ui-s, 1)); padding: 0 calc(6px * var(--ui-s, 1)); box-sizing: border-box; border: 1px solid var(--m-border); border-radius: 999px; text-align: center; line-height: calc(18px * var(--ui-s, 1)); font-size: calc(12px * var(--ui-s, 1)); }
+.stack-count:empty { display: none; }
+
+/* The sign-in code is a ticket: notched ends, the code in mono. */
+.code-copy {
+  border-radius: calc(6px * var(--ui-s, 1));
+  padding-inline: calc(14px * var(--ui-s, 1));
+  -webkit-mask: radial-gradient(circle at 0 50%, transparent calc(4px * var(--ui-s, 1)), #000 calc(4.5px * var(--ui-s, 1))) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, transparent calc(4px * var(--ui-s, 1)), #000 calc(4.5px * var(--ui-s, 1))) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle at 0 50%, transparent calc(4px * var(--ui-s, 1)), #000 calc(4.5px * var(--ui-s, 1))) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, transparent calc(4px * var(--ui-s, 1)), #000 calc(4.5px * var(--ui-s, 1))) right / 51% 100% no-repeat;
+}
+.code-copy:focus-visible { -webkit-mask: none; mask: none; }
+
+/* Setup as a step rail: numbered circles on a hairline, like an instrument's steps. */
+.welcome-steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+.welcome-steps > li { position: relative; counter-increment: step; padding-left: 2.5rem; }
+.welcome-steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.625rem; height: 1.625rem; border-radius: 50%; display: grid; place-items: center; box-sizing: border-box; border: 1px solid var(--m-border); background: var(--m-bg); color: var(--m-fg-muted); font: 600 0.8125rem/1 var(--f-mono, ui-monospace); }
+.welcome-steps > li.welcome-row::before { top: 1.25rem; }
+.welcome-steps > li:first-child::before { background: var(--m-accent); border-color: var(--m-accent); color: var(--m-accent-fg); }
+.welcome-steps > li:not(:last-child)::after { content: ""; position: absolute; left: 0.8125rem; top: 1.75rem; bottom: -1.25rem; width: 1px; background: var(--m-border); }
+.welcome-steps > li.welcome-row:not(:last-child)::after { top: 3rem; }
+.welcome-steps > li.welcome-row { border-top: 0; }
