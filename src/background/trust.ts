@@ -19,10 +19,14 @@ export function httpsHost(url = ''): string {
 }
 
 /** `host` is the sender's own https host, for the site messages. */
-export function trustSender(type: string, sender: Sender, extId: string, extOrigin: string): { ok: boolean; host: string } {
+/** Our own pages (sender.id is ours) under an extension scheme. The drawer may sit at
+ * a per-session random host (use_dynamic_url), so the host itself isn't compared. */
+const extensionPage = (url = '') => /^(chrome|moz|safari-web)-extension:\/\//.test(url);
+
+export function trustSender(type: string, sender: Sender, extId: string): { ok: boolean; host: string } {
   const no = { ok: false, host: '' };
   if (sender.id !== extId) return no;
-  const fromPage = (sender.url ?? '').startsWith(extOrigin + '/');
+  const fromPage = extensionPage(sender.url);
   if (PAGE_ONLY.has(type as ToBackground['type'])) return { ok: fromPage, host: '' };
   if (SITE.has(type as ToBackground['type'])) {
     const host = httpsHost(sender.url);
