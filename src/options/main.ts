@@ -856,6 +856,39 @@ async function getSaved(): Promise<SavedSetup[]> {
   return Array.isArray(r[SETUPS_KEY]) ? (r[SETUPS_KEY] as SavedSetup[]) : [];
 }
 
+/** Weekly backup file in Downloads: survives removing the extension (the browser deletes its storage then). */
+async function autoBackupBlock(): Promise<HTMLElement> {
+  const last = h('p', { class: 'muted', role: 'status' });
+  const paintLast = async () => {
+    const at = await getLocal<number>('backupAt', 0);
+    last.textContent = at ? `Last backup ${new Date(at).toLocaleString()}. File: Downloads/sidegig/sidegig-backup.json` : 'No backup yet.';
+  };
+  onLocalChanged('backupAt', () => void paintLast());
+  await paintLast();
+  const ask = (): Promise<boolean> => Promise.resolve((ext as any).permissions?.request?.({ permissions: ['downloads'] }) ?? true);
+  const save = async () => toast((await send({ type: 'backup-now' }).catch(() => false)) ? 'Backup saved in Downloads' : 'The backup could not be saved');
+  const now = async () => {
+    if (!(await ask())) return toast('Backups need permission to save a file in Downloads');
+    await save();
+  };
+  return h(
+    'div',
+    { class: 'setup-block' },
+    h('div', { class: 'setup-h' }, 'Automatic backup'),
+    h('p', { class: 'muted' }, 'Your browser deletes sidegig’s notes, to-dos and chats if the extension is removed. A weekly backup file in your Downloads folder keeps them; import it here to restore. Keys and passwords are never in it.'),
+    opt('Back up every week', 'Replaces one file in Downloads/sidegig', toggle(await getLocal<boolean>('autoBackup', false), (on) => {
+      // Ask inside the click; turn on only once the browser agrees.
+      void (on ? ask() : Promise.resolve(true)).then(async (ok) => {
+        if (!ok) return toast('Backups need permission to save a file in Downloads');
+        await setLocal('autoBackup', on);
+        if (on) await save();
+      });
+    }, 'Back up every week')),
+    h('div', { class: 'setup-actions' }, h('button', { class: 'btn', type: 'button', onclick: () => void now() }, 'Back up now')),
+    last,
+  );
+}
+
 async function setupsSection(): Promise<HTMLElement> {
   const saved = await getSaved();
   const stage = h('div', { class: 'setup-stage' });
@@ -971,6 +1004,7 @@ async function setupsSection(): Promise<HTMLElement> {
       stage,
     ),
     h('div', { class: 'setup-block' }, h('div', { class: 'setup-h' }, 'Your setups'), list),
+    await autoBackupBlock(),
     h(
       'div',
       { class: 'setup-block' },

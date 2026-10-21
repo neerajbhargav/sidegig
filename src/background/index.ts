@@ -14,6 +14,7 @@ import { pageCookies } from './framecookies.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup, rememberSideWidth } from './open.ts';
 import { mailThread, refreshStatus } from './status.ts';
 import { agentLink, stopAgents } from './agent.ts';
+import { backupNow, scheduleBackup } from './backup.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 import { trackPanels } from './panels.ts';
@@ -48,6 +49,7 @@ async function sync(): Promise<void> {
   await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
   void agentLink();
+  void scheduleBackup();
   setupActionBehavior();
   setupLinkRules();
 }
@@ -260,6 +262,7 @@ ext.runtime.onStartup?.addListener(() => {
 });
 onSettingsChanged(() => void sync());
 onLocalChanged('agentAccess', () => void agentLink());
+onLocalChanged('autoBackup', () => void scheduleBackup());
 (ext as any).permissions?.onAdded?.addListener(() => setupLinkRules());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));
 (ext.windows as any).onBoundsChanged?.addListener((w: chrome.windows.Window) => void rememberSideWidth(w));
@@ -341,6 +344,9 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     case 'refresh-status':
       refreshStatus().then(sendResponse, () => sendResponse([]));
       return true;
+    case 'backup-now':
+      backupNow().then(sendResponse, () => sendResponse(false));
+      return true;
     case 'agent-stop':
       // The banner's Stop in a tab an agent works in: always allowed, it only turns access off.
       void stopAgents();
@@ -397,6 +403,7 @@ ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'walls') void refreshWalls();
   if (a.name === 'favicons') void checkFavicons(now().apps);
   if (a.name === 'agent') void agentLink();
+  if (a.name === 'backup') void backupNow();
 });
 
 // Toolbar button where the browser has no side panel behavior.

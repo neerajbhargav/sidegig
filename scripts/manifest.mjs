@@ -75,7 +75,8 @@ export function manifestFor(target) {
     icons,
     action: { default_title: 'sidegig', default_icon: icons },
     permissions,
-    optional_permissions: ['webNavigation'],
+    // Link rules (webNavigation) and the weekly backup file (downloads), asked for when turned on.
+    optional_permissions: ['webNavigation', 'downloads'],
     host_permissions: ['<all_urls>'],
     commands,
     options_ui: { page: 'options.html', open_in_tab: true },

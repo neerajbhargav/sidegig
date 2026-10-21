@@ -14,6 +14,7 @@ export type ToBackground =
   | { type: 'drawer-frames' }
   | { type: 'mail-thread'; mid: string }
   | { type: 'agent-stop' }
+  | { type: 'backup-now' }
   | { type: 'save-workspace'; name: string }
   | { type: 'restore-workspace'; id: string }
   | { type: 'sleep-tabs' }
