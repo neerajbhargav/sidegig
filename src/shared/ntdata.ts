@@ -170,4 +170,3 @@ export function zoneText(zone: string, now: Date, loc?: string, here?: string): 
   const when = theirDay > ours ? ', tomorrow' : theirDay < ours ? ', yesterday' : '';
   return { city: zone.split('/').pop()!.replace(/_/g, ' '), time: `${time}${when}` };
 }
-
