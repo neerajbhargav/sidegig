@@ -27,6 +27,16 @@ for(const name of ['wallpaper','edition','tools']){
   const ai = structuredClone(base);
   ai.local.aiKeys = {};
   await writeFile(dir+'/qa-ai-setup.html', html.replace('<script src="shim.js', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(ai)};window.LanguageModel=undefined;sessionStorage.setItem('sidegig.page','desk');</script><script src="shim.js`));
+  // Mail layer: a fresh sign-in code and a thread to summarize. ?model= points the local provider at a test server.
+  const mail = structuredClone(panel);
+  mail.sync.settings.status = { github: false, vercel: false, gmail: true, intervalMin: 5 };
+  const now = Date.now();
+  mail.local.status = [{ id: 'gmail', title: 'Gmail', value: '2', detail: 'unread emails', url: 'https://mail.google.com/mail/u/0/', signature: 'm1,m2', updatedAt: now, items: [
+    { title: 'Your verification code', meta: 'Acme', url: 'https://mail.google.com/mail/u/0/#inbox', state: 'ok', code: '482913', at: now - 60000, mid: '1a15fd7317beb608', email: 'no-reply@acme.example' },
+    { title: 'Plans for the launch', meta: 'Ada Lovelace', url: 'https://mail.google.com/mail/u/0/#inbox', state: 'ok', at: now - 3600000, mid: '1a15fd7317beb609', email: 'ada@example.com' },
+  ] }];
+  mail.mailThread = { subject: 'Plans for the launch', messages: [{ from: 'Ada Lovelace', email: 'ada@example.com', date: 'Tue, Oct 20, 2026 at 9:14 AM', text: 'Can we ship on Thursday? The build is ready.' }] };
+  await writeFile(dir+'/qa-mail.html', panelHtml.replace('<script src="shim.js', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(mail)};const mq=new URLSearchParams(location.search).get('model');if(mq)window.__SIDEGIG_FIXTURES__.local.aiKeys={local:mq};</script><script src="shim.js`));
   const rail = { persist: false, sync: { settings: { version: 10, rail: { side: 'left' } } }, local: { badges: { gmail: 123, discord: 9, whatsapp: -1 }, browserAi: { aside: true, at: Date.now() } } };
   await writeFile(dir+'/qa-rail.html', `<!doctype html><meta charset="utf-8"><title>Rail fixtures</title><style>body{font:18px system-ui;background:#f3f4f6;padding:3rem}h1{font-size:24px}</style><h1>A page beside sidegig</h1><p>Fixture page. Badges and sidebar visibility use the real content script.</p><script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(rail)};const q=new URLSearchParams(location.search);Object.assign(window.__SIDEGIG_FIXTURES__.sync.settings,{theme:{scale:Number(q.get('scale'))||100}});window.__SIDEGIG_FIXTURES__.sync.settings.rail.size=q.get('size')||'comfortable';</script><script src="shim.js"></script><script src="rail.js"></script>`);
 }
