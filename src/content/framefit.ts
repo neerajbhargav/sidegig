@@ -34,7 +34,7 @@ const framedByUs = window.top !== window && window.name.startsWith('sidegig-app'
 function start() {
   // Same-site cookies the page may read but the browser hides inside a frame (X's ct0).
   void ext.runtime
-    .sendMessage({ type: 'frame-cookies', url: location.href })
+    .sendMessage({ type: 'frame-cookies' })
     .then((c: string) => c && document.dispatchEvent(new CustomEvent('sidegig-cookies', { detail: c })))
     .catch(() => undefined);
   // Inline scripts: fix the frame check before the parser runs them. The parser
