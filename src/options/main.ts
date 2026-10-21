@@ -578,7 +578,7 @@ function weatherControl(): HTMLElement {
     h(
       'div',
       { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
-      toggle(w.enabled && !!w.place, (v) => commit((x) => void (x.newtab.weather.enabled = v)), 'Weather'),
+      toggle(s.newtab.widgets.weather, (v) => commit((x) => void (x.newtab.widgets.weather = v)), 'Weather'),
       q,
       h('button', { type: 'button', class: 'btn', onclick: () => void find() }, 'Find'),
       seg(w.units, [['f', '°F'], ['c', '°C']], (v) => commit((x) => void (x.newtab.weather.units = v))),

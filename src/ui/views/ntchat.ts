@@ -473,6 +473,19 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   if (o.where === 'panel') {
     const t = await likelyTab(o.hostTabId);
     if (t?.id !== undefined) attached.set(t.id, { title: t.title ?? '', url: t.url ?? '' });
+    // Text you chose "Ask the sidegig Assistant" on: quoted, ready for your question.
+    const prefill = (v: unknown) => {
+      const p = v as { text?: string; ts?: number } | null;
+      if (!p?.text || !p.ts || Date.now() - p.ts > 30_000) return;
+      void setLocal('chatPrefill', null);
+      input.value = `${p.text.trim().split('\n').map((l) => `> ${l}`).join('\n')}\n\n`;
+      input.dispatchEvent(new Event('input'));
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    };
+    void getLocal('chatPrefill', null).then(prefill);
+    const stopPrefill = onLocalChanged('chatPrefill', prefill);
+    ctx.signal?.addEventListener('abort', stopPrefill, { once: true });
   }
   paintCtx();
 

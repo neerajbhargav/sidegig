@@ -310,6 +310,7 @@ class Rail {
     this.rail.append(apps);
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
     this.rail.append(this.tool('search', `Search  ${keys('K')}`, iconNode('search')));
+    this.rail.append(this.tool('chat', 'Assistant', iconNode('forum')));
     this.rail.append(this.tool('status', 'Status', iconNode('pulse'), this.statusNews ? 'glow status' : 'status'));
     const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, iconNode('ask'), () => this.askAi(), 'ai');
     ai.addEventListener('pointerenter', () => this.showFlyout(ai, 450));

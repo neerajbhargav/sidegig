@@ -138,7 +138,7 @@ export interface Settings {
     weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };
     todo: boolean;
     /** Which parts of the page show (each one can be turned off). */
-    widgets: { greeting: boolean; brief: boolean; weather: boolean; calendar: boolean; pomodoro: boolean; notes: boolean; apps: boolean; bookmarks: boolean; reading: boolean; tabs: boolean; calculator: boolean; feed: boolean };
+    widgets: { greeting: boolean; brief: boolean; weather: boolean; calendar: boolean; pomodoro: boolean; notes: boolean; bookmarks: boolean; reading: boolean; tabs: boolean; calculator: boolean; feed: boolean };
     /** How widgets sit on the wallpaper: clear (bounded tint with an adaptive text tone), glass, or solid. */
     panels: 'frosted' | 'clear' | 'solid';
     /** Where each widget sits on the 12 × 8 grid (missing ones use their usual spot). */
