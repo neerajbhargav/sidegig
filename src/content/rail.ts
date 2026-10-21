@@ -53,6 +53,7 @@ class Rail {
   private flyout = document.createElement('div');
   private flyTimer = 0;
   private ready = false;
+  private port?: MessagePort;
   private pending: Record<string, unknown> | null = null;
   private hint = document.createElement('div');
   private iframe: HTMLIFrameElement | null = null;
@@ -477,16 +478,45 @@ class Rail {
     cover.className = 'cover';
     this.drawer.append(f, cover, resize);
     this.iframe = f;
+    f.addEventListener('load', () => this.connect(f));
     this.wireResize(resize);
   }
 
+  /** Hand the drawer a private port (see ui/main.ts); nothing else crosses the page. */
+  private connect(f: HTMLIFrameElement) {
+    const ch = new MessageChannel();
+    this.port?.close();
+    this.port = ch.port1;
+    this.ready = false;
+    ch.port1.onmessage = (e) => e.data && this.fromDrawer(e.data);
+    const origin = TARGET === 'preview' ? '*' : new URL(ext.runtime.getURL('/')).origin;
+    f.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, type: 'port' }, origin, [ch.port2]);
+  }
+
   private post(msg: Record<string, unknown>) {
-    if (!this.iframe) return;
-    if (!this.ready && msg.type === 'view') {
-      this.pending = msg;
+    if (!this.ready || !this.port) {
+      if (msg.type === 'view') this.pending = msg;
       return;
     }
-    this.iframe.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, ...msg }, '*');
+    this.port.postMessage(msg);
+  }
+
+  private fromDrawer(d: Record<string, unknown>) {
+    if (d.type === 'close') this.hide();
+    if (d.type === 'view' && this.view) {
+      this.view = d.view as DrawerView;
+      this.markActive();
+    }
+    if (d.type === 'ask-ai') this.askAi();
+    if (d.type === 'ready') {
+      this.ready = true;
+      this.post({ type: 'theme', mode: this.mode });
+      if (this.pending) {
+        const p = this.pending;
+        this.pending = null;
+        this.post(p);
+      }
+    }
   }
 
   /** Load the drawer quietly after the rail first appears, so opening it is instant. */
@@ -668,26 +698,6 @@ class Rail {
       this.dock.suspend(full);
       if (this.s.rail.hideInFullscreen) this.host.style.visibility = full ? 'hidden' : '';
       if (!full) this.updateDock();
-    });
-    window.addEventListener('message', (e) => {
-      if (!this.iframe || e.source !== this.iframe.contentWindow) return;
-      const d = e.data;
-      if (!d || d.ns !== 'sidegig' || d.n !== this.nonce) return;
-      if (d.type === 'close') this.hide();
-      if (d.type === 'view' && this.view) {
-        this.view = d.view;
-        this.markActive();
-      }
-      if (d.type === 'ask-ai') this.askAi();
-      if (d.type === 'ready') {
-        this.ready = true;
-        this.post({ type: 'theme', mode: this.mode });
-        if (this.pending) {
-          const p = this.pending;
-          this.pending = null;
-          this.post(p);
-        }
-      }
     });
     ext.runtime.onMessage.addListener((msg: ToContent | { type: 'extract' }, _sender, reply) => {
       if (msg.type === 'extract') {
