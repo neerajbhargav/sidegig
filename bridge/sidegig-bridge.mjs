@@ -8,14 +8,15 @@
 //     only as far as you allow in sidegig's settings (off by default).
 //
 // Listens on 127.0.0.1 only. Browser extensions connect over a WebSocket and
-// the first one to connect is paired (reset with `unpair`). Agents connect with
+// prove a pairing code on every connection: `setup` prints it, you paste it
+// once in sidegig Settings, AI (`unpair` makes a new one). Agents connect with
 // a token (HTTP) or through `stdio`. Web pages are always refused.
 //
 // Usage:
 //   node sidegig-bridge.mjs            start (prints how to connect agents)
 //   node sidegig-bridge.mjs stdio      MCP over stdio, for agents that launch it
-//   node sidegig-bridge.mjs setup      print the connection commands again
-//   node sidegig-bridge.mjs unpair     forget the paired browser extension
+//   node sidegig-bridge.mjs setup      print the pairing code and connection commands
+//   node sidegig-bridge.mjs unpair     make a new pairing code (the old one stops working)
 //
 // Zero dependencies. Node 18+. MIT-style license: part of sidegig (GPL-3.0).
 
@@ -48,23 +49,35 @@ function saveConf(c) {
   fs.mkdirSync(HOME, { recursive: true, mode: 0o700 });
   fs.writeFileSync(CONF, JSON.stringify(c, null, 2), { mode: 0o600 });
 }
+// Easy to read aloud and type: no 0/O, 1/I/L.
+const newCode = () => Array.from({ length: 8 }, (_, i) => (i === 4 ? '-' : '') + '23456789ABCDEFGHJKMNPQRSTUVWXYZ'[crypto.randomInt(31)]).join('');
+const normCode = (c) => String(c ?? '').toUpperCase().replace(/[^0-9A-Z]/g, '');
 const conf = loadConf();
-if (!conf.token) {
-  conf.token = crypto.randomBytes(24).toString('base64url');
+if (!conf.token || !conf.code) {
+  conf.token ||= crypto.randomBytes(24).toString('base64url');
+  conf.code ||= newCode();
+  delete conf.paired; // pairing by first connection, before codes
   saveConf(conf);
 }
-conf.paired ??= [];
+/** Constant-time check of the code an extension sends with its hello. */
+function codeMatches(sent, code = conf.code) {
+  const a = Buffer.from(normCode(sent));
+  const b = Buffer.from(normCode(code));
+  return a.length === b.length && a.length > 0 && crypto.timingSafeEqual(a, b);
+}
 
 if (mode === 'unpair') {
-  conf.paired = [];
+  conf.code = newCode();
   saveConf(conf);
-  console.log('Forgot the paired browser extension. The next one to connect will be paired.');
+  console.log(`New pairing code: ${conf.code}\nPaste it in sidegig Settings, AI. The old code no longer works.`);
   process.exit(0);
 }
 
 function setupText() {
   const url = `http://127.0.0.1:${PORT}/mcp`;
   return [
+    `Pairing code for sidegig (Settings, AI, Your ChatGPT plan): ${conf.code}`,
+    '',
     'Connect an agent to this browser (turn on agent access in sidegig Settings, AI, first):',
     '',
     `  Claude Code:   claude mcp add --transport http sidegig ${url} --header "Authorization: Bearer ${conf.token}"`,
@@ -108,6 +121,7 @@ async function checkCodex() {
 }
 
 const runs = new Map();
+const MAX_RUNS = 3; // Codex runs one socket may have going at once
 function codexRun(send, id, prompt, model, effort) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sidegig-codex-'));
   const args = ['exec', '--json', '--ephemeral', '--skip-git-repo-check', '-s', 'read-only', '-C', dir];
@@ -166,9 +180,11 @@ function callBrowser(name, args) {
   return new Promise((resolve) => {
     if (!host) return resolve({ content: [{ type: 'text', text: 'sidegig isn’t connected. Open the browser, and turn on agent access in sidegig Settings, AI.' }], isError: true });
     const id = `t${++n}`;
+    const asked = host;
     const timer = setTimeout(() => (pending.delete(id), resolve({ content: [{ type: 'text', text: 'The browser didn’t answer in time.' }], isError: true })), 60000);
-    pending.set(id, (r) => (clearTimeout(timer), resolve(r)));
-    host.send({ type: 'tool', id, name, args: args ?? {} });
+    // Only the connection that was asked may answer.
+    pending.set(id, { ws: asked, done: (r) => (clearTimeout(timer), resolve(r)) });
+    asked.send({ type: 'tool', id, name, args: args ?? {} });
   });
 }
 
@@ -193,6 +209,8 @@ async function mcp(msg) {
 }
 
 // ------------------------------------------------------------ WebSocket (just enough of RFC 6455)
+
+const MAX_FRAME = 8 << 20; // 8 MB: a long page attached to a prompt fits
 
 function wsAccept(req, socket) {
   const key = req.headers['sec-websocket-key'];
@@ -233,14 +251,13 @@ function wsAccept(req, socket) {
         len = Number(buf.readBigUInt64BE(2));
         off = 10;
       }
+      // RFC 6455: clients must mask; refuse oversized frames before buffering them.
+      if (!masked || len > MAX_FRAME || frag.reduce((t, f) => t + f.length, 0) + len > MAX_FRAME) return void socket.destroy();
       const maskOff = off;
-      if (masked) off += 4;
+      off += 4;
       if (buf.length < off + len) return;
-      let data = buf.subarray(off, off + len);
-      if (masked) {
-        const mask = buf.subarray(maskOff, maskOff + 4);
-        data = Buffer.from(data.map((b, i) => b ^ mask[i & 3]));
-      }
+      const mask = buf.subarray(maskOff, maskOff + 4);
+      const data = Buffer.from(buf.subarray(off, off + len).map((b, i) => b ^ mask[i & 3]));
       buf = buf.subarray(off + len);
       if (op === 8) return ws.close();
       if (op === 9) {
@@ -317,21 +334,22 @@ function serve() {
       return;
     }
     const ws = wsAccept(req, socket);
-    // Pair with the first extension that connects; refuse others.
-    if (!conf.paired.length) {
-      conf.paired.push(origin);
-      saveConf(conf);
-      log(`paired with ${origin}`);
-    }
-    if (!conf.paired.includes(origin)) {
-      ws.send({ type: 'refused', message: 'The bridge is paired with another browser extension. Run: node sidegig-bridge.mjs unpair' });
-      setTimeout(() => ws.close(), 50);
-      return;
-    }
     const ping = setInterval(() => ws.send({ type: 'ping' }), 20000);
+    const mine = new Set(); // this socket's Codex runs
     let role = 'page';
+    let paired = false;
+    // No hello with the right code within 5 s: goodbye.
+    const knock = setTimeout(() => !paired && ws.close(), 5000);
     ws.on('message', async (m) => {
+      if (!paired && m.type !== 'hello') return;
       if (m.type === 'hello') {
+        if (!codeMatches(m.code)) {
+          ws.send({ type: 'refused', reason: 'code', message: 'Wrong or missing pairing code. Run node sidegig-bridge.mjs setup and paste its code in sidegig Settings, AI.' });
+          setTimeout(() => ws.close(), 50);
+          return;
+        }
+        paired = true;
+        clearTimeout(knock);
         role = m.role;
         if (role === 'host') {
           host = ws;
@@ -343,16 +361,24 @@ function serve() {
         }
         ws.send({ type: 'ready', version: VERSION, codex: { installed: codex.installed, signedIn: codex.signedIn, models: codex.models }, agents: { url: `http://127.0.0.1:${PORT}/mcp`, token: conf.token, stdio: `node ${SELF} stdio` } });
       } else if (m.type === 'tool.result') {
-        pending.get(m.id)?.({ content: m.content ?? [{ type: 'text', text: '' }], isError: !!m.isError });
+        const p = pending.get(m.id);
+        if (!p || p.ws !== ws) return;
         pending.delete(m.id);
+        p.done({ content: m.content ?? [{ type: 'text', text: '' }], isError: !!m.isError });
       } else if (m.type === 'codex.run') {
-        codexRun(ws.send, m.id, String(m.prompt ?? ''), String(m.model ?? ''), String(m.effort ?? ''));
+        const id = String(m.id ?? '');
+        if (!id || runs.has(id)) return;
+        if (mine.size >= MAX_RUNS) return ws.send({ type: 'codex.error', id, message: 'Too many Codex runs at once. Wait for one to finish.' }), ws.send({ type: 'codex.done', id });
+        mine.add(id);
+        codexRun((x) => (x.type === 'codex.done' && mine.delete(id), ws.send(x)), id, String(m.prompt ?? ''), String(m.model ?? ''), String(m.effort ?? ''));
       } else if (m.type === 'codex.stop') {
-        runs.get(m.id)?.kill('SIGTERM');
+        if (mine.has(m.id)) runs.get(m.id)?.kill('SIGTERM');
       }
     });
     ws.on('close', () => {
       clearInterval(ping);
+      clearTimeout(knock);
+      for (const id of mine) runs.get(id)?.kill('SIGTERM');
       if (host === ws) {
         host = null;
         log('browser disconnected');
