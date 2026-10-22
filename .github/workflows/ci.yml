@@ -1,19 +1,42 @@
-# Typecheck, tests and a Chrome build on every push, whichever agent pushed.
+# Typecheck, unit tests and all four builds on every push and pull request, whichever
+# agent pushed; then the Playwright checks against the built extension and the preview.
 name: CI
 on:
   push:
   pull_request:
+permissions:
+  contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit -p .
       - run: npm test
-      - run: node scripts/build.mjs chrome
+      - run: node scripts/build.mjs --zip
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Full Chromium (new headless mode loads extensions; the headless shell does not).
+      - run: npx playwright install --with-deps --no-shell chromium
+      - run: node scripts/build.mjs chrome && node scripts/build.mjs preview
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: test-results/e2e
+          if-no-files-found: ignore

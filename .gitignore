@@ -9,3 +9,5 @@ safari-xcode/
 
 # Full agent session exports (personal data, large): local only
 /context/
+test-results/
+playwright-report/
