@@ -1,11 +1,21 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-21 19:23 (0.4.0 on branch `product/premium-1.0`, not merged to `main`; installed in the owner's Aside from `8761b3e`).
+Last updated: 2026-10-21 23:30 (0.4.0 plus a personal-data scrub on branch `upgrade/oct-2026`, built from `product/premium-1.0` in the worktree `~/.worktrees/sidegig-upgrade`; local only, not merged to `main`, not pushed; the owner's Aside still runs `8761b3e`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Scrub and land prep, 2026-10-21 night (branch `upgrade/oct-2026`, from `product/premium-1.0` at `dd7fbe6`):** make 0.4.0 safe to publish before it merges to `main`.
+
+- `tsc --noEmit --noUnusedLocals` is clean again (an unused `st` in `ntcustom.ts` `layoutTab`).
+- Personal and employer data removed from tracked files. Test fixtures now use neutral examples (Springfield, Example Labs, `github.com/example-org`). A case-insensitive `git grep` for the employer name, the job-search phrases, the personal email, the recruiter and the home city returns nothing.
+- README screenshots are new captures from the fixture preview (headless Chrome through `qa-viewport.html`). The new `qa-sidebar.html` scene (`?view=status`, `?view=add`, `&theme=dark`) and `qa-settings.html` in `scripts/preview-scenes.mjs` make them repeatable. The AI picker shot was dropped: its popover needs a hover that a headless capture cannot make.
+- 21 early images in `docs/evolution` (2026-10-11 to 2026-10-14) had bookmark and folder names, a job-search folder, a home city, calendar and to-do text, edition picks and a calendar name. Those areas are now pixelated and blurred. All 76 evolution images and the 5 README images were checked by eye. Git history still holds the old images (no history rewrite).
+- README: an honest browser support table (only Aside is installed and checked live; Chrome-family, Opera, Firefox and Safari are built only). Removed two claims with no evidence in the repo: the docking site list and "opens instantly".
+- THIRD_PARTY_NOTICES lists Barlow Condensed and IBM Plex Mono (both OFL, already bundled).
+- **Not done, waits for the owner:** push `upgrade/oct-2026`, open the PR into `main`, merge it, then `npm run changelog` on `main`. `AGENTS.md` and Key decisions say nothing merges or pushes until the owner says so in his own words. Pushing the branch adds no new personal data: the 32 premium-1.0 commits add only fixture images and no matching strings.
 
 **Jank fixes and one design system, 2026-10-21 evening:** the owner said the sidebar loads apps badly, the new tab layout is janky and nothing feels premium, then asked to "maintain a unified UI UX design system for widgets, icons, components, animations, etc".
 
@@ -111,7 +121,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 ## Open work, in priority order
 
 1. **Owner, now:** clear the leftover test text in the sidebar Claude composer (an agent-test page and an inbox tab title, typed by an earlier check); confirm the three judgment calls above.
-2. **Owner decisions:** merge `product/premium-1.0` to `main` (then `npm run changelog`); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
+2. **Owner decisions:** merge `upgrade/oct-2026` (premium 1.0 plus the scrub) to `main` (then `npm run changelog`); whether to rewrite git history to drop the old personal-data images (they are still in past commits); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
 3. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
 4. **Live checks still owed:** a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
 5. **Phase 2, typed data:** a typed schema for `chrome.storage.local` and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings`; one typed message protocol (the trust table in `trust.ts` is the start). Simultaneous edits of the same notes or to-do list from two open tabs still save whole lists (the last write wins).
