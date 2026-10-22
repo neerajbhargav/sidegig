@@ -75,12 +75,13 @@ npm run build          # dist/chrome, dist/opera, dist/firefox, dist/safari
 
 ### Browser support
 
-One codebase builds four packages. Only the Chromium package has been installed and checked in a real browser.
+One codebase builds four packages. Only the Chromium package has been loaded and checked in a browser.
 
-| Browser | Package | Status (from [docs/STATUS.md](docs/STATUS.md), 2026-10-21) |
+| Browser | Package | Status (from [docs/STATUS.md](docs/STATUS.md), 2026-10-22) |
 |---|---|---|
 | Aside (Chromium) | `dist/chrome` | Installed and checked live: sidebar, Gmail and X in frames, Assistant, agents, new tab |
-| Chrome, Edge, Brave, Arc, Dia, Vivaldi | `dist/chrome` | Same package as Aside. Built; no install check recorded in these browsers yet |
+| Chromium, Chrome | `dist/chrome` | Loaded by the end-to-end checks in headless Chromium 153 (the browser CI installs) and Google Chrome 155: rail, drawer, frame rules, new tab. Signed-in apps not checked |
+| Edge, Brave, Arc, Dia, Vivaldi | `dist/chrome` | Same package. Built; no install check recorded in these browsers yet |
 | Opera | `dist/opera` | Built only. Never installed |
 | Firefox | `dist/firefox` | Built only. Never installed. Needs Mozilla signing to distribute |
 | Safari | `dist/safari` | Built only. Needs Xcode conversion and signing |
@@ -153,12 +154,27 @@ Method, sets, misses and the prompt-injection defenses: [docs/evals](docs/evals/
 ```bash
 npm test         # unit tests (node:test)
 npm run check    # TypeScript
+npm run lint     # Biome
 npm run build    # all browsers, or build:chrome / build:firefox / build:opera / build:safari
 npm run preview  # UI bundle with mocked browser APIs, used for screenshots
 node scripts/fetch-assets.mjs   # refresh icons and font
 ```
 
 The build uses native esbuild when it can and falls back to the WebAssembly build automatically.
+
+To try the preview by hand, serve it with `python3 -m http.server 8765 --bind 127.0.0.1 --directory dist` and open `http://127.0.0.1:8765/preview/`. It covers first install, the new tab, the sidebar and settings, with isolated fixture storage; its reset button clears only preview data.
+
+### End-to-end checks
+
+```bash
+npx playwright install chromium            # once
+npm run build:chrome && npm run preview
+npm run e2e
+```
+
+`e2e/extension.spec.ts` loads `dist/chrome` into Chromium from a fresh profile, with a local server standing in for web sites. It checks that the rail appears on a page, that the drawer switches view and closes over its private channel while the page sees no message, that a web page cannot embed the drawer, that frame header rules never apply to a top-level page, and that the new tab fits 1280x720. `e2e/preview.spec.ts` runs the preview smoke flows in `scripts/*-smoke.js` (first setup, notes and tasks across reloads and two tabs, settings search, the assistant, ten screen sizes, widget expansion, For you, badges and portable setups) with online requests blocked. `E2E_CHANNEL=chrome` uses an installed Google Chrome instead. Screenshots and traces go to `test-results/e2e`. No paid model call is made; signed-in app frames still need a check in a real browser.
+
+CI (`.github/workflows/ci.yml`) runs the lint, typecheck, unit tests, all four builds and the end-to-end checks on every push and pull request, and keeps the screenshots as an artifact. A version tag (`v*`) runs `.github/workflows/release.yml`, which attaches the four zips to a GitHub release.
 
 ## Known limitations
 
@@ -171,17 +187,3 @@ The build uses native esbuild when it can and falls back to the WebAssembly buil
 ## License
 
 [GPL-3.0-or-later](LICENSE). Bundled font and icons are covered by their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-### Check the product flows
-
-`npm run preview` builds a standalone preview with persistent, isolated fixture storage. Serve `dist/` on port 8765 and open `http://127.0.0.1:8765/preview/`. The preview includes first install, new tab, sidebar and settings. Its reset button affects only preview data.
-
-If you use the Aside CLI, run:
-
-```bash
-aside repl "$(cat scripts/product-smoke.js)"
-```
-
-The smoke test uses the local preview. It checks setup choices, note editing and reload, updates across two tabs, task completion, settings search, offline model discovery, sidebar assistant access and direct address navigation. It makes no paid model calls. Browser integrations and signed-in app frames need a separate installed-extension check.
-
-Additional fixture checks: run `aside repl "$(cat scripts/responsive-smoke.js)"` for screen sizes and `aside repl "$(cat scripts/refinement-smoke.js)"` for widget expansion, bookmarks, For you, daily tools, badges and single-sidebar behavior. Both use the development preview.

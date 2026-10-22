@@ -181,3 +181,9 @@ Commit `ed425f1` on branch `upgrade/oct-2026` (plus uncommitted work).
 
 <img src="2026-10-21-09-ask-before-sending-page-data-out-after-r.jpg" width="49%" alt="Ask before sending page data out: after reading a page, the chat stops before it opens a link that carries tab titles (fixture model)">
 <img src="2026-10-21-10-settings-ask-ai-the-new-ask-before-sendi.jpg" width="49%" alt="Settings, Ask AI: the new Ask before sending page data out switch, off by default">
+
+## 2026-10-22: The drawer's private port works again, found by the Playwright checks
+
+Fix in commit `328ab58`, captured at `72ee294` on branch `upgrade/oct-2026`.
+
+<img src="2026-10-22-01-the-drawer-switches-to-search-over-its-p.jpg" width="49%" alt="The drawer switches to Search over its private port again (Playwright, Chromium 153, fresh profile)">
