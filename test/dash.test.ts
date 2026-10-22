@@ -103,7 +103,7 @@ test('pomodoro: start, pause, finish into breaks, long break every fourth', () =
 test('weather: next four days come with the forecast', () => {
   assert.match(weatherUrl(40.7, -74, 'f'), /forecast_days=5/);
   const raw = { current: { temperature_2m: 68.4, apparent_temperature: 70, relative_humidity_2m: 81, weather_code: 2, is_day: 1 }, daily: { time: ['2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17'], weather_code: [2, 61, 3, 0, 45], temperature_2m_max: [70, 64.6, 60, 66, 63], temperature_2m_min: [56, 50, 48, 51, 49] } };
-  const w = parseWeather(raw, 'f', 'Jersey City')!;
+  const w = parseWeather(raw, 'f', 'Springfield')!;
   assert.equal(w.days?.length, 4);
   assert.deepEqual(w.days?.[0], { date: '2026-10-14', code: 61, hi: 65, lo: 50 });
 });

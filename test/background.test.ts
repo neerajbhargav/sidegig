@@ -57,13 +57,13 @@ test('no apps still lets sidegig frame its own pages', () => {
 
 test('gmail atom feed parsing', () => {
   const xml = `<?xml version="1.0"?><feed><fullcount>3</fullcount>
-    <entry><title>Offer &amp; next steps</title><link rel="alternate" href="https://mail.google.com/mail?a=1&amp;b=2"/><id>tag:gmail.google.com,2004:1</id><author><name>Mercor</name></author></entry>
+    <entry><title>Notes &amp; next steps</title><link rel="alternate" href="https://mail.google.com/mail?a=1&amp;b=2"/><id>tag:gmail.google.com,2004:1</id><author><name>Example Labs</name></author></entry>
     <entry><title></title><id>tag:gmail.google.com,2004:2</id><author><name>Jane</name></author></entry></feed>`;
   const r = parseGmailFeed(xml);
   assert.equal(r.count, 3);
-  assert.equal(r.entries[0].title, 'Offer & next steps');
+  assert.equal(r.entries[0].title, 'Notes & next steps');
   assert.equal(r.entries[0].url, 'https://mail.google.com/mail?a=1&b=2');
-  assert.equal(r.entries[0].from, 'Mercor');
+  assert.equal(r.entries[0].from, 'Example Labs');
   assert.equal(r.entries[1].title, '(no subject)');
 });
 
