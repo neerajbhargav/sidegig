@@ -3,7 +3,7 @@
 //
 // Usage: node scripts/eval-mail-codes.ts [--misses] [--write]
 //   --misses  list the dev-split rows it gets wrong (the test split is never listed, so it stays untuned)
-//   --write   save docs/evals/mail-codes-<date>.json
+//   --write   save docs/evals/mail-codes-<date>-<commit>.json
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { findCode } from '../src/shared/mail.ts';
@@ -73,7 +73,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   if (process.argv.includes('--misses')) for (const r of rows.filter((r) => r.split === 'dev' && r.outcome !== 'tp' && r.outcome !== 'tn')) console.log(`  ${r.outcome.padEnd(5)} ${r.id} [${r.category}] want=${r.code} got=${r.got} :: ${r.subject} | ${r.snippet}`);
   if (process.argv.includes('--write')) {
     mkdirSync(new URL('../docs/evals/', import.meta.url), { recursive: true });
-    const file = new URL(`../docs/evals/mail-codes-${report.date.slice(0, 10)}.json`, import.meta.url);
+    const file = new URL(`../docs/evals/mail-codes-${report.date.slice(0, 10)}-${report.commit}.json`, import.meta.url);
     writeFileSync(file, JSON.stringify(report, null, 1) + '\n');
     console.log(`wrote ${file.pathname}`);
   }
