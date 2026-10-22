@@ -6,21 +6,50 @@
 export interface MailMessage { from: string; email: string; date: string; text: string }
 export interface MailThread { subject: string; messages: MailMessage[] }
 
-const KEYWORD = /\b(codes?|verif\w*|otp|pass ?code|pin|one[- ]time|sign[- ]?in|log[- ]?in|2fa|two[- ]factor|security|confirm\w*|authenticat\w*)\b/i;
-// Digits not glued to money, dates, times, phone numbers or other words.
-const DIGITS = /(?<![\w$€£#.,:/-])(\d{3,4}[ -]\d{3,4}|\d{4,8})(?![\w,:/%-])(?!\.\d)/g;
-const YEAR = /^(19|20)\d\d$/;
+const KEYWORD = /\b(codes?|verif\w*|otp|pass ?code|pin|one[- ]time|sign[- ]?in|log[- ]?in|2fa|two[- ]factor|security|confirm\w*|authenticat\w*)\b|code\b|c[óo]digo|codice|コード/i;
+// A candidate counts only next to one of these: "code is 123456", "Enter 4030", "123456 is your code".
+const CODEWORD = 'code|c[óo]digo|codice|コード|password|\\bpin\\b|\\botp\\b';
+const BEFORE = new RegExp(`(${CODEWORD}|\\benter\\b|\\buse\\b)`, 'gi');
+const AFTER = new RegExp(`^[^\\d.!?\\n]{0,40}?(${CODEWORD})`, 'i');
+// Between the code word and the code: no number and no sentence end, but "code is:" may end the line.
+const GAP = /^[^\d.!?\n]{0,40}?(:\s*)?$/;
+// Phone numbers, dates, IP addresses and versions: three or more number groups.
+const GROUPS = /\+?\(?\d+\)?(?:[ .\/-]\(?\d+\)?){2,}/g;
+const MEETING = /\b(meeting|webinar|dial[- ]in|join by phone)\b/i;
+const TRAVEL = /\b(flights?|booking|reservation|itinerary|check-in|boarding)\b/i;
+const PROMO = /\d+% off|\b(discount|checkout|promo|coupon)\b/i;
+const CANDIDATES = [
+  /\b[A-Z]{1,3}-(\d{4,8})\b/g, // G-482913, FB-44027
+  /\b(?=[A-Z0-9]{3}-[A-Z0-9]{3}\b)(?=[A-Z-]*\d)(?=[\d-]*[A-Z])([A-Z0-9]{3}-[A-Z0-9]{3})\b/g, // 9QX-4ZB
+  // Digits not glued to money, dates, times, phone numbers or other words.
+  /(?<![\w$€£#.,:/~-])(\d{3,4}[ -]\d{3,4}|\d{4,8})(?![\w,:/%#~-])(?!\.\d)/g,
+  /\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])([A-Z0-9]{5,8})\b/g, // MWWE6
+  /\b(?=[a-z0-9]*\d)(?=[a-z0-9]*[a-z])([a-z0-9]{6,8})\b/g, // 769qwbsr
+];
+
+function anchored(t: string, at: number, end: number, shown: string, lines: string[]): boolean {
+  if (lines.includes(shown)) return true;
+  if (AFTER.test(t.slice(end, end + 60))) return true;
+  const before = t.slice(Math.max(0, at - 60), at);
+  const last = [...before.matchAll(BEFORE)].pop();
+  return !!last && GAP.test(before.slice(last.index + last[0].length));
+}
 
 /** A one-time code in an email's subject or preview, or null. */
 export function findCode(subject: string, snippet: string): string | null {
-  const text = `${subject}\n${snippet}`;
-  if (!KEYWORD.test(text)) return null;
-  const google = text.match(/\bG-(\d{4,8})\b/);
-  if (google) return google[1];
-  const words = text.match(/\b(?=[A-Z0-9]{3}-[A-Z0-9]{3}\b)(?=[A-Z-]*\d)(?=[\d-]*[A-Z])[A-Z0-9]{3}-[A-Z0-9]{3}\b/);
-  if (words) return words[0];
-  const found = [...text.matchAll(DIGITS)].map((m) => m[1].replace(/[ -]/g, '')).filter((d) => d.length >= 4 && d.length <= 8 && !YEAR.test(d));
-  return found.find((d) => d.length === 6) ?? found[0] ?? null;
+  let text = `${subject}\n${snippet}`;
+  if (!KEYWORD.test(text) || MEETING.test(text) || PROMO.test(text)) return null;
+  // An airline or hotel "confirmation code" is a booking reference, not a sign-in code.
+  if (TRAVEL.test(text)) text = text.replace(/confirmation (code|number)/gi, 'confirmation reference');
+  const t = text.replace(GROUPS, (m) => '~'.repeat(m.length));
+  const lines = [subject.trim(), snippet.trim()];
+  const found: string[] = [];
+  for (const re of CANDIDATES)
+    for (const m of t.matchAll(re)) {
+      const shown = m[0];
+      if (anchored(t, m.index, m.index + shown.length, shown, lines)) found.push(/^[\d -]+$/.test(m[1]) ? m[1].replace(/[ -]/g, '') : m[1]);
+    }
+  return found.find((d) => /^\d{6}$/.test(d)) ?? found[0] ?? null;
 }
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
