@@ -251,7 +251,7 @@ async function boot() {
   if (kind === 'panel') {
     const handle = (r: unknown) => {
       const req = r as { appId?: string; view?: ViewName; url?: string; ts?: number } | null;
-      if (!req || !req.ts || Date.now() - req.ts > 15_000) return false;
+      if (!req?.ts || Date.now() - req.ts > 15_000) return false;
       if (req.appId) void render('app', { app: req.appId, url: req.url });
       else if (req.view) void render(req.view);
       return true;

@@ -75,7 +75,7 @@ function pixelsOf(img: HTMLImageElement, size = 64): Uint8ClampedArray | null {
 function blankGlobe(): Promise<number | null> {
   return (blankPrint ??= new Promise((done) => {
     const src = faviconFor('https://sidegig-blank.invalid/', 64);
-    if (!src || !src.includes('_favicon')) return done(null);
+    if (!src?.includes('_favicon')) return done(null);
     const i = new Image();
     i.onload = () => {
       const px = pixelsOf(i);

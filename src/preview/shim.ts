@@ -4,7 +4,7 @@
 type Listener = (...a: any[]) => any;
 const ev = () => {
   const ls: Listener[] = [];
-  return { addListener: (f: Listener) => ls.push(f), removeListener: (f: Listener) => { const i = ls.indexOf(f); if (i >= 0) ls.splice(i, 1); }, fire: (...a: any[]) => [...ls].forEach((f) => f(...a)), hasListeners: () => ls.length > 0 };
+  return { addListener: (f: Listener) => ls.push(f), removeListener: (f: Listener) => { const i = ls.indexOf(f); if (i >= 0) ls.splice(i, 1); }, fire: (...a: any[]) => { for (const f of [...ls]) f(...a); }, hasListeners: () => ls.length > 0 };
 };
 
 const fx = (globalThis as any).__SIDEGIG_FIXTURES__ ?? {};
@@ -64,7 +64,7 @@ const index = (n: any, parentId?: string) => {
   byId.set(n.id, n);
   for (const c of n.children ?? []) index(c, n.id);
 };
-tree.forEach((n: any) => index(n));
+for (const n of tree) index(n);
 const strip = (n: any) => ({ id: n.id, title: n.title, url: n.url, parentId: n.parentId, children: n.children ? n.children.map(strip) : undefined });
 
 const tabs: any[] = fx.tabs ?? [];

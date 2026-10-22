@@ -711,7 +711,7 @@ export function folderTone(ctx: Ctx, id: string): string {
 }
 
 /** A pocket folder: a few of its sites peek out of the top like cards. */
-function folderArt(f: Mark, kids: Mark[], tone = 'oat'): HTMLElement {
+function folderArt(kids: Mark[], tone = 'oat'): HTMLElement {
   const papers = kids
     .filter((k) => k.url)
     .slice(0, 3)
@@ -851,7 +851,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
         });
       }
       const sites = inner[n].filter((x) => x.url).length;
-      return tile(k.title || 'Folder', folderArt(k, inner[n], folderTone(ctx, k.id)), {
+      return tile(k.title || 'Folder', folderArt(inner[n], folderTone(ctx, k.id)), {
         class: 'nt-key is-folder',
         title: `${k.title || 'Folder'}: ${sitesLabel(sites)}`,
         'aria-label': `${k.title || 'Folder'} folder, ${sitesLabel(sites)}`,
@@ -890,7 +890,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     let first = items.findIndex(out);
     if (first < 0) return;
     const place = () => {
-      items.forEach((it, i) => (it.hidden = i >= first));
+      items.forEach((it, i) => { it.hidden = i >= first; });
       const rest = items.slice(first).filter((it) => !it.querySelector('.shelf-addkey')).length;
       more.replaceChildren(
         h('button', { type: 'button', class: 'nt-key shelf-more', title: 'Show all bookmarks', 'aria-label': `Show all bookmarks, ${rest} more`, onclick: () => (play('key'), root.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'bookmarks' }))) },

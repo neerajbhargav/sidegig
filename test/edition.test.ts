@@ -258,7 +258,7 @@ test('compose: every kind gets a say, no topic dominates, reserve is separate', 
 
 test('terms: strongest interests always searched, the rest rotate; music tastes only feed music', () => {
   const p = emptyProfile();
-  ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].forEach((t, n) => addInterest(p, `topic ${t}`, 5 - n * 0.5, 'you'));
+  ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].forEach((t, n) => { addInterest(p, `topic ${t}`, 5 - n * 0.5, 'you'); });
   addInterest(p, 'Telugu indie', 4, 'ai', ['music']);
   const t1 = pickTerms(p, 'read', 4, rng(1));
   const t2 = pickTerms(p, 'read', 4, rng(99));

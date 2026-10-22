@@ -111,7 +111,7 @@ test('no drop shadows or glows: shadows are none, inset, or a crisp ring', () =>
   const blurred = (v: string) =>
     split(v, ',').some((item) => {
       if (/^(none|unset|inherit)$/.test(item) || /^var\(--[\w-]+\)$/.test(item)) return false;
-      const lens = split(item.replace(/^inset\s+/, '').replace(/(rgba?|oklab|oklch|color-mix|hsla?)\([^]*\)|#[\da-f]+|\b[a-z]+\b(?!\()/gi, ''), ' ');
+      const lens = split(item.replace(/^inset\s+/, '').replace(/(rgba?|oklab|oklch|color-mix|hsla?)\([\s\S]*\)|#[\da-f]+|\b[a-z]+\b(?!\()/gi, ''), ' ');
       const blur = lens[2];
       return !!blur && !/^0(px|rem)?$/.test(blur);
     });

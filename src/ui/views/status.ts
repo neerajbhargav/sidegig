@@ -90,7 +90,7 @@ export function codePill(ctx: Ctx): HTMLElement {
   void paint();
   const stops = [onLocalChanged('status', () => void paint()), onLocalChanged('codesSeen', () => void paint())];
   const timer = setInterval(() => void paint(), 60_000);
-  ctx.signal?.addEventListener('abort', () => (stops.forEach((f) => f()), clearInterval(timer)), { once: true });
+  ctx.signal?.addEventListener('abort', () => { for (const f of stops) f(); clearInterval(timer); }, { once: true });
   // A code is often why you opened this page: look now if the last look is over a minute old.
   void getLocal<StatusCard[]>('status', []).then((cards) => {
     const g = cards.find((c) => c.id === 'gmail');

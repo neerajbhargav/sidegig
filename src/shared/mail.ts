@@ -16,7 +16,7 @@ const AFTER = new RegExp(`^[^\\d.!?\\n]{0,40}?(${CODEWORD})`, 'i');
 // Between the code word and the code: no number and no sentence end, but "code is:" may end the line.
 const GAP = /^[^\d.!?\n]{0,40}?(:\s*)?$/;
 // Phone numbers, dates, IP addresses and versions: three or more number groups.
-const GROUPS = /\+?\(?\d+\)?(?:[ .\/-]\(?\d+\)?){2,}/g;
+const GROUPS = /\+?\(?\d+\)?(?:[ ./-]\(?\d+\)?){2,}/g;
 const MEETING = /\b(meeting|webinar|dial[- ]in|join by phone)\b/i;
 const TRAVEL = /\b(flights?|booking|reservation|itinerary|check-in|boarding)\b/i;
 const PROMO = /\d+% off|\b(discount|checkout|promo|coupon)\b/i;

@@ -20,7 +20,7 @@ const send = (m: ToBackground) => ext.runtime.sendMessage(m);
 function isMainFrame(): boolean {
   if (window === window.top) return true;
   const anc = (location as any).ancestorOrigins as DOMStringList | undefined;
-  if (anc && anc.length) return /^(chrome|moz|safari-web)-extension:/.test(anc[0]);
+  if (anc?.length) return /^(chrome|moz|safari-web)-extension:/.test(anc[0]);
   return window.parent === window.top;
 }
 

@@ -89,7 +89,7 @@ class Picks {
   }
   /** The effort that will actually be sent to this model. */
   effective(): Effort {
-    return this.model && this.model.efforts.includes(this.effort) ? this.effort : 'auto';
+    return this.model?.efforts.includes(this.effort) ? this.effort : 'auto';
   }
 }
 
@@ -747,7 +747,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
       target.updated = Date.now();
       await saveChat(target);
       if (!current()) return;
-      turn.querySelectorAll('.cm-wait').forEach((x) => x.classList.remove('cm-wait'));
+      turn.querySelectorAll('.cm-wait').forEach((x) => { x.classList.remove('cm-wait'); });
       [...turn.querySelectorAll('.cm-seg')].forEach((s) => {
         if (!s.textContent?.trim() && !s.querySelector('.cm-tool')) s.remove();
       });
