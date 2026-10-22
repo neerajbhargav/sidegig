@@ -19,6 +19,7 @@
     "check": "tsc --noEmit -p .",
     "edition:dry-run": "node scripts/edition-dry-run.ts",
     "test": "node --test \"test/**/*.test.ts\"",
+    "e2e": "playwright test",
     "safari": "npm run build:safari && xcrun safari-web-extension-converter dist/safari --project-location safari-xcode --app-name sidegig --bundle-identifier com.neerajbhargav.sidegig --macos-only --no-prompt --force",
     "figures": "node scripts/build-figures.mjs",
     "snap": "node scripts/evolution.mjs add",
@@ -26,6 +27,7 @@
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/chrome": "^0.3.5",
     "@types/node": "^24.0.0",
     "esbuild-wasm": "^0.28.2",
