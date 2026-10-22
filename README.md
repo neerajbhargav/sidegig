@@ -137,6 +137,17 @@ test/                  node:test unit tests
 
 See [PRIVACY.md](PRIVACY.md) for exactly what is stored and which requests are made. Short version: nothing leaves your browser except requests to the sites and accounts you choose.
 
+## Measured
+
+Sign-in codes from unread mail, scored with `scripts/eval-mail-codes.ts` on a held-out set of 330 hand-labelled subjects and previews (150 with a code) that was never used for tuning:
+
+| Detector | Precision (95% CI) | Recall (95% CI) |
+|---|---|---|
+| Before, `279374e` | 90.9% (84.3 to 96.5) | 53.3% (45.3 to 61.5) |
+| After, `07fea22` | 96.7% (93.0 to 99.2) | 77.3% (70.4 to 83.9) |
+
+Method, sets, misses and the prompt-injection defenses: [docs/evals](docs/evals/README.md).
+
 ## Development
 
 ```bash
@@ -155,6 +166,7 @@ The build uses native esbuild when it can and falls back to the WebAssembly buil
 - A few sites keep a separate sign-in inside the sidebar; signing in once there fixes it.
 - Two accounts of the same app side by side needs Firefox containers (planned).
 - Status cards for Claude Code / Codex usage need a small native helper (planned).
+- A web page can carry hidden instructions for the assistant. Page and email text cannot break out of its wrapper, and "Ask before sending page data out" (off by default) stops outbound tools after the chat reads a page. How often a model still follows such instructions is not measured yet.
 
 ## License
 
