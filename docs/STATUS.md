@@ -1,11 +1,21 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-21 23:30 (0.4.0 plus a personal-data scrub on branch `upgrade/oct-2026`, built from `product/premium-1.0` in the worktree `~/.worktrees/sidegig-upgrade`; local only, not merged to `main`, not pushed; the owner's Aside still runs `8761b3e`).
+Last updated: 2026-10-22 00:10 (0.4.0, the personal-data scrub, then evals and injection defenses on branch `upgrade/oct-2026`, built from `product/premium-1.0` in the worktree `~/.worktrees/sidegig-upgrade`; local only, not merged to `main`, not pushed; the owner's Aside still runs `8761b3e`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Evals and injection defenses, 2026-10-22 (branch `upgrade/oct-2026`):** measured proof for the sign-in code detector, and the first defenses against prompt injection. Details and reproduce commands: `docs/evals/README.md`.
+
+- **Sign-in code eval:** `test/fixtures/mail-codes.jsonl` (348 template rows, `scripts/mail-codes-corpus.mjs`) and a held-out set `test/fixtures/mail-codes-holdout.jsonl` (330 rows drafted by the local `qwen2.5-coder:7b`, labels checked by hand, never used for tuning). `scripts/eval-mail-codes.ts` scores any commit (`--rev`). Before the fix (`279374e`) the template corpus gave precision 70.1% and recall 88.9%: phone numbers, card endings, meeting PINs, flight, room and build numbers counted as codes.
+- **Detector fix (`07fea22`):** a candidate needs a code word next to it or must be the whole subject or preview; number groups (phones, dates, IPs, versions) are masked; meeting and promo mails are skipped; letter-and-digit codes, FB- prefixes, year-like codes and glued or non-English code words are found. Held-out: precision 90.9% to 96.7%, recall 53.3% to 77.3% (95% CIs in `docs/evals`). The template corpus is now 100%/100%, but that is in-sample. `test/mail-codes.test.ts` keeps both sets at their measured values. A Slack-style code lost its dash during the fix; the unit test caught it and it is fixed.
+- **Wrappers (`ed425f1`):** `neutralize()` and `attr()` in `src/shared/prompt.ts` keep page text, email bodies, the email subject and tab, history and bookmark titles from closing `<page>`/`<email>` or faking a system, user or tool turn or a chat-template token. Used by `asPage` (read_tab and attached tabs), `threadPrompt` and the bridge's `browser_read`, `browser_tabs` and `browser_history`.
+- **Ask before sending page data out (`eddf145`), off by default:** a new setting in Settings › Ask AI. Once a chat holds a tool result or an attached page, `open_url` and every MCP tool wait for Allow or Don't allow in the chat (the full address is shown). Off by default because of the Key decision "Chat tools keep running without asking"; **the owner has to choose the default.** Preview scene `qa-ask.html` shows it with a fixture model; screenshots in `docs/evolution`.
+- `test/injection.test.ts` covers every defense (wrapper break-outs, the gate through the real `runChat` with a scripted model, MCP tools counted as outbound). On the previous commit 6 of its 10 tests fail; the other 4 check that behaviour without the setting is unchanged.
+- **Not done:** a model-measured attack success rate (adversarial corpus plus a runner against Ollama). Nothing is committed for it and no number is claimed. The bridge's own agents (Claude Code, Codex) get neutralized page text, but they have no confirmation gate: their access level (off, read only, full) is the control.
+- **Not done, waits for the owner:** push, PR and merge (unchanged from the scrub below).
 
 **Scrub and land prep, 2026-10-21 night (branch `upgrade/oct-2026`, from `product/premium-1.0` at `dd7fbe6`):** make 0.4.0 safe to publish before it merges to `main`.
 
@@ -121,13 +131,14 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 ## Open work, in priority order
 
 1. **Owner, now:** clear the leftover test text in the sidebar Claude composer (an agent-test page and an inbox tab title, typed by an earlier check); confirm the three judgment calls above.
-2. **Owner decisions:** merge `upgrade/oct-2026` (premium 1.0 plus the scrub) to `main` (then `npm run changelog`); whether to rewrite git history to drop the old personal-data images (they are still in past commits); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
+2. **Owner decisions:** the default for "Ask before sending page data out" (off today, to keep "Chat tools keep running without asking"; on would ask before `open_url` or an MCP tool once a chat has read a page); merge `upgrade/oct-2026` (premium 1.0, the scrub, evals and injection defenses) to `main` (then `npm run changelog`); whether to rewrite git history to drop the old personal-data images (they are still in past commits); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
 3. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
 4. **Live checks still owed:** a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
-5. **Phase 2, typed data:** a typed schema for `chrome.storage.local` and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings`; one typed message protocol (the trust table in `trust.ts` is the start). Simultaneous edits of the same notes or to-do list from two open tabs still save whole lists (the last write wins).
-6. **Phase 3, structure:** a widget registry; one Customize page API; `sync()` redrawing only what changed.
-7. **Phase 4, tests:** a fake `chrome.*` seam from the preview shim; router tests; a manifest snapshot test.
-8. Settings: field-level validation and focus checks; check other compact windows and very large interface sizes.
+5. **Injection eval:** an adversarial page and email corpus and a runner that drives `runChat` against a local model, to measure how often attacks still work with and without the two defenses (see `docs/evals/README.md`).
+6. **Phase 2, typed data:** a typed schema for `chrome.storage.local` and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings`; one typed message protocol (the trust table in `trust.ts` is the start). Simultaneous edits of the same notes or to-do list from two open tabs still save whole lists (the last write wins).
+7. **Phase 3, structure:** a widget registry; one Customize page API; `sync()` redrawing only what changed.
+8. **Phase 4, tests:** a fake `chrome.*` seam from the preview shim; router tests; a manifest snapshot test.
+9. Settings: field-level validation and focus checks; check other compact windows and very large interface sizes.
 
 ## Blocked or limited
 
@@ -156,7 +167,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 - Audit fixes go on their own branch, one commit per fix, pushed per phase; the work stops only when a test or live check fails. Nothing merges to `main` until the owner says.
 - Live checks in the owner's Aside (side panel, Gmail, X) are allowed for sidebar, frame and background changes, announced before each. The new tab is checked in the preview with fixtures.
-- Chat tools keep running without asking ("Never ask").
+- Chat tools keep running without asking ("Never ask"). Since 2026-10-22 an opt-in setting, "Ask before sending page data out", asks before outbound tools once a chat has read outside text; it is off by default until the owner decides.
 - The `identity` permission is required on every target. Minimums: Chrome 130, Firefox 148, no fallback code.
 - CSS: "fix what is broken and make it look consistent across the whole tool": one component set on every surface, each surface keeps its own colour theme.
 - Changelog is generated at merge (done). The history chat finder is deleted (done). Customize's reload memory is cut, and the overridden pattern-fade rule is deleted rather than restored (both done in the UI follow-up).
