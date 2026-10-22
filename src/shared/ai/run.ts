@@ -15,6 +15,11 @@ export type RunEvent =
 
 export const MAX_STEPS = 10;
 
+/** Has the model read text the user did not write: a tool result or an attached page? */
+export const readUntrusted = (msgs: Msg[]) => msgs.some((m) => m.role === 'tool' || !!m.tabs?.length);
+
+export const DECLINED = 'The user did not allow this. The conversation includes text from a web page or another outside source, so sending data out needs their yes. Do not try again; tell the user what you wanted to open and why.';
+
 export function systemPrompt(extra = ''): string {
   const now = new Date();
   return [
@@ -38,6 +43,11 @@ export async function runChat(o: {
   tools: ToolSet;
   signal: AbortSignal;
   on: (e: RunEvent) => void;
+  /**
+   * Asked before an outbound tool (open_url, MCP) runs once the conversation has
+   * read untrusted text. Leave out to run tools without asking.
+   */
+  confirm?: (call: ToolCall, label: string) => Promise<boolean>;
 }): Promise<Msg[]> {
   const added: Msg[] = [];
   const effort: Effort = o.model.efforts.includes(o.effort) ? o.effort : 'auto';
@@ -82,8 +92,11 @@ export async function runChat(o: {
     if (stop !== 'tools' || !msg.calls?.length) break;
     // Run what it asked for, one after another, and send the results back.
     for (const call of msg.calls) {
-      o.on({ type: 'tool', call, state: 'running', label: o.tools.describe(call) });
-      const r = o.signal.aborted ? { content: 'Stopped before this tool ran.', error: true } : await o.tools.run(call, o.signal);
+      const label = o.tools.describe(call);
+      o.on({ type: 'tool', call, state: 'running', label });
+      const ask = !!o.confirm && !o.signal.aborted && !!o.tools.outbound?.(call) && readUntrusted([...o.history, ...added]);
+      const allowed = ask ? await o.confirm!(call, label) : true;
+      const r = o.signal.aborted ? { content: 'Stopped before this tool ran.', error: true } : allowed ? await o.tools.run(call, o.signal) : { content: DECLINED, error: true };
       const res: Msg = { role: 'tool', callId: call.id, name: call.name, content: r.content, label: r.label ?? o.tools.describe(call), ...(r.error ? { error: true } : {}) };
       added.push(res);
       o.on({ type: 'tool', call, state: r.error ? 'failed' : 'done', label: r.label ?? o.tools.describe(call) });

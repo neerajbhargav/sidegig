@@ -16,6 +16,8 @@ export interface ToolSet {
   run: (call: ToolCall, signal?: AbortSignal) => Promise<ToolResult>;
   /** Shown while a tool runs. */
   describe: (call: ToolCall) => string;
+  /** Can this call send data off the device (open a page, call a server)? */
+  outbound?: (call: ToolCall) => boolean;
 }
 
 const MAX_PAGE = 24_000;
@@ -123,14 +125,16 @@ export function browserTools(opts: { hostTabId?: number } = {}): ToolSet {
   const describe = (c: ToolCall) =>
     ({ read_tab: 'Reading the page', list_tabs: 'Looking at your tabs', open_url: 'Opening a tab', search_history: 'Searching your history', search_bookmarks: 'Searching your bookmarks' })[c.name] ?? `Using ${c.name.replace(/__/g, ': ').replace(/_/g, ' ')}`;
 
-  return { defs, run, describe };
+  return { defs, run, describe, outbound: (c) => c.name === 'open_url' };
 }
 
 /** Put several tool sets together (the browser's, then each MCP server's). */
 export function combine(...sets: ToolSet[]): ToolSet {
+  const owner = (c: ToolCall) => sets.find((s) => s.defs.some((d) => d.name === c.name)) ?? sets[0];
   return {
     defs: sets.flatMap((s) => s.defs),
-    run: (c, signal) => (sets.find((s) => s.defs.some((d) => d.name === c.name)) ?? sets[0]).run(c, signal),
-    describe: (c) => (sets.find((s) => s.defs.some((d) => d.name === c.name)) ?? sets[0]).describe(c),
+    run: (c, signal) => owner(c).run(c, signal),
+    describe: (c) => owner(c).describe(c),
+    outbound: (c) => !!owner(c).outbound?.(c),
   };
 }
