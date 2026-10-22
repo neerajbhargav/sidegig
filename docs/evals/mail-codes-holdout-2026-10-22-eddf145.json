@@ -1,0 +1,467 @@
+{
+ "eval": "mail-codes-holdout",
+ "corpus": "test/fixtures/mail-codes-holdout.jsonl",
+ "corpus_version": 1,
+ "detector": "findCode in src/shared/mail.ts at eddf145 (working tree)",
+ "detector_dirty": false,
+ "match": "exact string match with the label",
+ "date": "2026-10-22T04:03:59.819Z",
+ "command": "node scripts/eval-mail-codes.ts --corpus test/fixtures/mail-codes-holdout.jsonl --write",
+ "all": {
+  "n": 330,
+  "positives": 150,
+  "tp": 116,
+  "fp": 4,
+  "fn": 34,
+  "tn": 177,
+  "wrong": 1,
+  "precision": 0.9667,
+  "recall": 0.7733,
+  "precision_ci95": [
+   0.9298,
+   0.9922
+  ],
+  "recall_ci95": [
+   0.7042,
+   0.8392
+  ]
+ },
+ "by_category": {
+  "appointment": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "bill": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "card": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "code-word-no-code": {
+   "n": 26,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "gift-card": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "invoice": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "meeting": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "newsletter": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "not-sign-in": {
+   "n": 4,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "order": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "otp": {
+   "n": 107,
+   "tp": 84,
+   "fp": 0,
+   "fn": 23
+  },
+  "otp-french": {
+   "n": 4,
+   "tp": 2,
+   "fp": 0,
+   "fn": 2
+  },
+  "otp-german": {
+   "n": 9,
+   "tp": 8,
+   "fp": 1,
+   "fn": 1
+  },
+  "otp-italian": {
+   "n": 10,
+   "tp": 8,
+   "fp": 0,
+   "fn": 2
+  },
+  "otp-portuguese": {
+   "n": 10,
+   "tp": 8,
+   "fp": 0,
+   "fn": 2
+  },
+  "otp-spanish": {
+   "n": 10,
+   "tp": 6,
+   "fp": 0,
+   "fn": 4
+  },
+  "pickup": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "promo": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "sign-in-alert": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "ticket": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "tracking": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "travel": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "version": {
+   "n": 10,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  }
+ },
+ "errors": [
+  {
+   "id": "hold-008",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "123456789",
+   "got": null
+  },
+  {
+   "id": "hold-010",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ZYXW",
+   "got": null
+  },
+  {
+   "id": "hold-013",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "2F-3C",
+   "got": null
+  },
+  {
+   "id": "hold-014",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "4D-5E-6F",
+   "got": null
+  },
+  {
+   "id": "hold-016",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "6789",
+   "got": null
+  },
+  {
+   "id": "hold-018",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "9D10",
+   "got": null
+  },
+  {
+   "id": "hold-019",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "112233",
+   "got": null
+  },
+  {
+   "id": "hold-032",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ABCD-1234",
+   "got": null
+  },
+  {
+   "id": "hold-042",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "789",
+   "got": null
+  },
+  {
+   "id": "hold-043",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ABCD",
+   "got": null
+  },
+  {
+   "id": "hold-055",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "A1B2",
+   "got": null
+  },
+  {
+   "id": "hold-059",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ABCD",
+   "got": null
+  },
+  {
+   "id": "hold-072",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "567890",
+   "got": null
+  },
+  {
+   "id": "hold-077",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "QWERTY",
+   "got": null
+  },
+  {
+   "id": "hold-080",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ZZZZ",
+   "got": null
+  },
+  {
+   "id": "hold-086",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "Z9X8",
+   "got": null
+  },
+  {
+   "id": "hold-088",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "M7N8-O9P0",
+   "got": null
+  },
+  {
+   "id": "hold-089",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "556677889900",
+   "got": null
+  },
+  {
+   "id": "hold-090",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "K1L2-M3N4",
+   "got": null
+  },
+  {
+   "id": "hold-097",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ABCD-1234",
+   "got": null
+  },
+  {
+   "id": "hold-102",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ABCD-1234",
+   "got": null
+  },
+  {
+   "id": "hold-105",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "QWERTY",
+   "got": null
+  },
+  {
+   "id": "hold-112",
+   "split": "holdout",
+   "category": "otp",
+   "outcome": "fn",
+   "want": "ABCD-1234",
+   "got": null
+  },
+  {
+   "id": "hold-113",
+   "split": "holdout",
+   "category": "not-sign-in",
+   "outcome": "fp",
+   "want": null,
+   "got": "5678"
+  },
+  {
+   "id": "hold-119",
+   "split": "holdout",
+   "category": "not-sign-in",
+   "outcome": "fp",
+   "want": null,
+   "got": "123ABC"
+  },
+  {
+   "id": "hold-122",
+   "split": "holdout",
+   "category": "otp-spanish",
+   "outcome": "fn",
+   "want": "56789",
+   "got": null
+  },
+  {
+   "id": "hold-123",
+   "split": "holdout",
+   "category": "otp-spanish",
+   "outcome": "fn",
+   "want": "A1B2",
+   "got": null
+  },
+  {
+   "id": "hold-128",
+   "split": "holdout",
+   "category": "otp-spanish",
+   "outcome": "fn",
+   "want": "B2C3",
+   "got": null
+  },
+  {
+   "id": "hold-130",
+   "split": "holdout",
+   "category": "otp-spanish",
+   "outcome": "fn",
+   "want": "A1B2C3D4E5",
+   "got": null
+  },
+  {
+   "id": "hold-132",
+   "split": "holdout",
+   "category": "otp-french",
+   "outcome": "fn",
+   "want": "567890",
+   "got": null
+  },
+  {
+   "id": "hold-139",
+   "split": "holdout",
+   "category": "otp-french",
+   "outcome": "fn",
+   "want": "ABCD-1234",
+   "got": null
+  },
+  {
+   "id": "hold-141",
+   "split": "holdout",
+   "category": "not-sign-in",
+   "outcome": "fp",
+   "want": null,
+   "got": "1234"
+  },
+  {
+   "id": "hold-149",
+   "split": "holdout",
+   "category": "otp-german",
+   "outcome": "wrong",
+   "want": "MNO-1234",
+   "got": "1234"
+  },
+  {
+   "id": "hold-152",
+   "split": "holdout",
+   "category": "otp-portuguese",
+   "outcome": "fn",
+   "want": "567890",
+   "got": null
+  },
+  {
+   "id": "hold-156",
+   "split": "holdout",
+   "category": "otp-portuguese",
+   "outcome": "fn",
+   "want": "ABCD-1234",
+   "got": null
+  },
+  {
+   "id": "hold-163",
+   "split": "holdout",
+   "category": "otp-italian",
+   "outcome": "fn",
+   "want": "2A3B",
+   "got": null
+  },
+  {
+   "id": "hold-166",
+   "split": "holdout",
+   "category": "otp-italian",
+   "outcome": "fn",
+   "want": "AB12-CD34",
+   "got": null
+  }
+ ]
+}
