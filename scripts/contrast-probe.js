@@ -34,7 +34,7 @@
       const s = getComputedStyle(n);
       if (s.backgroundImage !== 'none' && !n.matches('html, body')) return bg.a >= 0.85 ? bg : 'wall';
       const c = parse(s.backgroundColor);
-      if (c && c.a) bg = over(bg, c);
+      if (c?.a) bg = over(bg, c);
       if (bg.a >= 0.85) return bg;
       if (n.matches('.gw')) return null;
       if (n.matches('.nt-wall')) return 'wall';

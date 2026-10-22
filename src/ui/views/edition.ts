@@ -303,7 +303,7 @@ function setupCard(ctx: Ctx, rerender: () => void): HTMLElement {
 function todayView(ctx: Ctx, ed: Edition | null, st: EdStatus | null, a: Actions, rerender: () => void, filter: { kind: EdKind | 'all' }): HTMLElement {
   const wrap = h('div', { class: 'ed-today' });
   if (!a.profile.interests.length) return wrap.appendChild(setupCard(ctx, rerender)), wrap;
-  if (!ed || !ed.items.length) {
+  if (!ed?.items.length) {
     wrap.append(
       h(
         'div',
@@ -429,7 +429,9 @@ async function interestsView(ctx: Ctx, p: Profile, rebuildSoon: () => void): Pro
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const terms = input.value.split(',').map((t) => t.trim()).filter(Boolean);
-      if (terms.length) void edit((x) => terms.forEach((t) => addInterest(x, t, 3, 'you', kinds)));
+      if (terms.length) void edit((x) => {
+        for (const t of terms) addInterest(x, t, 3, 'you', kinds);
+      });
     });
     return h(
       'section',
@@ -714,7 +716,7 @@ export async function editionSection(ctx: Ctx): Promise<HTMLElement> {
     }, 120);
   };
   const offs = ['edition', 'edStatus', 'edProfile', 'edSaved'].map((k) => onLocalChanged(k, () => { if (!ctx.signal?.aborted) changed(); }));
-  ctx.signal?.addEventListener('abort', () => { clearTimeout(pending); clearTimeout(rebuildTimer); offs.forEach((off) => off()); }, { once: true });
+  ctx.signal?.addEventListener('abort', () => { clearTimeout(pending); clearTimeout(rebuildTimer); for (const off of offs) off(); }, { once: true });
   offs.push(
     onLocalChanged('edStatus', (v) => {
       const imp = (v as EdStatus | null)?.imported;

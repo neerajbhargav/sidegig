@@ -106,7 +106,7 @@ export function learnFromDismiss(p: Profile, item: Pick<EdItem, 'topic'>): Profi
 export function decay(p: Profile, now = Date.now()): Profile {
   const days = (now - (p.decayedAt || now)) / 86_400_000;
   if (days < 0.5) return p;
-  const f = Math.pow(0.5, days / HALF_LIFE_DAYS);
+  const f = 0.5 ** (days / HALF_LIFE_DAYS);
   p.interests = p.interests
     .map((i) => (i.from === 'you' ? i : { ...i, weight: Math.round(i.weight * f * 100) / 100 }))
     .filter((i) => i.from === 'you' || i.weight >= 0.6);

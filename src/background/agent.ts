@@ -254,7 +254,7 @@ async function banner(tabId: number) {
       func: () => {
         const w = window as unknown as { __sidegigAgent?: { host: HTMLElement; timer: number } };
         let a = w.__sidegigAgent;
-        if (!a || !a.host.isConnected) {
+        if (!a?.host.isConnected) {
           const host = document.createElement('sidegig-agent');
           host.style.cssText = 'all:initial;position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;';
           const root = host.attachShadow({ mode: 'closed' });

@@ -1,4 +1,4 @@
-# Typecheck, unit tests and all four builds on every push and pull request, whichever
+# Lint, typecheck, unit tests and all four builds on every push and pull request, whichever
 # agent pushed; then the Playwright checks against the built extension and the preview.
 name: CI
 on:
@@ -17,6 +17,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npx tsc --noEmit -p .
       - run: npm test
       - run: node scripts/build.mjs --zip

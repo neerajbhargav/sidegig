@@ -45,7 +45,7 @@ function frameReady(id: string) {
 const greeted = new Set<string>();
 addEventListener('message', (e) => {
   const d = e.data as { ns?: string; type?: string } | null;
-  if (!d || d.ns !== 'sidegig-frame' || d.type !== 'hello') return;
+  if (d?.ns !== 'sidegig-frame' || d.type !== 'hello') return;
   for (const [id, f] of frames) if (f.el.contentWindow === e.source) greeted.add(id);
 });
 

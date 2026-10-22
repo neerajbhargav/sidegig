@@ -174,7 +174,7 @@ test('paletteFromPixels: a readable theme from a picture', () => {
   const [r, , b] = hexRgb(night.accent);
   assert.ok(r > b, `accent picks the warm lights: ${night.accent}`);
   // Bright beach: light page, dark ink.
-  const beach = paletteFromPixels(img(48, 28, (x, y) => (y < 14 ? [150, 205, 240] : [238, 222, 190])));
+  const beach = paletteFromPixels(img(48, 28, (_x, y) => (y < 14 ? [150, 205, 240] : [238, 222, 190])));
   assert.equal(beach.dark, false);
   assert.ok(contrast(hexRgb(beach.ink), hexRgb(beach.bg)) >= 7);
   assert.ok(contrast(hexRgb(beach.accent), hexRgb(beach.bg)) >= 3);

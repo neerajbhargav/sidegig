@@ -103,6 +103,7 @@ const POSITIVE = [
   ['digits-6', 'ChatGPT', 'Your ChatGPT code is {code}', 'Enter this temporary verification code to continue.'],
   ['alnum-6', 'generic', 'Your verification code', 'Use this code to verify your email: {code}', 'alnum6'],
   ['digits-8', 'bank', 'Your one-time passcode', 'Your one-time passcode is {code}. Do not share it. We will never ask for it.', 'd8'],
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: a dollar sign, then the {amount} slot.
   ['distractor-amount', 'bank', 'Confirm your payment', 'Use code {code} to confirm your payment of ${amount} to {merchant}.'],
   ['distractor-date', 'generic', 'Your verification code', 'Your code is {code}. It expires at {time} on {date}.'],
   ['distractor-order', 'shop', 'Confirm your order', 'Enter {code} to confirm order #{order}.', 'd4'],
@@ -140,6 +141,7 @@ const NEGATIVE = [
   ['order', 'Order {order} confirmed', 'Thanks for your purchase. We will email you when it ships.'],
   ['order', 'Your order of headphones has shipped', 'Order 112-{d7}-{d7}. Your confirmation and receipt are attached.'],
   ['order', 'Order No. {d6} confirmed', 'Estimated delivery: {date}.'],
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: a dollar sign, then the {amount} slot.
   ['price', 'Payment confirmation', 'Your payment of ${amount} was received on {date}.'],
   ['price', 'Payment confirmed: {d4} USD', 'Thanks, {user}. Your receipt is attached.'],
   ['price', 'Confirm your subscription', '€{amount} per month, renews on {date}.'],
@@ -169,6 +171,7 @@ const NEGATIVE = [
   ['booking', 'Check-in confirmation', 'Flight UA {d4} departs at 08:15 from gate B12.'],
   ['ticket', 'Support case {d8} confirmed', 'We received your request and will reply soon.'],
   ['ticket', 'Your verification is complete', 'Thanks for verifying. Case {d5} is closed.'],
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: a dollar sign, then the {amount} slot.
   ['ticket', 'Invoice INV-{d5} confirmation', 'Total due ${amount} by {date}.'],
   ['promo', 'Your code inside: SAVE20', 'Use code SAVE20 for 20% off this weekend.'],
   ['promo', 'A welcome code for you', 'Use code FALL2026 at checkout.'],

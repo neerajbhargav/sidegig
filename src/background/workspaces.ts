@@ -35,7 +35,7 @@ export async function saveWorkspace(name: string): Promise<Workspace> {
 export async function restoreWorkspace(id: string): Promise<void> {
   const all = await getLocal<Workspace[]>('workspaces', []);
   const ws = all.find((w) => w.id === id);
-  if (!ws || !ws.tabs.length) return;
+  if (!ws?.tabs.length) return;
   const win = await ext.windows.create({ url: ws.tabs[0].url, focused: true });
   const created: { id: number; group?: Workspace['tabs'][number]['group'] }[] = [];
   const first = win?.tabs?.[0];
