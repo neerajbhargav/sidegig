@@ -729,7 +729,6 @@ function sizeSlider(ctx: Ctx): HTMLElement {
 
 /** Layout: how widgets sit on the wallpaper, where they go, what's on the page, and how big. */
 function layoutTab(ctx: Ctx): HTMLElement {
-  const st = ctx.settings;
   return h(
     'div',
     { class: 'cz-themes-wrap' },
