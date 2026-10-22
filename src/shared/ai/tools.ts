@@ -2,6 +2,7 @@
 // link, look through your history and bookmarks. Page text goes back to the
 // model marked as page content, never as instructions.
 import { ext } from '../api.ts';
+import { attr, neutralize } from '../prompt.ts';
 import type { ToolCall, ToolDef } from './types.ts';
 
 export interface ToolResult {
@@ -40,7 +41,7 @@ export async function readTab(tabId: number, max = MAX_PAGE): Promise<{ title: s
 }
 
 /** Wrap page text so the model treats it as data. */
-export const asPage = (p: { title: string; url: string; text: string }) => `<page title="${p.title.replace(/"/g, '“')}" url="${p.url}">\n${p.text}\n</page>`;
+export const asPage = (p: { title: string; url: string; text: string }) => `<page title="${attr(p.title)}" url="${attr(p.url)}">\n${neutralize(p.text)}\n</page>`;
 
 /** The tab you most likely mean by "this page": the last web tab you looked at in this window. */
 export async function likelyTab(hostTabId?: number): Promise<chrome.tabs.Tab | undefined> {
@@ -93,7 +94,7 @@ export function browserTools(opts: { hostTabId?: number } = {}): ToolSet {
         }
         case 'list_tabs': {
           const tabs = await ext.tabs.query({});
-          const rows = tabs.filter((t) => isWeb(t.url)).slice(0, 80).map((t) => `${t.id}\t${t.active ? '(active) ' : ''}${t.title}\t${t.url}`);
+          const rows = tabs.filter((t) => isWeb(t.url)).slice(0, 80).map((t) => `${t.id}\t${t.active ? '(active) ' : ''}${neutralize(t.title ?? '')}\t${t.url}`);
           return { content: rows.length ? `id\ttitle\turl\n${rows.join('\n')}` : 'No web tabs are open.', label: `Looked at ${rows.length} tabs` };
         }
         case 'open_url': {
@@ -105,12 +106,12 @@ export function browserTools(opts: { hostTabId?: number } = {}): ToolSet {
         case 'search_history': {
           const days = Math.max(1, Math.min(365, Number(a.days) || 30));
           const items = await ext.history.search({ text: String(a.query ?? ''), startTime: Date.now() - days * 86_400_000, maxResults: 25 });
-          const rows = items.map((i) => `${new Date(i.lastVisitTime ?? 0).toISOString().slice(0, 10)}\t${i.title}\t${i.url}`);
+          const rows = items.map((i) => `${new Date(i.lastVisitTime ?? 0).toISOString().slice(0, 10)}\t${neutralize(i.title ?? '')}\t${i.url}`);
           return { content: rows.join('\n') || 'Nothing in history matches.', label: `Searched history for “${a.query}”` };
         }
         case 'search_bookmarks': {
           const items = (await ext.bookmarks.search(String(a.query ?? ''))).filter((b) => b.url).slice(0, 25);
-          return { content: items.map((b) => `${b.title}\t${b.url}`).join('\n') || 'No bookmarks match.', label: `Searched bookmarks for “${a.query}”` };
+          return { content: items.map((b) => `${neutralize(b.title)}\t${b.url}`).join('\n') || 'No bookmarks match.', label: `Searched bookmarks for “${a.query}”` };
         }
       }
       return { content: `There's no tool called ${c.name}.`, error: true };

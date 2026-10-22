@@ -38,3 +38,14 @@ export function buildPrompt({ template, text, title, url, maxChars }: PromptInpu
     .replaceAll('{url}', url)
     .trim();
 }
+
+// Untrusted text (pages, emails, tab titles) goes to the model inside <page>
+// and <email> wrappers. These two keep it from closing a wrapper early or
+// faking one, or a system, user or tool turn, or a chat-template token.
+const STRUCTURE = /[<＜](?=\s*\/?\s*(?:page|email|system|user|assistant|tool\w*|instructions?)\b)|[<＜](?=\|)/gi;
+
+/** Untrusted text with its wrapper-like tags written as `&lt;page>`, so they read as text. */
+export const neutralize = (s: string) => s.replace(STRUCTURE, '&lt;');
+
+/** A value for a wrapper attribute: one line, no quotes or angle brackets. */
+export const attr = (s: string) => s.replace(/["<>＜＞]/g, '').replace(/\s+/g, ' ').trim();
