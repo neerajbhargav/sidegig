@@ -1,0 +1,29 @@
+# On a version tag (v*): check, build the four browser packages and publish them as a
+# GitHub release with generated notes. The tag must match package.json's version.
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Tag matches package.json
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      - run: npm run lint
+      - run: npx tsc --noEmit -p .
+      - run: npm test
+      - run: node scripts/build.mjs --zip
+      - name: Publish the release
+        run: gh release create "$GITHUB_REF_NAME" dist/sidegig-chrome.zip dist/sidegig-opera.zip dist/sidegig-firefox.zip dist/sidegig-safari.zip --title "sidegig $GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
