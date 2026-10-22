@@ -1,11 +1,19 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-22 00:55 (0.4.0, the personal-data scrub, evals and injection defenses, then end-to-end checks, lint and a release workflow on branch `upgrade/oct-2026`, built from `product/premium-1.0` in the worktree `~/.worktrees/sidegig-upgrade`; local only, not merged to `main`, not pushed; the owner's Aside still runs `8761b3e`).
+Last updated: 2026-10-22 13:25 (0.4.0 on branch `upgrade/oct-2026`: premium 1.0, the personal-data scrub, evals and injection defenses, end-to-end checks, lint and a release workflow. Pushed; PR #1 into `main` is open and not merged; the owner's Aside still runs `8761b3e`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Pushed for review, 2026-10-22 (PR #1, `upgrade/oct-2026` into `main`, a fast-forward of 51 commits):**
+
+- Checked before the push, with the commands in `ci.yml`: lint, `tsc --noEmit` (also with `--noUnusedLocals`), 185 unit tests, all four builds with zips, and 9 Playwright checks in Google Chrome 155 (headless).
+- Privacy check before the push: `git grep -niE 'landair|forward deployed|rondlanbr|mercor|jersey city'` finds nothing in the tree or in the lines the 51 commits add. All 83 images linked from `README.md` and `docs/evolution/README.md` were checked by eye: fixture data or blurred. The old images stay in history that was already public (no history rewrite).
+- Only the branch was pushed. The T3 Code checkpoint refs (`refs/t3/*`) stay local.
+- A Python server tweak for the e2e preview (bigger listen backlog) was left out: the checks pass 3 times in a row without it. Add it only if CI shows connection resets.
+- **Not done, waits for the owner:** merge PR #1, then `npm run changelog` on `main`.
 
 **End-to-end checks, lint and release, 2026-10-22 (branch `upgrade/oct-2026`):** CI now runs the browser checks that used to need the Aside CLI.
 
@@ -14,7 +22,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - **Biome (`ba4b8ad`):** `npm run lint` gates CI with recommended rules and zero warnings. Fixed what it found (forEach callbacks returning values, a shadowed `unescape`, unused locals and parameters, two regexes, `var` in `nt-boot.js`). Rules that encode a deliberate pattern are off with a reason each in `biome.jsonc`; `noInvalidGridAreas` is off because it flags three valid templates (Chromium's `CSS.supports` accepts them). Formatting is off.
 - **Notices (`f5387b3`):** the packages ship a port of the Anatomy kit's camera, so its MIT text is now included in full; the Apache-2.0 text for Material Symbols too. Fonts are Google Fonts' Latin subsets, unchanged.
 - **Release (`72ee294`):** a `v*` tag checks that the tag matches `package.json`, runs lint, typecheck and tests, and attaches the four zips to a GitHub release with generated notes. No tag yet.
-- **Not done:** nothing is pushed, so neither workflow has run on GitHub. The suite ran locally on Node 24.17 with Chromium 153 and Chrome 155 (headless).
+- Pushed on 2026-10-22 (see above). The suite also ran locally on Node 24.17 with Chromium 153 and Chrome 155 (headless).
 
 **Evals and injection defenses, 2026-10-22 (branch `upgrade/oct-2026`):** measured proof for the sign-in code detector, and the first defenses against prompt injection. Details and reproduce commands: `docs/evals/README.md`.
 
@@ -24,7 +32,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - **Ask before sending page data out (`eddf145`), off by default:** a new setting in Settings › Ask AI. Once a chat holds a tool result or an attached page, `open_url` and every MCP tool wait for Allow or Don't allow in the chat (the full address is shown). Off by default because of the Key decision "Chat tools keep running without asking"; **the owner has to choose the default.** Preview scene `qa-ask.html` shows it with a fixture model; screenshots in `docs/evolution`.
 - `test/injection.test.ts` covers every defense (wrapper break-outs, the gate through the real `runChat` with a scripted model, MCP tools counted as outbound). On the previous commit 6 of its 10 tests fail; the other 4 check that behaviour without the setting is unchanged.
 - **Not done:** a model-measured attack success rate (adversarial corpus plus a runner against Ollama). Nothing is committed for it and no number is claimed. The bridge's own agents (Claude Code, Codex) get neutralized page text, but they have no confirmation gate: their access level (off, read only, full) is the control.
-- **Not done, waits for the owner:** push, PR and merge (unchanged from the scrub below).
+- Push and PR #1: done on 2026-10-22. The merge waits for the owner (see above).
 
 **Scrub and land prep, 2026-10-21 night (branch `upgrade/oct-2026`, from `product/premium-1.0` at `dd7fbe6`):** make 0.4.0 safe to publish before it merges to `main`.
 
@@ -34,7 +42,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - 21 early images in `docs/evolution` (2026-10-11 to 2026-10-14) had bookmark and folder names, a job-search folder, a home city, calendar and to-do text, edition picks and a calendar name. Those areas are now pixelated and blurred. All 76 evolution images and the 5 README images were checked by eye. Git history still holds the old images (no history rewrite).
 - README: an honest browser support table (only Aside is installed and checked live; Chrome-family, Opera, Firefox and Safari are built only). Removed two claims with no evidence in the repo: the docking site list and "opens instantly".
 - THIRD_PARTY_NOTICES lists Barlow Condensed and IBM Plex Mono (both OFL, already bundled).
-- **Not done, waits for the owner:** push `upgrade/oct-2026`, open the PR into `main`, merge it, then `npm run changelog` on `main`. `AGENTS.md` and Key decisions say nothing merges or pushes until the owner says so in his own words. Pushing the branch adds no new personal data: the 32 premium-1.0 commits add only fixture images and no matching strings.
+- Pushed and PR #1 opened on 2026-10-22. The merge and `npm run changelog` on `main` wait for the owner (see above). Pushing added no new personal data: the new commits add only fixture images and no matching strings.
 
 **Jank fixes and one design system, 2026-10-21 evening:** the owner said the sidebar loads apps badly, the new tab layout is janky and nothing feels premium, then asked to "maintain a unified UI UX design system for widgets, icons, components, animations, etc".
 
@@ -140,7 +148,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 ## Open work, in priority order
 
 1. **Owner, now:** clear the leftover test text in the sidebar Claude composer (an agent-test page and an inbox tab title, typed by an earlier check); confirm the three judgment calls above.
-2. **Owner decisions:** the default for "Ask before sending page data out" (off today, to keep "Chat tools keep running without asking"; on would ask before `open_url` or an MCP tool once a chat has read a page); merge `upgrade/oct-2026` (premium 1.0, the scrub, evals and injection defenses) to `main` (then `npm run changelog`); whether to rewrite git history to drop the old personal-data images (they are still in past commits); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
+2. **Owner decisions:** the default for "Ask before sending page data out" (off today, to keep "Chat tools keep running without asking"; on would ask before `open_url` or an MCP tool once a chat has read a page); merge PR #1 (`upgrade/oct-2026`: premium 1.0, the scrub, evals and injection defenses) into `main` (then `npm run changelog`), and whether to tag `v0.4.0` after it (the release workflow then attaches the four zips); whether to rewrite git history to drop the old personal-data images (they are still in past commits); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
 3. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
 4. **Live checks still owed:** the drawer fix (`328ab58`) in the owner's Aside: switch the drawer's view from the rail and close it from inside; a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
 5. **Injection eval:** an adversarial page and email corpus and a runner that drives `runChat` against a local model, to measure how often attacks still work with and without the two defenses (see `docs/evals/README.md`).
