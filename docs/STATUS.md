@@ -1,16 +1,16 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-22 13:25 (0.4.0 on branch `upgrade/oct-2026`: premium 1.0, the personal-data scrub, evals and injection defenses, end-to-end checks, lint and a release workflow. Pushed; PR #1 into `main` is open and not merged; the owner's Aside still runs `8761b3e`).
+Last updated: 2026-10-22 13:40 (0.4.0 on branch `upgrade/oct-2026`: premium 1.0, the personal-data scrub, evals and injection defenses, end-to-end checks, lint and a release workflow. Pushed; PR #1 into `main` is open and not merged; the owner's Aside still runs `8761b3e`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
 
-**Pushed for review, 2026-10-22 (PR #1, `upgrade/oct-2026` into `main`, a fast-forward of 51 commits):**
+**Pushed for review, 2026-10-22 (PR #1, `upgrade/oct-2026` into `main`, a fast-forward of 53 commits):**
 
 - Checked before the push, with the commands in `ci.yml`: lint, `tsc --noEmit` (also with `--noUnusedLocals`), 185 unit tests, all four builds with zips, and 9 Playwright checks in Google Chrome 155 (headless).
-- Privacy check before the push: `git grep -niE 'landair|forward deployed|rondlanbr|mercor|jersey city'` finds nothing in the tree or in the lines the 51 commits add. All 83 images linked from `README.md` and `docs/evolution/README.md` were checked by eye: fixture data or blurred. The old images stay in history that was already public (no history rewrite).
+- Privacy check before the push: a case-insensitive `git grep` for the employer name, the job-search phrases, the personal email, the recruiter and the home city finds nothing in the tree or in the lines the commits add. All 83 images linked from `README.md` and `docs/evolution/README.md` were checked by eye: fixture data or blurred. The old images stay in history that was already public (no history rewrite).
 - Only the branch was pushed. The T3 Code checkpoint refs (`refs/t3/*`) stay local.
 - A Python server tweak for the e2e preview (bigger listen backlog) was left out: the checks pass 3 times in a row without it. Add it only if CI shows connection resets.
 - **Not done, waits for the owner:** merge PR #1, then `npm run changelog` on `main`.
@@ -23,6 +23,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - **Notices (`f5387b3`):** the packages ship a port of the Anatomy kit's camera, so its MIT text is now included in full; the Apache-2.0 text for Material Symbols too. Fonts are Google Fonts' Latin subsets, unchanged.
 - **Release (`72ee294`):** a `v*` tag checks that the tag matches `package.json`, runs lint, typecheck and tests, and attaches the four zips to a GitHub release with generated notes. No tag yet.
 - Pushed on 2026-10-22 (see above). The suite also ran locally on Node 24.17 with Chromium 153 and Chrome 155 (headless).
+- Re-checked 2026-10-22 13:40 on Node 26.10 and Chrome 155: 9 of 9 checks pass. Two planted defects each fail their check: `main_frame` in rule 1, and `use_dynamic_url: false` (the page then embeds `drawer.html`). Each rule turned off in `biome.jsonc` has 3 to 191 hits, and none of the 178 assignment hits is an accidental `if (a = b)`. The smoke scripts' headers now name `npm run e2e` first; the Aside REPL is optional.
 
 **Evals and injection defenses, 2026-10-22 (branch `upgrade/oct-2026`):** measured proof for the sign-in code detector, and the first defenses against prompt injection. Details and reproduce commands: `docs/evals/README.md`.
 
