@@ -2,12 +2,14 @@
 
 **Your apps, bookmarks and daily tools, close while you browse.** sidegig is a free, open-source browser sidebar with an optional new tab. Start with a short setup, pin the apps you use, and make room for your day.
 
-No account. No servers. No analytics. Works in Chrome, Edge, Brave, Arc, Dia, Vivaldi, Opera, Aside, Firefox and Safari.
+No account. No servers. No analytics. One codebase builds packages for Chromium browsers, Opera, Firefox and Safari. So far it is checked live only in Aside, a Chromium browser: see [browser support](#browser-support).
 
 <p>
-<img src="docs/screenshots/drawer-home.jpg" width="49%" alt="sidegig drawer with bookmark stacks and grouped tabs">
-<img src="docs/screenshots/status-dark.jpg" width="49%" alt="Status cards on a dark site">
+<img src="docs/screenshots/drawer-home.jpg" width="49%" alt="The sidebar home: app rail, a sign-in code, bookmark stacks and a tab group">
+<img src="docs/screenshots/status-dark.jpg" width="49%" alt="Status cards for GitHub, Gmail and Vercel in the dark theme">
 </p>
+
+All screenshots come from the fixture preview (`npm run preview`), so they show sample data, not a real account.
 
 How it got here: [screenshots of every milestone](docs/evolution/README.md) and the [changelog](CHANGELOG.md).
 
@@ -15,7 +17,7 @@ How it got here: [screenshots of every milestone](docs/evolution/README.md) and 
 
 Opera's sidebar proved how good it is to keep messengers and tools one click away. Arc and Dia showed how calm a browser can feel. Most sidebar extensions today either open a second browser pane on the right or put features behind a subscription. sidegig is built to be:
 
-- **Quick.** The rail is drawn on the page itself, appears after a 120 ms touch of the edge, and the drawer is preloaded so it opens instantly.
+- **Quick.** The rail is drawn on the page itself, appears after a 120 ms touch of the edge (a setting), and the drawer is preloaded.
 - **Always there, like Opera's sidebar.** Docked by default: the rail sits flush on the side you choose and every page makes room for it, so nothing is ever covered. Prefer more space? Switch to hover.
 - **Customizable.** Any site as an app, any bookmark folder as a space, theme from three inputs, custom CSS, per-site hiding, link rules.
 - **Adaptive.** By default it matches each website's light or dark look. Text contrast is checked by tests at every setting.
@@ -26,7 +28,7 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 
 | | |
 |---|---|
-| **Docked rail** | Always visible on the left or right, and the page makes room for it like Opera's sidebar: fixed headers, side navs and overlays are moved clear of it automatically (tested on YouTube, X, Gmail, LinkedIn, GitHub, Wikipedia). Opening the drawer makes room too. Or switch to hover, where it slides over the page from the edge. |
+| **Docked rail** | Always visible on the left or right, and the page makes room for it like Opera's sidebar: fixed headers, side navs and overlays are moved clear of it automatically. Opening the drawer makes room too. Or switch to hover, where it slides over the page from the edge. |
 | **Opera-style panel** | Apps open in the browser's sidebar laid out like Opera: buttons list on the outer edge, the app right beside it. When the panel opens on the rail's side, the page rail steps aside so it reads as one sidebar. If the browser puts its sidebar on the other side, sidegig offers a one-click fix. |
 | **Apps** | Claude, ChatGPT, Gemini, Perplexity, Grok, WhatsApp, Telegram, Slack, Discord, Gmail, Calendar, YouTube Music, Spotify, Notion, Linear, GitHub and more, or any site. Opens in the browser's own sidebar (where your sign-ins work), a slim mini window, a tab, or an in-page drawer. Unread badges from page titles. Messengers keep running while hidden (a switch per app), any app can be muted, and each app remembers the width you give it. |
 | **Add this site** | The **+** on the rail turns the page you're on into a rail app or a bookmark in one tap, with suggested apps below. |
@@ -44,12 +46,11 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 | **Theme engine** | Base tint, accent and contrast generate the whole palette in OKLCH. Light, dark, system, or Page (match each site). Corner radius and custom CSS too. |
 
 <p>
-<img src="docs/screenshots/ai-picker.jpg" width="32%" alt="AI picker">
 <img src="docs/screenshots/add.jpg" width="32%" alt="Add this site">
-<img src="docs/screenshots/settings.jpg" width="34%" alt="Settings">
+<img src="docs/screenshots/settings.jpg" width="66%" alt="Settings">
 </p>
 
-![New tab page](docs/screenshots/newtab.jpg)
+![New tab desk with widgets over a wallpaper](docs/screenshots/newtab.jpg)
 
 ## Install
 
@@ -71,6 +72,18 @@ npm run build          # dist/chrome, dist/opera, dist/firefox, dist/safari
 | Opera | `opera://extensions` → Developer mode → Load unpacked → `dist/opera` (sidegig also shows up in Opera's own sidebar) |
 | Firefox | `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → `dist/firefox/manifest.json` |
 | Safari | `npm run safari` (needs Xcode), then build the generated project and enable sidegig in Safari settings |
+
+### Browser support
+
+One codebase builds four packages. Only the Chromium package has been installed and checked in a real browser.
+
+| Browser | Package | Status (from [docs/STATUS.md](docs/STATUS.md), 2026-10-21) |
+|---|---|---|
+| Aside (Chromium) | `dist/chrome` | Installed and checked live: sidebar, Gmail and X in frames, Assistant, agents, new tab |
+| Chrome, Edge, Brave, Arc, Dia, Vivaldi | `dist/chrome` | Same package as Aside. Built; no install check recorded in these browsers yet |
+| Opera | `dist/opera` | Built only. Never installed |
+| Firefox | `dist/firefox` | Built only. Never installed. Needs Mozilla signing to distribute |
+| Safari | `dist/safari` | Built only. Needs Xcode conversion and signing |
 
 `npm run zip` writes browser packages to `dist/`. The Chromium packages can be loaded locally. Firefox and Safari still need their browser-specific signing and distribution steps.
 

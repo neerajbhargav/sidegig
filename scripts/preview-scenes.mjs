@@ -41,6 +41,45 @@ for(const name of ['wallpaper','edition','tools','desk','full']){
   ] }];
   mail.mailThread = { subject: 'Plans for the launch', messages: [{ from: 'Ada Lovelace', email: 'ada@example.com', date: 'Tue, Oct 20, 2026 at 9:14 AM', text: 'Can we ship on Thursday? The build is ready.' }] };
   await writeFile(dir+'/qa-mail.html', panelHtml.replace('<script src="shim.js', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(mail)};const mq=new URLSearchParams(location.search).get('model');if(mq)window.__SIDEGIG_FIXTURES__.local.aiKeys={local:mq};</script><script src="shim.js`));
+  // README screenshots: a sidebar with stacks, a tab group and status cards, fixture data only.
+  // Capture at an exact size through qa-viewport.html, for example:
+  //   chrome --headless=new --window-size=420,860 --force-device-scale-factor=2 --virtual-time-budget=6000 \
+  //     --screenshot=out.png 'http://127.0.0.1:8765/preview/qa-viewport.html?page=qa-sidebar.html&w=420&h=860'
+  // Add ?view=status (and &theme=dark) to the inner page for the status cards.
+  const bm = (id, title, url) => ({ id, title, url });
+  const sidebar = structuredClone(mail);
+  delete sidebar.sidePanelSide;
+  delete sidebar.sync.settings.apps;
+  sidebar.local.badges = { whatsapp: 3, gmail: 2 };
+  sidebar.sync.settings.status = { github: true, vercel: true, gmail: true, intervalMin: 5 };
+  sidebar.local.status = [
+    { id: 'github', title: 'GitHub', value: '3', detail: 'review requests', url: 'https://github.com/notifications', signature: 'g1', updatedAt: now, items: [
+      { title: 'Fix the rail on narrow pages', meta: 'Review requested · example/garden-app', url: 'https://github.com/', state: 'warn' },
+      { title: 'Add a dark map style', meta: 'Review requested · example/garden-app', url: 'https://github.com/', state: 'warn' },
+      { title: 'Bump the test runner', meta: 'example/field-notes · subscribed', url: 'https://github.com/', state: 'ok' },
+    ] },
+    mail.local.status[0],
+    { id: 'vercel', title: 'Vercel', value: 'ready', detail: 'garden-app · 12m ago', url: 'https://vercel.com/', signature: 'v1', updatedAt: now, items: [
+      { title: 'garden-app', meta: 'ready · 12m ago · map legend', url: 'https://vercel.com/', state: 'ok' },
+      { title: 'field-notes', meta: 'ready · 2d ago', url: 'https://vercel.com/', state: 'ok' },
+    ] },
+  ];
+  sidebar.bookmarks = [{ id: '0', title: '', children: [{ id: '1', title: 'Bookmarks bar', children: [
+    { id: '10', title: 'Reading', children: [bm('11', 'Wikipedia', 'https://www.wikipedia.org/'), bm('12', 'Hacker News', 'https://news.ycombinator.com/'), bm('13', 'arXiv', 'https://arxiv.org/')] },
+    { id: '20', title: 'Build', children: [bm('21', 'GitHub', 'https://github.com/'), bm('22', 'MDN', 'https://developer.mozilla.org/'), bm('23', 'Vercel', 'https://vercel.com/'), bm('24', 'Linear', 'https://linear.app/')] },
+    { id: '30', title: 'Design', children: [bm('31', 'Figma', 'https://www.figma.com/'), bm('32', 'Dribbble', 'https://dribbble.com/')] },
+    { id: '40', title: 'Listen', children: [bm('41', 'YouTube Music', 'https://music.youtube.com/'), bm('42', 'Spotify', 'https://open.spotify.com/')] },
+  ] }] }];
+  sidebar.groups = [{ id: 7, windowId: 1, title: 'Garden app', color: 'blue', collapsed: false }];
+  sidebar.tabs = [
+    { id: 11, windowId: 1, title: 'Designing calmer software', url: 'https://example.com/calm', active: true, groupId: -1 },
+    { id: 12, windowId: 1, title: 'Map legend · Pull request', url: 'https://github.com/', groupId: 7 },
+    { id: 13, windowId: 1, title: 'garden-app · Deployments', url: 'https://vercel.com/', groupId: 7 },
+    { id: 14, windowId: 1, title: 'How mechanical clocks keep time', url: 'https://www.youtube.com/', groupId: -1 },
+  ];
+  await writeFile(dir+'/qa-sidebar.html', panelHtml.replace('<script src="shim.js', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(sidebar)};const sq=new URLSearchParams(location.search);if(sq.get('view'))window.__SIDEGIG_FIXTURES__.local.panelRequest={view:sq.get('view'),ts:Date.now()};if(sq.get('theme'))window.__SIDEGIG_FIXTURES__.sync.settings.theme={mode:sq.get('theme')};</script><script src="shim.js`));
+  // Settings without Chrome's built-in model, whose availability check can hold a headless capture.
+  await writeFile(dir+'/qa-settings.html', options.replace('<script src="shim.js', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(sidebar)};window.LanguageModel=undefined;</script><script src="shim.js`));
   const rail = { persist: false, sync: { settings: { version: 10, rail: { side: 'left' } } }, local: { badges: { gmail: 123, discord: 9, whatsapp: -1 }, browserAi: { aside: true, at: Date.now() } } };
   await writeFile(dir+'/qa-rail.html', `<!doctype html><meta charset="utf-8"><title>Rail fixtures</title><style>body{font:18px system-ui;background:#f3f4f6;padding:3rem}h1{font-size:24px}</style><h1>A page beside sidegig</h1><p>Fixture page. Badges and sidebar visibility use the real content script.</p><script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(rail)};const q=new URLSearchParams(location.search);Object.assign(window.__SIDEGIG_FIXTURES__.sync.settings,{theme:{scale:Number(q.get('scale'))||100}});window.__SIDEGIG_FIXTURES__.sync.settings.rail.size=q.get('size')||'comfortable';</script><script src="shim.js"></script><script src="rail.js"></script>`);
 }
