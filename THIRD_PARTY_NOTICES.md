@@ -8,6 +8,13 @@ sidegig itself is licensed under GPL-3.0-or-later. It bundles:
 Copyright 2022 The Google Sans Flex Project Authors (https://github.com/googlefonts/googlesans-flex).
 Licensed under the SIL Open Font License, Version 1.1. Full text: `src/assets/fonts/OFL.txt`.
 
+## Barlow Condensed and IBM Plex Mono (Latin subsets)
+
+`src/assets/fonts/BarlowCondensed-*.woff2` and `src/assets/fonts/IBMPlexMono-*.woff2`, fetched by `scripts/fetch-assets.mjs`.
+Barlow: Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow).
+IBM Plex Mono: Copyright 2017 IBM Corp., with Reserved Font Name "Plex".
+Both are licensed under the SIL Open Font License, Version 1.1. Full texts: `src/assets/fonts/BarlowCondensed-OFL.txt` and `src/assets/fonts/IBMPlexMono-OFL.txt`.
+
 ## Material Symbols (Rounded)
 
 Icon path data in `src/shared/icons.ts`, fetched by `scripts/fetch-assets.mjs`.
