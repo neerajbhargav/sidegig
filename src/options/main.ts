@@ -221,6 +221,11 @@ async function aiSection(): Promise<HTMLElement> {
     await modelSettings(),
     h('label', { class: 'label', for: 'ai-instructions' }, 'Custom instructions for the built-in chat'),
     h('textarea', { class: 'text-input', id: 'ai-instructions', rows: 4, style: { width: '100%' }, placeholder: 'How would you like the assistant to respond?', onchange: (e: Event) => commit((x) => void (x.ai.instructions = (e.target as HTMLTextAreaElement).value)) }, s.ai.instructions),
+    h(
+      'div',
+      { class: 'group' },
+      opt('Ask before sending page data out', 'Once the chat has read a page, an email or your history, it asks before it opens a link or uses a connected tool. A page can hide instructions that try to send your data away.', toggle(s.ai.askBeforeSending, (v) => commit((x) => void (x.ai.askBeforeSending = v)), 'Ask before sending page data out')),
+    ),
     await mcpSettings(),
     await agentSettings(),
     h('div', { class: 'label' }, 'AI sites'),

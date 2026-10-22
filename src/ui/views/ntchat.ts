@@ -13,7 +13,7 @@ import { runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
 import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
 import { openBridge, type BridgeHello } from '../../shared/ai/bridge.ts';
-import { modelKey, type Effort, type ModelInfo, type Msg, type ProviderId } from '../../shared/ai/types.ts';
+import { modelKey, type Effort, type ModelInfo, type Msg, type ProviderId, type ToolCall } from '../../shared/ai/types.ts';
 
 // ------------------------------------------------------------ saved chats and picks
 
@@ -716,12 +716,31 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
         play('fail');
       }
     };
+    // Settings, Ask AI: "Ask before sending page data out". The chat has read outside text, so an outbound tool waits for a yes.
+    const confirm = (call: ToolCall, label: string) =>
+      new Promise<boolean>((done) => {
+        const url = typeof call.args.url === 'string' ? call.args.url : '';
+        const box = h(
+          'div',
+          { class: 'cm-ask', role: 'alert' },
+          h('span', {}, `${url ? `Open ${url}?` : `${label}?`} This chat has read a page or other outside text, and that text can ask the assistant to send your data somewhere.`),
+          h('button', { type: 'button', class: 'btn', onclick: () => finish(true) }, 'Allow'),
+          h('button', { type: 'button', class: 'btn ghost', onclick: () => finish(false) }, 'Don’t allow'),
+        );
+        const finish = (yes: boolean) => {
+          box.remove();
+          done(yes);
+        };
+        ctrl.signal.addEventListener('abort', () => finish(false), { once: true });
+        (rows.get(call.id)?.parentElement ?? turn).append(box);
+        if (nearBottom()) toBottom();
+      });
     const history = target.messages.slice(0, userIndex + 1);
     try {
       const tools = model.tools ? await toolsFor(ctrl.signal) : browserTools();
       if (ctrl.signal.aborted || !current()) return;
       const extra = ctx.settings.ai.instructions;
-      const added = await runChat({ model, effort: picks.effective(), system: systemPrompt(extra), history, tools, signal: ctrl.signal, on });
+      const added = await runChat({ model, effort: picks.effective(), system: systemPrompt(extra), history, tools, signal: ctrl.signal, on, ...(ctx.settings.ai.askBeforeSending ? { confirm } : {}) });
       if (!current()) return;
       target.messages = [...history, ...added];
       target.model = modelKey(model);

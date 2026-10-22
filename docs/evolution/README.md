@@ -174,3 +174,10 @@ Commit `77ce138` on branch `product/premium-1.0` (plus uncommitted work).
 
 <img src="2026-10-21-07-layout-fix-32fe690-fixture-desk-saved-fu.jpg" width="49%" alt="Layout fix (32fe690), fixture desk saved full before three widgets were added. Before: one hidden widget forced the scrolling layout, with light and dark cards mixed. After: the re-pack fits all 11 widgets on one screen in one tone.">
 <img src="2026-10-21-08-design-system-77ce138-before-white-on-wh.jpg" width="49%" alt="Design system (77ce138). Before: white-on-white Find and note text, a light search card, expand buttons on every card edge, four button shapes, titles at five heights. After: one header row, one button, one corner control, every card in the desk tone.">
+
+## 2026-10-21: Ask before sending page data out (opt-in), after the wrapper fix
+
+Commit `ed425f1` on branch `upgrade/oct-2026` (plus uncommitted work).
+
+<img src="2026-10-21-09-ask-before-sending-page-data-out-after-r.jpg" width="49%" alt="Ask before sending page data out: after reading a page, the chat stops before it opens a link that carries tab titles (fixture model)">
+<img src="2026-10-21-10-settings-ask-ai-the-new-ask-before-sendi.jpg" width="49%" alt="Settings, Ask AI: the new Ask before sending page data out switch, off by default">

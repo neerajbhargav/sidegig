@@ -247,5 +247,6 @@ export async function mcpTools(servers: McpServer[], signal?: AbortSignal): Prom
     const r = route.get(c.name);
     return r ? `${r.server}: ${r.tool.replace(/_/g, ' ')}` : c.name;
   };
-  return { set: { defs, run, describe }, status };
+  // A server's tools can send anything anywhere, so each counts as outbound.
+  return { set: { defs, run, describe, outbound: () => true }, status };
 }
