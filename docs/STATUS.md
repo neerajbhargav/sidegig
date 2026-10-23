@@ -1,11 +1,17 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-23 12:06 (Arc redesign on branch `design/arc`, cut from `product/premium-1.0`; neither is merged to `main`. The owner's Aside still runs `8761b3e`: the redesign is not deployed).
+Last updated: 2026-10-23 12:19 (`main` at `2f0ac56`: 0.4.0 and the Arc redesign, merged and pushed at the owner's request, CI green; installed in the owner's Aside from `2f0ac56`).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Merged and deployed, 2026-10-23 12:10–12:19 (owner: "merge and deploy"):** `design/arc` (which contains `product/premium-1.0`) merged into `main` as `8985b1b`, changelog `2f0ac56`, pushed; CI run 39984643700 passed on `2f0ac56`. Pre-merge: typecheck, 176 tests, all four builds and zips, `git diff --check`, no `DIAGNOSTIC (temporary)` code, no credential-shaped strings in the diff. `dist/chrome` rebuilt from `2f0ac56` (`ui.js fa00c602…`, `ui.css 5d146776…`, `background.js 0777c479…`, `rail.js 8dafc941…`); Aside serves exactly these files, and sidegig was reloaded (the tab that ran `chrome.runtime.reload()` closed with it).
+- **Live in Aside (observed with `aside repl`, test tabs closed after):** a fresh sidebar page wears the space colour (Haze, `rgb(174, 194, 255)`), 12 rows, 19 favorites tiles, a lifted open tab, contrast probe 0 failures. On a web page the rail is present; the owner's rail is on hover, and its edge hint shows in the space colour's muted tone.
+- **Not verified live: the new tab.** Aside updated itself to 154.0.8037.100 at 12:15 (during this work). Its new-tab override list now has Aside's own new tab first, so Cmd+T opens Aside's page, and Aside sends sidegig's `newtab.html` to its own page too. sidegig's new tab is still switched on in settings. The owner decides whether to bring sidegig's new tab back (open work item 1). The new tab was checked in the preview only.
+- **Tool limits:** Aside's DevTools socket stopped answering after its restart (TCP accepts; the upgrade never replies), so live checks used `aside repl`. Hashes fetched from an unpacked extension prove what is on disk, not what runs; the reload is what makes them run.
+- **Settings:** the owner's stored settings are still version 10. The v11 migration (accent follows the space colour; Match browser becomes Space) applies when they load and is written on the next change. The owner's look is From picture, which stays.
 
 **Arc redesign, 2026-10-23 (branch `design/arc`):** the owner: "everyone is missing Arc browser since it is being discontinued, check the design system of New tab and the sidebar and take full inspiration from the design system of Arc after studying it and redesign the components of the tool". arc.net confirms "Arc is sunsetting on December 22, 2026". The owner answered four questions: soft lift on floating layers, spring motion without overshoot, an Arc-style space colour that the accent follows, and the system font (all four were the recommended options).
 
@@ -119,8 +125,8 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 
 ## Open work, in priority order
 
-1. **Owner, now:** look at the Arc redesign (`design/arc`; before and after in `docs/evolution`) and say whether to deploy it to Aside. Buttons on the Space and Match browser looks are now Arc's rounded rectangles; the studio looks keep pills. Still open from 2026-10-21: clear the leftover test text in the sidebar Claude composer; confirm the expand control on hover and the header-sized To-do spike.
-2. **Owner decisions:** merge `product/premium-1.0` to `main` (then `npm run changelog`); confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
+1. **Owner, now:** decide whether sidegig's new tab should come back in Aside (Aside 154 puts its own new tab first; switching sidegig off and on again at `aside://extensions`, or a new-tab choice in Aside's settings if it has one, may restore it; not tried, because it changes the browser's setup). Then look at the Arc redesign live (before and after in `docs/evolution`). Buttons on the Space and Match browser looks are now Arc's rounded rectangles; the studio looks keep pills. Still open from 2026-10-21: clear the leftover test text in the sidebar Claude composer; confirm the expand control on hover and the header-sized To-do spike.
+2. **Owner decisions:** confirm list rows start-aligned (a one-line revert in `ui.css` if not); the earlier undecided items: Opera-style drawer placement next to the rail, the product name (sidegig, Ledge or Edgewise), default wallpaper.
 3. **Owner set-up after the reinstall:** finish the setup page that opened; re-add model keys and MCP servers; turn on the Gmail card for codes and summaries; optionally turn on the weekly backup.
 4. **Live checks still owed:** a real keyed model for Summarize and Draft reply (only a local mock was used); provider and MCP OAuth; Codex through the bridge with the pairing code; the mute switch with a real notification; link rule "Open in the sidebar" with the real side panel; a real sign-in code arriving; the weekly backup file being written; Firefox, Safari and Opera builds (none installed here).
 5. **Phase 2, typed data:** a typed schema for `chrome.storage.local` and the `sidegig.nt*` localStorage keys; a pure `normalizeSettings`; one typed message protocol (the trust table in `trust.ts` is the start). Simultaneous edits of the same notes or to-do list from two open tabs still save whole lists (the last write wins).
