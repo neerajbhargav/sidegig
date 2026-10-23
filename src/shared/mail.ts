@@ -8,9 +8,12 @@ import { attr, neutralize } from './prompt.ts';
 export interface MailMessage { from: string; email: string; date: string; text: string }
 export interface MailThread { subject: string; messages: MailMessage[] }
 
-const KEYWORD = /\b(codes?|verif\w*|otp|pass ?code|pin|one[- ]time|sign[- ]?in|log[- ]?in|2fa|two[- ]factor|security|confirm\w*|authenticat\w*)\b|code\b|c[óo]digo|codice|コード/i;
+// "code" may end a compound (Bestätigungscode), but a zip code, postcode, barcode, area code or
+// QR code is not a sign-in code.
+const CODE = '(?<!(?:zip|post|postal|bar|area|qr) ?)code';
+const KEYWORD = new RegExp(`\\b(${CODE}s?|verif\\w*|otp|pass ?code|pin|one[- ]time|sign[- ]?in|log[- ]?in|2fa|two[- ]factor|security|confirm\\w*|authenticat\\w*)\\b|${CODE}\\b|c[óo]digo|codice|コード`, 'i');
 // A candidate counts only next to one of these: "code is 123456", "Enter 4030", "123456 is your code".
-const CODEWORD = 'code|c[óo]digo|codice|コード|password|\\bpin\\b|\\botp\\b';
+const CODEWORD = `${CODE}|c[óo]digo|codice|コード|password|\\bpin\\b|\\botp\\b`;
 const BEFORE = new RegExp(`(${CODEWORD}|\\benter\\b|\\buse\\b)`, 'gi');
 const AFTER = new RegExp(`^[^\\d.!?\\n]{0,40}?(${CODEWORD})`, 'i');
 // Between the code word and the code: no number and no sentence end, but "code is:" may end the line.
