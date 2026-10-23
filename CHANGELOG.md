@@ -3,8 +3,51 @@
 Generated from the git history of `main` by `npm run changelog`. Newest first.
 Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Current state and next steps: [docs/STATUS.md](docs/STATUS.md).
 
+## 2026-10-23
+
+- `8985b1b` Merge the premium product pass (0.4.0) and the Arc redesign
+- `abae585` Evolution: Arc redesign before and after; picker drag listeners and slider value
+- `b0a4e4d` Redesign after Arc: space colour frame, content cards, lift, system type
+
+## 2026-10-21
+
+- `dd7fbe6` STATUS: design system deployed to Aside and live-checked
+- `8761b3e` Evolution: layout fix and design system, before and after (fixture desk)
+- `77ce138` One design system for every surface, enforced by a test
+- `32fe690` Fix the new tab layout and sidebar app loading jank
+- `d01acb1` STATUS: review outcome, mute verification, sharp icons closed
+- `9b2a331` Fixes from the Codex review
+- `f1196af` Revert sharp touch icons: the trigger could never fire
+- `45fba62` Trailing blank line in ntdata.ts
+- `99bc0c2` STATUS: 0.4.0 premium pass, live checks, the reinstall incident and open work
+- `cf9cb3d` Sharp app icons: the site's own touch icon when the cached one is small
+- `cb1816f` Screenshots and design notes for 0.4.0
+- `ce7f527` Opt-in weekly backup to Downloads that survives removing the extension
+- `8e016e9` Document mail, agents and the new desk details; ship the bridge in packages
+- `907ae54` Settings page applies changes to the latest stored settings; 0.4.0
+- `354f07f` Drawer behind Chrome's per-session random URL (from drawer-dynamic-url)
+- `a6c5e6e` Sender trust and the drawer channel work with a per-session drawer host
+- `5debe04` Setup as a numbered step rail; sign-in codes as tickets; outline counts
+- `6626816` Desk details from the owner's X bookmarks
+- `67eb760` New stacks and spaces in sidegig; per-app mute; panel window fallback
+- `74e2bca` Agents can use the browser through the bridge, as far as you allow
+- `2400d18` List rows start-aligned again; compact mail actions; mail preview scene
+- `a016725` Mail layer: sign-in code pills, thread summaries and reply drafts
+- `fb05a78` Arrow keys move along the rails; touch-size targets; calm refresh spinner
+- `f459d39` Opera's sidebar badge shows the unread total
+- `8e8f218` Apps can keep running while hidden
+- `b5d87d2` Link rules can open links in the sidebar
+- `1d12692` Each app remembers its drawer and side-window width
+- `a1ea113` Assistant on the page rail; ask it about selected text; working Weather switch
+- `4cc3d5a` Bridge: pairing code on every connection, frame limits, owned runs
+- `f808cf3` Frame-header rule for app navigations covers only sidegig's frames
+- `b8f8e1f` Rail and drawer talk over a private MessageChannel
+- `dd8d6e6` Trust message senders, not hosts named inside messages
+
 ## 2026-10-17
 
+- `0cca2ee` Record 0.3.0 installed verification and remaining product work
+- `c86232f` Changelog for the native panel lifecycle repair
 - `b329b14` Merge native panel lifecycle repair
 - `48f152c` Record the restored dock state after native panel closure
 - `945a9d1` Restore page rails immediately when native panels close
