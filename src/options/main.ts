@@ -17,6 +17,7 @@ import { THEMES } from '../ui/views/ntcustom.ts';
 import { PACKS } from '../shared/walls.ts';
 import { PARTS, allLocalKeys, isPrefixKey, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
 import { aiSetup } from '../ui/views/ntchat.ts';
+import { ASK_BEFORE_SENDING } from '../shared/ai/run.ts';
 import { getKeys, setKeys, PROVIDERS } from '../shared/ai/providers.ts';
 import { getLocal, setLocal, onLocalChanged } from '../shared/storage.ts';
 import { mcpSignIn, mcpSignOut, mcpSignedIn, setMcpToken, type McpServer } from '../shared/ai/mcp.ts';
@@ -225,7 +226,7 @@ async function aiSection(): Promise<HTMLElement> {
     h(
       'div',
       { class: 'group' },
-      opt('Ask before sending page data out', 'Once the chat has read a page, an email or your history, it asks before it opens a link or uses a connected tool. A page can hide instructions that try to send your data away.', toggle(s.ai.askBeforeSending, (v) => commit((x) => void (x.ai.askBeforeSending = v)), 'Ask before sending page data out')),
+      opt('Ask before sending page data out', 'Once the chat has read a page, an email or your history, it asks before it opens a link or uses a connected tool. A page can hide instructions that try to send your data away. Kept on this device; it never syncs.', toggle(await getLocal<boolean>(ASK_BEFORE_SENDING, false), (v) => void setLocal(ASK_BEFORE_SENDING, v), 'Ask before sending page data out')),
     ),
     await mcpSettings(),
     await agentSettings(),

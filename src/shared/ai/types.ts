@@ -44,6 +44,8 @@ export interface Msg {
   /** For the chat only (never sent): what the user typed, tabs they attached, a tool's line. */
   display?: string;
   tabs?: { title: string; url: string }[];
+  /** User: the message still holds text quoted from a page ("Ask the sidegig Assistant" on a selection). */
+  quoted?: boolean;
   label?: string;
 }
 

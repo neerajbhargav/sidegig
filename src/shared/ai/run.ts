@@ -15,10 +15,25 @@ export type RunEvent =
 
 export const MAX_STEPS = 10;
 
-/** Has the model read text the user did not write: a tool result or an attached page? */
-export const readUntrusted = (msgs: Msg[]) => msgs.some((m) => m.role === 'tool' || !!m.tabs?.length);
+/** Has the model read text the user did not write: a tool result, an attached page, or text quoted from a page? */
+export const readUntrusted = (msgs: Msg[]) => msgs.some((m) => m.role === 'tool' || !!m.tabs?.length || !!m.quoted);
+
+/**
+ * Local storage key for Settings › Ask AI › "Ask before sending page data out". Kept on
+ * this device and never synced (like agent access), so an older build on another device
+ * cannot drop it from synced settings and switch it off.
+ */
+export const ASK_BEFORE_SENDING = 'askBeforeSending';
 
 export const DECLINED = 'The user did not allow this. The conversation includes text from a web page or another outside source, so sending data out needs their yes. Do not try again; tell the user what you wanted to open and why.';
+
+/** The question in the "Ask before sending" prompt: the full address for open_url; for other tools their name and what they would send, cut short. */
+export function askText(call: ToolCall, label: string): string {
+  if (call.name === 'open_url' && typeof call.args.url === 'string') return `Open ${call.args.url}?`;
+  const args = JSON.stringify(call.args ?? {});
+  if (!args || args === '{}') return `${label}?`;
+  return `${label} with ${args.length > 300 ? `${args.slice(0, 299)}…` : args}?`;
+}
 
 export function systemPrompt(extra = ''): string {
   const now = new Date();

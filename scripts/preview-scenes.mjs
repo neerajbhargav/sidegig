@@ -83,11 +83,12 @@ for(const name of ['wallpaper','edition','tools','desk','full']){
   // Settings without Chrome's built-in model, whose availability check can hold a headless capture.
   await writeFile(dir+'/qa-settings.html', options.replace('<script src="shim.js', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(sidebar)};window.LanguageModel=undefined;</script><script src="shim.js`));
   // "Ask before sending page data out": a scripted model lists the tabs, then tries to open a link
-  // that carries their titles, and the chat stops to ask. Nothing leaves the page.
+  // that carries their titles, and the chat stops to ask. Nothing leaves the page. ?ask=off turns
+  // the setting off (e2e/preview.spec.ts checks that nothing is asked then).
   const ask = structuredClone(sidebar);
-  ask.sync.settings.ai = { askBeforeSending: true };
+  ask.local.askBeforeSending = true;
   ask.local.aiKeys = { local: 'http://fixture.invalid' };
-  const askScript = `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(ask)}${panelSwitches};window.__SIDEGIG_FIXTURES__.local.panelRequest={view:'chat',ts:Date.now()};window.LanguageModel=undefined;
+  const askScript = `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(ask)}${panelSwitches};window.__SIDEGIG_FIXTURES__.local.panelRequest={view:'chat',ts:Date.now()};if(new URLSearchParams(location.search).get('ask')==='off')window.__SIDEGIG_FIXTURES__.local.askBeforeSending=false;window.LanguageModel=undefined;
 const askFetch=window.fetch;let askTurn=0;
 const askSse=(d,f)=>new Response('data: '+JSON.stringify({choices:[{delta:d}]})+'\\n\\ndata: '+JSON.stringify({choices:[{delta:{},finish_reason:f}]})+'\\n\\ndata: [DONE]\\n\\n',{headers:{'content-type':'text/event-stream'}});
 const askCall=(name,args)=>askSse({tool_calls:[{index:0,id:'c'+askTurn,function:{name,arguments:JSON.stringify(args)}}]},'tool_calls');

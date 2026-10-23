@@ -106,8 +106,6 @@ export interface Settings {
     pageTemplate: string;
     autoSend: boolean;
     maxChars: number;
-    /** Built-in chat: after it reads a page, an email or your history, ask before a tool sends anything out (open_url, MCP). */
-    askBeforeSending: boolean;
   };
   status: {
     github: boolean;

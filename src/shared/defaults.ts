@@ -47,8 +47,6 @@ export function defaultSettings(): Settings {
       pageTemplate: 'Summarize this page and point out anything I should pay attention to.\n\nTitle: {title}\nURL: {url}\n\n{text}',
       autoSend: false,
       maxChars: 12000,
-      // Off: chat tools keep running without asking (owner, 2026-10-14). See docs/evals/README.md.
-      askBeforeSending: false,
     },
     status: { github: false, vercel: false, gmail: false, intervalMin: 5 },
     rules: [],

@@ -9,7 +9,7 @@ import { play } from '../sound.ts';
 import { openOptions, type Ctx } from '../ctx.ts';
 import { md } from '../../shared/ai/md.ts';
 import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter, streamTurn } from '../../shared/ai/providers.ts';
-import { runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
+import { ASK_BEFORE_SENDING, askText, runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
 import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
 import { openBridge, type BridgeHello } from '../../shared/ai/bridge.ts';
@@ -411,6 +411,8 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   if (ctx.signal?.aborted) stopKeys();
   else ctx.signal?.addEventListener('abort', stopKeys, { once: true });
   const attached = new Map<number, { title: string; url: string }>();
+  // Lines quoted from a page into the composer; a message that still holds one counts as outside text.
+  let quoted: string[] = [];
 
   const view = h('section', { class: `cv cv-${o.where}`, 'aria-label': 'Assistant', hidden: o.where === 'newtab' });
   const title = h('h2', { class: 'cv-title' }, 'New chat');
@@ -495,7 +497,8 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
       const p = v as { text?: string; ts?: number } | null;
       if (!p?.text || !p.ts || Date.now() - p.ts > 30_000) return;
       void setLocal('chatPrefill', null);
-      input.value = `${p.text.trim().split('\n').map((l) => `> ${l}`).join('\n')}\n\n`;
+      quoted = p.text.trim().split('\n').map((l) => `> ${l}`);
+      input.value = `${quoted.join('\n')}\n\n`;
       input.dispatchEvent(new Event('input'));
       input.focus();
       input.setSelectionRange(input.value.length, input.value.length);
@@ -719,11 +722,10 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     // Settings, Ask AI: "Ask before sending page data out". The chat has read outside text, so an outbound tool waits for a yes.
     const confirm = (call: ToolCall, label: string) =>
       new Promise<boolean>((done) => {
-        const url = typeof call.args.url === 'string' ? call.args.url : '';
         const box = h(
           'div',
           { class: 'cm-ask', role: 'alert' },
-          h('span', {}, `${url ? `Open ${url}?` : `${label}?`} This chat has read a page or other outside text, and that text can ask the assistant to send your data somewhere.`),
+          h('span', {}, `${askText(call, label)} This chat has read a page or other outside text, and that text can ask the assistant to send your data somewhere.`),
           h('button', { type: 'button', class: 'btn', onclick: () => finish(true) }, 'Allow'),
           h('button', { type: 'button', class: 'btn ghost', onclick: () => finish(false) }, 'Don’t allow'),
         );
@@ -740,7 +742,9 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
       const tools = model.tools ? await toolsFor(ctrl.signal) : browserTools();
       if (ctrl.signal.aborted || !current()) return;
       const extra = ctx.settings.ai.instructions;
-      const added = await runChat({ model, effort: picks.effective(), system: systemPrompt(extra), history, tools, signal: ctrl.signal, on, ...(ctx.settings.ai.askBeforeSending ? { confirm } : {}) });
+      const ask = await getLocal<boolean>(ASK_BEFORE_SENDING, false);
+      if (ctrl.signal.aborted || !current()) return;
+      const added = await runChat({ model, effort: picks.effective(), system: systemPrompt(extra), history, tools, signal: ctrl.signal, on, ...(ask ? { confirm } : {}) });
       if (!current()) return;
       target.messages = [...history, ...added];
       target.model = modelKey(model);
@@ -801,7 +805,9 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
         if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
       }
       if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
-      const msg: Msg = { role: 'user', content: pages.length ? `${q}\n\n${pages.join('\n\n')}` : q, display: q, ...(shown.length ? { tabs: shown } : {}) };
+      const fromPage = quoted.some((l) => l.trim().length > 1 && q.includes(l));
+      const msg: Msg = { role: 'user', content: pages.length ? `${q}\n\n${pages.join('\n\n')}` : q, display: q, ...(shown.length ? { tabs: shown } : {}), ...(fromPage ? { quoted: true } : {}) };
+      quoted = [];
       chat.messages.push(msg);
       await saveChat(target);
       if (ctrl.signal.aborted || chat !== target || ctx.signal?.aborted) return;
