@@ -116,7 +116,7 @@ const REPLY = `Sure! Here's what I know:
 
 \`\`\`json
 {"sidegig_profile": 1,
- "about": "AI engineer in Jersey City aiming for a forward deployed role",
+ "about": "Product designer in Springfield who reads about calm interfaces",
  "topics": [{"topic": "agent evals", "weight": 5}, {"topic": "vibe coding", "weight": 4}, {"topic": "quiet luxury menswear", "weight": 3},],
  "music": ["Telugu indie", "Tamil film scores"],
  "creators": ["Naval Ravikant"],
@@ -130,7 +130,7 @@ test('import: reads the JSON out of a chatty reply (fences, trailing commas)', (
   assert.deepEqual(imp.topics.map((t) => t.term), ['agent evals', 'vibe coding', 'quiet luxury menswear']);
   assert.deepEqual(imp.music, ['Telugu indie', 'Tamil film scores']);
   assert.deepEqual(imp.avoid, ['crypto']);
-  assert.equal(imp.about, 'AI engineer in Jersey City aiming for a forward deployed role', 'about is not cut at 60 chars');
+  assert.equal(imp.about, 'Product designer in Springfield who reads about calm interfaces', 'about is not cut at 60 chars');
 });
 
 test('import: the prompt’s own example never parses (so the bridge can’t read the question as the answer)', () => {
@@ -258,7 +258,7 @@ test('compose: every kind gets a say, no topic dominates, reserve is separate', 
 
 test('terms: strongest interests always searched, the rest rotate; music tastes only feed music', () => {
   const p = emptyProfile();
-  ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].forEach((t, n) => addInterest(p, `topic ${t}`, 5 - n * 0.5, 'you'));
+  ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].forEach((t, n) => { addInterest(p, `topic ${t}`, 5 - n * 0.5, 'you'); });
   addInterest(p, 'Telugu indie', 4, 'ai', ['music']);
   const t1 = pickTerms(p, 'read', 4, rng(1));
   const t2 = pickTerms(p, 'read', 4, rng(99));

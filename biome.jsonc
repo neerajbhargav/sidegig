@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    // Not linted: generated figures, the vendored Anatomy kit, fetched brand icons,
+    // and saved third-party responses used as test fixtures.
+    "includes": ["**", "!src/ui/figures", "!vendor", "!src/assets", "!test/fixtures"]
+  },
+  // Lint only. Formatting the whole codebase would be a style rewrite, not a fix.
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      // Off: each one is a deliberate pattern in this codebase, not a defect.
+      "style": {
+        // `!` after lookups of elements the same code just built, under strict TypeScript.
+        "noNonNullAssertion": "off",
+        // String concatenation is kept where it reads better than a template.
+        "useTemplate": "off"
+      },
+      "suspicious": {
+        // `any` marks browser API seams that @types/chrome lacks (Firefox, Opera, Safari, side panel layout).
+        "noExplicitAny": "off",
+        // Settings controls mutate a draft in a one-line callback: `commit((s) => void (s.x = v))`.
+        "noAssignInExpressions": "off"
+      },
+      "complexity": {
+        // One-line event handlers that do two things: `(e.preventDefault(), save())`.
+        "noCommaOperator": "off",
+        // CSS: `!important` keeps [hidden], reduced motion and the desk tone above page and theme rules.
+        "noImportantStyles": "off"
+      },
+      "correctness": {
+        // CSS: reports three valid grid-template-areas in ui.css (Biome 2.5.15); Chromium accepts them.
+        "noInvalidGridAreas": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // CSS is ordered by component, not by specificity; reordering it would change the cascade.
+      "includes": ["**/*.css"],
+      "linter": { "rules": { "style": { "noDescendingSpecificity": "off" } } }
+    }
+  ]
+}

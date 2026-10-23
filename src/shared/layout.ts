@@ -127,7 +127,9 @@ export function resolve(layout: Layout, shown: WidgetId[]): { boxes: Partial<Rec
     for (const combo of combos) {
       if (used(r) === COLS * ROWS) break;
       const trial: Layout = { ...fixed };
-      fresh.forEach((id, i) => (trial[id] = { ...DEFAULT_LAYOUT[id], w: combo[i][0], h: combo[i][1] }));
+      fresh.forEach((id, i) => {
+        trial[id] = { ...DEFAULT_LAYOUT[id], w: combo[i][0], h: combo[i][1] };
+      });
       const t = settle(trial, shown);
       if (!t.hidden.length && used(t) > used(r)) r = t;
     }

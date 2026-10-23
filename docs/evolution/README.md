@@ -175,6 +175,19 @@ Commit `77ce138` on branch `product/premium-1.0` (plus uncommitted work).
 <img src="2026-10-21-07-layout-fix-32fe690-fixture-desk-saved-fu.jpg" width="49%" alt="Layout fix (32fe690), fixture desk saved full before three widgets were added. Before: one hidden widget forced the scrolling layout, with light and dark cards mixed. After: the re-pack fits all 11 widgets on one screen in one tone.">
 <img src="2026-10-21-08-design-system-77ce138-before-white-on-wh.jpg" width="49%" alt="Design system (77ce138). Before: white-on-white Find and note text, a light search card, expand buttons on every card edge, four button shapes, titles at five heights. After: one header row, one button, one corner control, every card in the desk tone.">
 
+## 2026-10-21: Ask before sending page data out (opt-in), after the wrapper fix
+
+Commit `ed425f1` on branch `upgrade/oct-2026` (plus uncommitted work).
+
+<img src="2026-10-21-09-ask-before-sending-page-data-out-after-r.jpg" width="49%" alt="Ask before sending page data out: after reading a page, the chat stops before it opens a link that carries tab titles (fixture model)">
+<img src="2026-10-21-10-settings-ask-ai-the-new-ask-before-sendi.jpg" width="49%" alt="Settings, Ask AI: the new Ask before sending page data out switch, off by default">
+
+## 2026-10-22: The drawer's private port works, found by the Playwright checks
+
+Fix in commit `328ab58`, captured at `72ee294` on branch `upgrade/oct-2026`.
+
+<img src="2026-10-22-01-the-drawer-switches-to-search-over-its-p.jpg" width="49%" alt="The drawer switches to Search over its private port (Playwright, Chromium 153, fresh profile)">
+
 ## 2026-10-23: Redesign after Arc: space colour frame, content cards, lift, system type
 
 Commit `b0a4e4d` on branch `design/arc` (plus uncommitted work).
@@ -183,3 +196,15 @@ Commit `b0a4e4d` on branch `design/arc` (plus uncommitted work).
 <img src="2026-10-23-02-new-tab-space-look-b0a4e4d-fixtures-befo.jpg" width="49%" alt="New tab, Space look (b0a4e4d, fixtures): before (Match browser); after, the space colour with white widget cards and a lifted command bar">
 <img src="2026-10-23-03-settings-after-arc-b0a4e4d-fixtures-befo.jpg" width="49%" alt="Settings after Arc (b0a4e4d, fixtures): before; navigation on the space colour, the page on a card, the space colour picker">
 <img src="2026-10-23-04-space-look-in-dark-mode-and-the-page-rai.jpg" width="49%" alt="Space look in dark mode, and the page rail as a strip of the space colour (b0a4e4d, fixtures)">
+
+## 2026-10-23: Ask before sending, restyled after Arc (after main was merged in)
+
+Commit `706beab` on branch `upgrade/oct-2026` (plus uncommitted work).
+
+<img src="2026-10-23-05-ask-before-sending-restyled-after-arc-fi.jpg" width="49%" alt="Ask before sending, restyled after Arc (fixture chat): before, a hairline box with frame wells; after, a content card in light and dark, no lift">
+
+## 2026-10-23: Ask before sending stays on this device
+
+Change in commit `ce44957`, captured at `58bbfdc` on branch `upgrade/oct-2026`.
+
+<img src="2026-10-23-06-settings-ask-ai-ask-before-sending-page.jpg" width="49%" alt="Settings, Ask AI: Ask before sending page data out is now kept on this device and never syncs (fixture preview)">

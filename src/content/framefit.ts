@@ -19,7 +19,7 @@ import type { Settings } from '../shared/types.ts';
 const ANCESTOR = (() => {
   try {
     const a = location.ancestorOrigins;
-    return a && a.length ? a[a.length - 1] : '';
+    return a?.length ? a[a.length - 1] : '';
   } catch {
     return '';
   }

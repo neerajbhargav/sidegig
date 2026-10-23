@@ -20,6 +20,37 @@ test('dates, prices, order numbers and ordinary mail are not codes', () => {
   assert.equal(findCode('Your verification code', 'Call us at 1-800-555-0199 if this was not you.'), null);
 });
 
+// Each case below failed before the code-word anchor (found by the corpus eval, scripts/eval-mail-codes.ts).
+test('codes the old detector missed', () => {
+  assert.equal(findCode('Your Steam account: Access from new web or mobile device', 'Here is the Steam Guard code you need to login to account ada: MWWE6'), 'MWWE6');
+  assert.equal(findCode('Your X confirmation code is 769qwbsr', 'Please enter this verification code.'), '769qwbsr');
+  assert.equal(findCode('Your sign-in code', 'Your sign-in code is 2003.'), '2003', 'a code that looks like a year is still a code');
+  assert.equal(findCode('FB-44027 is your Facebook confirmation code', ''), '44027');
+  assert.equal(findCode('Ihr Bestätigungscode', 'Ihr Bestätigungscode lautet 616533.'), '616533');
+  assert.equal(findCode('認証コード', '認証コード: 451908'), '451908');
+  assert.equal(findCode('Security code', 'Your security code is:\n052089'), '052089');
+});
+
+test('numbers next to a code word but not codes', () => {
+  assert.equal(findCode('Security alert', 'If this was not you, call us at (415) 555-0148.'), null);
+  assert.equal(findCode('Verify your phone number', 'We will text a code to +44 20 7946 0309.'), null);
+  assert.equal(findCode('Security alert for your card', 'A purchase on your card ending in 0732 was declined.'), null);
+  assert.equal(findCode('Security: new card added', 'Card ****7572 was added to your wallet.'), null);
+  assert.equal(findCode('Invitation: Weekly sync', 'Join Zoom Meeting. Meeting ID: 607 5454 2073. Passcode: 526008'), null);
+  assert.equal(findCode('Updated invitation', 'Join by phone: 415.555.0063, PIN: 328206#'), null);
+  assert.equal(findCode('Your flight confirmation code', 'Confirmation code JFPG69. Flight EX 0033 departs at 14:30.'), null);
+  assert.equal(findCode('Security update ready', 'Build 1703 is ready to install.'), null);
+  assert.equal(findCode('Security report 20261019', 'Your weekly security summary is ready.'), null);
+  assert.equal(findCode('Your code inside: SAVE20', 'Use code SAVE20 for 20% off this weekend.'), null);
+  assert.equal(findCode('Confirm your rewards', 'You earned 1576 points this month.'), null);
+  // "code" at the end of a word that is not a sign-in code (a German compound still counts, see above).
+  assert.equal(findCode('Delivery update', 'Your zipcode 10001 is outside our delivery area.'), null);
+  assert.equal(findCode('Your barcode', 'Show barcode 48213907 at the counter to pick up your parcel.'), null);
+  assert.equal(findCode('Shipping', 'We ship to postcode 2000 and nearby suburbs.'), null);
+  assert.equal(findCode('Security notice', 'Calls from area code 212 are not from us.'), null);
+  assert.equal(findCode('Bestätigung', 'Ihr Bestätigungscode lautet 482913.'), '482913');
+});
+
 test('html becomes readable text', () => {
   assert.equal(htmlText('<div>Hi&nbsp;there,<br>Line two</div><p>Para &amp; more</p><style>.x{}</style><!-- c -->'), 'Hi there,\nLine two\nPara & more');
   assert.equal(htmlText('&#39;quoted&#39; &#x27;hex&#x27; &lt;b&gt;'), "'quoted' 'hex' <b>");

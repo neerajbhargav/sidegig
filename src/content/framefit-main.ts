@@ -13,6 +13,7 @@ function quietNotifications() {
   });
   const Real = window.Notification;
   if (!Real) return;
+  // biome-ignore lint/complexity/useArrowFunction: pages call it with `new`, and an arrow function is not a constructor.
   const Quiet = function (title: string, options?: NotificationOptions) {
     if (!muted) return new Real(title, options);
     const quiet = Object.assign(new EventTarget(), { title, ...options, onclick: null, onclose: null, onerror: null, onshow: null });
@@ -29,8 +30,8 @@ function quietNotifications() {
   let parent = '';
   try {
     const a = location.ancestorOrigins;
-    anc = a && a.length ? a[a.length - 1] : '';
-    parent = a && a.length ? a[0] : '';
+    anc = a?.length ? a[a.length - 1] : '';
+    parent = a?.length ? a[0] : '';
   } catch {
     return;
   }

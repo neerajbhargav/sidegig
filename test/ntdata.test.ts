@@ -37,10 +37,10 @@ test('weather: codes, URL and parsing (Open-Meteo shape)', () => {
   const w = parseWeather(
     { current: { temperature_2m: 57.6, relative_humidity_2m: 71, apparent_temperature: 55.2, weather_code: 3, is_day: 1 }, daily: { temperature_2m_max: [62.1], temperature_2m_min: [49.4] } },
     'f',
-    'Jersey City',
+    'Springfield',
     1,
   );
-  assert.deepEqual(w, { temp: 58, feels: 55, humidity: 71, code: 3, isDay: true, hi: 62, lo: 49, units: 'f', place: 'Jersey City', at: 1, days: [] });
+  assert.deepEqual(w, { temp: 58, feels: 55, humidity: 71, code: 3, isDay: true, hi: 62, lo: 49, units: 'f', place: 'Springfield', at: 1, days: [] });
   assert.equal(parseWeather({}, 'c', 'x'), null);
 });
 

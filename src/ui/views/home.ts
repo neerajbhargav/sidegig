@@ -283,7 +283,7 @@ async function tabsSection(ctx: Ctx): Promise<HTMLElement> {
   return sec;
 }
 
-async function workspacesSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement> {
+async function workspacesSection(rerender: () => void): Promise<HTMLElement> {
   const sec = h('section');
   const all = await getLocal<Workspace[]>('workspaces', []);
   const form = h('form', { class: 'opt', hidden: true, style: { gap: '6px' } });
@@ -336,7 +336,7 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
   const rerender = async () => {
     const pad = h('div', { class: 'pad' });
     // The rail (or the panel's own buttons list) already shows your apps right next to this.
-    pad.append(await spaceSection(ctx, rerender, foot), await tabsSection(ctx), await workspacesSection(ctx, rerender));
+    pad.append(await spaceSection(ctx, rerender, foot), await tabsSection(ctx), await workspacesSection(rerender));
     body.replaceChildren(pad);
   };
   const search = h('div', { class: 'field' }, ico('search', 16), h('input', {

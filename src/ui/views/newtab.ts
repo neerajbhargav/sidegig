@@ -294,7 +294,7 @@ function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arran
 // ---------------------------------------------------------------- page
 
 /** One-time choice: keep sidegig as the new tab, or go back to the browser's own. */
-async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLElement | null> {
+async function choiceCard(browser: DetectedBrowser): Promise<HTMLElement | null> {
   if (await getLocal('ntChoiceMade', false)) return null;
   const card = h('div', { class: 'nt-choice', role: 'region', 'aria-label': 'New tab choice' });
   const done = () => {
@@ -340,7 +340,7 @@ function segmented<T extends string>(label: string, options: [T, string, string]
   const set = (v: T) => {
     const i = Math.max(0, options.findIndex(([o]) => o === v));
     el.style.setProperty('--i', String(i));
-    btns.forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
+    btns.forEach((b, j) => { b.setAttribute('aria-selected', String(j === i)); });
   };
   set(value);
   return { el, set };
@@ -436,7 +436,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   push('tabs', 'Open tabs', w.tabs ? tabsCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.tabs = false)) });
   push('calculator', 'Calculator', w.calculator ? calculatorCard() : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.calculator = false)) });
   const grid = widgetGrid(ctx, items);
-  const choice = await choiceCard(ctx, browser);
+  const choice = await choiceCard(browser);
   const dash = h('div', { class: 'nt-dash', hidden: page === 'edition' }, choice ? h('div', { class: 'nt-choice-float' }, choice) : null, grid.el);
 
   const setMode = async (m: Mode) => {
@@ -523,7 +523,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     }
   };
   addEventListener('keydown', onKey, { signal });
-  addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => k.classList.remove('pressed')), { signal });
+  addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => { k.classList.remove('pressed'); }), { signal });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(n.look, browser, n.accent, n.custom, ctx.settings.theme.mode), { signal });
 
   // Drop any picture (or an image link) on the page to make it the background.

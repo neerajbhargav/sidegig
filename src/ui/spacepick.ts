@@ -76,7 +76,10 @@ export function spacePicker(settings: Settings, opts: { compact?: boolean; modes
     for (const d of dots.splice(0)) d.remove();
     space.colors.forEach((_, i) => {
       const d = h('button', { type: 'button', class: 'sp-dot', role: 'slider', 'aria-label': `Colour ${i + 1} of ${space.colors.length}`, 'aria-valuemin': '0', 'aria-valuemax': '360' }) as HTMLButtonElement;
-      d.addEventListener('focus', () => ((active = i), dots.forEach((_, j) => place(j))));
+      d.addEventListener('focus', () => {
+        active = i;
+        dots.forEach((_, j) => { place(j); });
+      });
       d.addEventListener('keydown', (e) => {
         const step = e.shiftKey ? 0.1 : 0.02;
         const { x, y } = toXY(space.colors[i]);

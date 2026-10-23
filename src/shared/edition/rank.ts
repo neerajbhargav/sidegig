@@ -80,7 +80,7 @@ export function scoreItem(item: EdItem, p: Profile, now: number): number | null 
   else if (hit < Math.min(2, termTokens.length) || match < 0.5) return null;
   const age = item.published ? Math.max(0, now - item.published) / DAY : undefined;
   const hl = HALF_LIFE[item.kind];
-  const fresh = age === undefined ? 0.6 : hl === Infinity ? 1 : Math.pow(0.5, age / hl);
+  const fresh = age === undefined ? 0.6 : hl === Infinity ? 1 : 0.5 ** (age / hl);
   const scale = POP_SCALE[item.source];
   const pop = scale && item.pop !== undefined ? Math.min(1, Math.log10(item.pop + 1) / scale) : 0.5;
   const rel = weight / MAX_WEIGHT;
@@ -149,8 +149,8 @@ export function compose(ranked: EdItem[], size: number, kinds: EdKind[], p?: Pro
         const share = Math.max(1, (weightOf.get(c.topic.toLowerCase()) ?? 2.5) / 2.5);
         const v =
           c.score! *
-          Math.pow(0.55, (topicN.get(c.topic.toLowerCase()) ?? 0) / share) *
-          Math.pow(0.8, sourceN.get(c.source) ?? 0) *
+          0.55 ** ((topicN.get(c.topic.toLowerCase()) ?? 0) / share) *
+          0.8 ** (sourceN.get(c.source) ?? 0) *
           (kn >= quota ? 0.3 : kn === 0 ? 1.3 : 1);
         if (v > bv) {
           bv = v;

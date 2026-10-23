@@ -17,8 +17,8 @@ test('fuzzy: exact words beat scattered letters', () => {
 });
 
 test('fuzzy: multi-word queries need every word', () => {
-  assert.ok(fuzzyScore('jersey apt', 'Jersey City apartments') !== null);
-  assert.equal(fuzzyScore('jersey boston', 'Jersey City apartments'), null);
+  assert.ok(fuzzyScore('spring apt', 'Springfield apartments') !== null);
+  assert.equal(fuzzyScore('spring boston', 'Springfield apartments'), null);
 });
 
 test('rank orders by weighted best field', () => {
@@ -51,8 +51,8 @@ test('link rule patterns', () => {
   assert.ok(matchPattern('*.figma.com', 'https://www.figma.com/file/1'));
   assert.ok(matchPattern('*.figma.com', 'https://figma.com/'));
   assert.ok(!matchPattern('notion.so', 'https://notnotion.so/'));
-  assert.ok(matchPattern('github.com/landairnyc', 'https://github.com/LandairNYC/repo'));
-  assert.ok(!matchPattern('github.com/landairnyc', 'https://github.com/other'));
+  assert.ok(matchPattern('github.com/example-org', 'https://github.com/Example-Org/repo'));
+  assert.ok(!matchPattern('github.com/example-org', 'https://github.com/other'));
   assert.ok(!matchPattern('notion.so', 'chrome://settings'));
   const rules = [
     { id: '1', pattern: 'notion.so', action: 'window' as const, enabled: false },
@@ -144,7 +144,7 @@ test('v7: the dashboard arrives with every widget on; weather you turned off sta
   assert.equal(fresh.newtab.widgets.calendar, true);
   assert.equal(fresh.newtab.panels, 'clear', 'v8 moves everyone to Clear');
   assert.equal(fresh.newtab.background.inks, 'theme');
-  const off = mergeSettings(defaultSettings(), migrate({ version: 6, newtab: { weather: { enabled: false, place: 'Jersey City', lat: 40.7, lon: -74, units: 'f' } } }));
+  const off = mergeSettings(defaultSettings(), migrate({ version: 6, newtab: { weather: { enabled: false, place: 'Springfield', lat: 39.8, lon: -89.6, units: 'f' } } }));
   assert.equal(off.newtab.widgets.weather, false);
   assert.equal(off.newtab.widgets.notes, true);
 });

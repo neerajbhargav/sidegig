@@ -1,19 +1,53 @@
-# Typecheck, tests and a Chrome build on every push, whichever agent pushed.
+# Lint, typecheck, unit tests and all four builds on every pull request and every push to main,
+# whichever agent pushed; then the Playwright checks against the built extension and the preview.
+# A branch push without a pull request runs nothing; open a pull request to check it.
 name: CI
 on:
   push:
+    branches: [main]
   pull_request:
+permissions:
+  contents: read
+# A newer push to the same pull request cancels the run that is still going; runs on main finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npx tsc --noEmit -p .
       - run: npm test
-      - run: node scripts/build.mjs chrome
+      - run: node scripts/build.mjs --zip
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Full Chromium (new headless mode loads extensions; the headless shell does not).
+      - run: npx playwright install --with-deps --no-shell chromium
+      - run: node scripts/build.mjs chrome && node scripts/build.mjs preview
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: test-results/e2e
+          if-no-files-found: ignore
