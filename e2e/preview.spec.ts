@@ -1,7 +1,7 @@
 // The preview smoke flows (scripts/*-smoke.js) against the fixture preview on 127.0.0.1:8765.
 // The scripts were written for the Aside CLI's REPL; these few globals stand in for it, so the
 // same files run here and in CI. Build the preview first: `npm run preview`.
-import { test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -44,3 +44,24 @@ for (const script of SCRIPTS) {
     }
   });
 }
+
+// Settings, Ask AI, "Ask before sending page data out" as the chat wires it (qa-ask.html: a scripted
+// model lists the tabs, then tries to open a link that carries their titles).
+test('ask before sending: the chat asks with the setting on, and does not with it off', async ({ context }) => {
+  await context.route(/^https?:\/\/(?!127\.0\.0\.1[:/])/, (route) => route.abort());
+  const opened = (p: Page) => p.evaluate(() => (window as unknown as { __SIDEGIG_LOG__: { type: string; url?: string }[] }).__SIDEGIG_LOG__.filter((e) => e.type === 'tabs.create').map((e) => e.url));
+  const on = await context.newPage();
+  await on.goto('http://127.0.0.1:8765/preview/qa-ask.html');
+  const ask = on.locator('.cm-ask');
+  await expect(ask).toContainText('Open https://collect.example/?t=');
+  await ask.getByRole('button', { name: 'Don’t allow' }).click();
+  // The run has ended when the reply's actions (Copy, Ask again) show.
+  await expect(on.locator('.cm-bot .cm-actions')).toBeVisible();
+  await expect(ask).toHaveCount(0);
+  expect(await opened(on)).toEqual([]);
+  const off = await context.newPage();
+  await off.goto('http://127.0.0.1:8765/preview/qa-ask.html?ask=off');
+  await expect(off.locator('.cm-bot .cm-actions')).toBeVisible();
+  await expect(off.locator('.cm-ask')).toHaveCount(0);
+  expect((await opened(off)).map((u) => new URL(u!).hostname)).toEqual(['collect.example']);
+});
