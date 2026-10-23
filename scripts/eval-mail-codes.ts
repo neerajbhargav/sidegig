@@ -4,9 +4,10 @@
 // Usage: node scripts/eval-mail-codes.ts [--corpus <jsonl>] [--rev <git rev>] [--misses] [--write]
 //   --corpus  default test/fixtures/mail-codes.jsonl; the held-out set is test/fixtures/mail-codes-holdout.jsonl
 //   --rev     score findCode as it was at that commit (default: the working tree)
-//   --misses  list the dev-split rows it gets wrong (the test split is never listed, so it stays untuned)
+//   --misses  list the dev-split rows it gets wrong. Rows in the test split and the held-out set are
+//             never listed, so they stay untuned; --misses on the held-out set is refused.
 //   --write   save docs/evals/mail-codes[-holdout]-<date>-<rev>.json
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
@@ -60,17 +61,24 @@ const arg = (name: string) => {
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()!)) {
   const corpusPath = arg('--corpus') ?? CORPUS.pathname;
   const rev = arg('--rev');
+  const holdout = /holdout/.test(corpusPath);
+  if (holdout && process.argv.includes('--misses')) {
+    console.error('--misses lists only dev rows; the held-out set is never listed, so it stays untuned.');
+    process.exit(2);
+  }
   let find: Find = findCode;
+  let tmp = '';
   if (rev) {
-    // The detector as it was at that commit, imported from a temporary copy.
-    const dir = mkdtempSync(join(tmpdir(), 'mailcodes-'));
-    writeFileSync(join(dir, 'mail.ts'), execSync(`git show ${rev}:src/shared/mail.ts`));
-    find = (await import(pathToFileURL(join(dir, 'mail.ts')).href)).findCode;
+    // The detector as it was at that commit, imported from a temporary copy of src/shared
+    // (mail.ts imports its neighbours, such as prompt.ts).
+    tmp = mkdtempSync(join(tmpdir(), 'mailcodes-'));
+    execSync(`git archive ${rev} src/shared | tar -x -C ${JSON.stringify(tmp)}`);
+    find = (await import(pathToFileURL(join(tmp, 'src/shared/mail.ts')).href)).findCode;
   }
   const rows = loadCodeRows(corpusPath).map((r) => scoreRow(r, find));
+  if (tmp) rmSync(tmp, { recursive: true, force: true });
   const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
   const head = execSync('git rev-parse --short HEAD').toString().trim();
-  const holdout = /holdout/.test(corpusPath);
   const report = {
     eval: holdout ? 'mail-codes-holdout' : 'mail-codes',
     corpus: corpusPath.replace(/^.*\/(test\/fixtures\/)/, '$1'),
@@ -92,7 +100,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const s = (report as Record<string, any>)[k];
     if (s) console.log(`${k.padEnd(4)} n=${s.n} positives=${s.positives} precision=${pct(s.precision)} [${s.precision_ci95.map(pct).join(', ')}] recall=${pct(s.recall)} [${s.recall_ci95.map(pct).join(', ')}] tp=${s.tp} fp=${s.fp} fn=${s.fn} wrong=${s.wrong}`);
   }
-  if (process.argv.includes('--misses')) for (const r of rows.filter((r) => r.split !== 'test' && r.outcome !== 'tp' && r.outcome !== 'tn')) console.log(`  ${r.outcome.padEnd(5)} ${r.id} [${r.category}] want=${r.code} got=${r.got} :: ${r.subject} | ${r.snippet}`);
+  if (process.argv.includes('--misses')) for (const r of rows.filter((r) => r.split === 'dev' && r.outcome !== 'tp' && r.outcome !== 'tn')) console.log(`  ${r.outcome.padEnd(5)} ${r.id} [${r.category}] want=${r.code} got=${r.got} :: ${r.subject} | ${r.snippet}`);
   if (process.argv.includes('--write')) {
     mkdirSync(new URL('../docs/evals/', import.meta.url), { recursive: true });
     const tag = rev ? execSync(`git rev-parse --short ${rev}`).toString().trim() : head;
