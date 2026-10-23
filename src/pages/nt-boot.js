@@ -29,7 +29,7 @@
   // Your size, before the first paint.
   var size = parseFloat(ls('sidegig.uiScale') || '');
   if (size >= 0.6 && size <= 1.6) root.style.setProperty('--ui-s', String(size));
-  var look = ls('sidegig.ntLook') || 'auto';
+  var look = ls('sidegig.ntLook') || 'space';
   var dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
   root.dataset.look = look === 'auto' ? 'native' : look;
   if (look === 'custom') {
@@ -38,6 +38,17 @@
       if (c.bg) root.style.setProperty('--c-bg', c.bg);
       if (c.ink) root.style.setProperty('--c-ink', c.ink);
       if (c.accent) root.style.setProperty('--c-signal', c.accent);
+    } catch (e) {}
+  }
+  var space = null;
+  if (look === 'space') {
+    try {
+      space = JSON.parse(ls('sidegig.ntSpace') || 'null');
+      if (space && space.frame) {
+        root.style.setProperty('--sp-frame', space.frame);
+        root.style.setProperty('--sp-1', space.bg);
+        root.style.setProperty('--sp-ink', space.ink);
+      }
     } catch (e) {}
   }
   if (look === 'picture') {
@@ -51,7 +62,7 @@
       }
     } catch (e) {}
   }
-  root.dataset.scheme = dark ? 'dark' : 'light';
+  root.dataset.scheme = space && space.scheme ? space.scheme : dark ? 'dark' : 'light';
   root.dataset.browser = ls('sidegig.ntBrowser') || 'chromium';
   root.dataset.mode = ls('sidegig.ntMode') === 'ai' ? 'ai' : 'home';
 })();

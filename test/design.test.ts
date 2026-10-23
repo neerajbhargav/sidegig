@@ -119,6 +119,12 @@ test('no drop shadows or glows: shadows are none, inset, or a crisp ring', () =>
   assert.deepEqual(bad.map(where), []);
 });
 
+test('lift (the soft shadow) only on floating layers and the selected row, tile or segment (owner, 2026-10-23)', () => {
+  const lifts = /(pop|menu|results|ai-host|nt-ask|nt-cz|toast|\.tip|flyout|frame-help|sp-dot|seg|cz-tabs|toggle|\.current|pressed|selected|\.on\b|:focus)/;
+  const bad = DECLS.filter((d) => /shadow$/.test(d.prop) && /var\(--lift-/.test(d.value) && !lifts.test(d.selector));
+  assert.deepEqual(bad.map(where), []);
+});
+
 test('a surface that changes the ink sets every colour role, so nothing turns white on white', () => {
   const roles = ['--c-ink', '--c-mute', '--c-bg', '--c-card', '--c-panel'];
   const blocks = new Map<string, Decl[]>();

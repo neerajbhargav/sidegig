@@ -18,10 +18,12 @@ import { CUBES } from '../figures/cubes.ts';
 import { SPIKE } from '../figures/spike.ts';
 import { PAD } from '../figures/pad.ts';
 import { play } from '../sound.ts';
+import { spacePicker } from '../spacepick.ts';
 import { SCALE_MAX, SCALE_MIN, applyScale, clampScale } from '../../shared/scale.ts';
 import { GRADIENTS, PATTERNS, LANDSCAPES, MONUMENTS, RISO, effectFor, landscapeUrl, monumentUrl, listUploads, addUpload, removeUpload, prepareImage } from './ntwall.ts';
 
 export const THEMES: { id: NtLook; name: string; note: string; swatch: [string, string, string]; studio: boolean }[] = [
+  { id: 'space', name: 'Space', note: 'your space colour, like Arc', swatch: ['#e3e6fb', '#1d1b26', '#5b6cff'], studio: false },
   { id: 'auto', name: 'Match browser', note: 'follows your browser', swatch: ['#ffffff', '#1f1f1f', '#0b57d0'], studio: false },
   { id: 'paper', name: 'Paper', note: 'warm grey, signal orange', swatch: ['#efefea', '#121212', '#ff4f00'], studio: true },
   { id: 'night', name: 'Night', note: 'black, warm white', swatch: ['#0f0f0e', '#ecece6', '#ff5a1f'], studio: true },
@@ -501,7 +503,7 @@ function nameSection(ctx: Ctx): HTMLElement {
 const lastPalette = (): NtLook => {
   try {
     const v = localStorage.getItem('sidegig.lastPalette') as NtLook | null;
-    return v && THEMES.some((t) => t.id === v && t.id !== 'auto' && t.id !== 'picture') ? v : 'paper';
+    return v && THEMES.some((t) => t.id === v && t.studio) ? v : 'paper';
   } catch {
     return 'paper';
   }
@@ -510,9 +512,10 @@ const lastPalette = (): NtLook => {
 /** Colours: where the page's colours come from (the wallpaper, your browser, or a palette), the accent and icons. */
 function coloursTab(ctx: Ctx): HTMLElement {
   const n = ctx.settings.newtab;
-  const source: 'picture' | 'browser' | 'palette' = n.look === 'picture' ? 'picture' : n.look === 'auto' ? 'browser' : 'palette';
+  const source: 'space' | 'picture' | 'browser' | 'palette' = n.look === 'space' ? 'space' : n.look === 'picture' ? 'picture' : n.look === 'auto' ? 'browser' : 'palette';
   const hasPicture = !['none', 'gradient', 'pattern', 'color'].includes(n.background.kind);
   const note = {
+    space: 'Your space colour paints the page, like Arc. The sidebar and rail wear it too.',
     picture: hasPicture ? 'Page, widget and accent colours are read from your wallpaper and change with it.' : 'Pick a picture in Wallpaper first. Until then this follows your browser.',
     browser: 'Follows your browser’s own look, light or dark.',
     palette: 'A fixed set of colours that stays the same whatever the wallpaper.',
@@ -525,18 +528,19 @@ function coloursTab(ctx: Ctx): HTMLElement {
       'section',
       { class: 'cz-sec' },
       h('div', { class: 'cz-sec-h' }, 'Colours from'),
-      seg(source, [['picture', 'Wallpaper'], ['browser', 'Browser'], ['palette', 'Palette']], (v) => {
+      seg(source, [['space', 'Space'], ['picture', 'Wallpaper'], ['browser', 'Browser'], ['palette', 'Palette']], (v) => {
         play('key');
-        set((s) => void (s.newtab.look = v === 'picture' ? 'picture' : v === 'browser' ? 'auto' : lastPalette()));
+        set((s) => void (s.newtab.look = v === 'space' ? 'space' : v === 'picture' ? 'picture' : v === 'browser' ? 'auto' : lastPalette()));
       }),
       h('p', { class: 'cz-hint' }, note),
     ),
+    source === 'space' ? h('section', { class: 'cz-sec' }, h('div', { class: 'cz-sec-h' }, 'Space colour'), spacePicker(ctx.settings)) : null,
     source === 'palette'
       ? h(
           'section',
           { class: 'cz-sec' },
           h('div', { class: 'cz-sec-h' }, 'Palette'),
-          h('div', { class: 'cz-themes' }, THEMES.filter((t) => t.id !== 'auto' && t.id !== 'picture').map((t) => themeCard(ctx, t))),
+          h('div', { class: 'cz-themes' }, THEMES.filter((t) => t.studio && t.id !== 'picture').map((t) => themeCard(ctx, t))),
           n.look === 'custom' ? customEditor(ctx) : null,
         )
       : null,

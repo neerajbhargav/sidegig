@@ -1,7 +1,8 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById, PHONE_FIT } from './catalog.ts';
+import { DEFAULT_SPACE } from './theme.ts';
 
-export const SETTINGS_VERSION = 10;
+export const SETTINGS_VERSION = 11;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
@@ -29,12 +30,13 @@ export function defaultSettings(): Settings {
     theme: {
       mode: 'page',
       base: '#808080',
-      accent: '#0b57d0',
+      accent: '',
       contrast: 50,
       radius: 10,
       scale: 100,
       icons: 'original',
       customCss: '',
+      space: { ...DEFAULT_SPACE, colors: [...DEFAULT_SPACE.colors] },
     },
     apps: DEFAULT_PINNED.filter((id) => CATALOG.some((c) => c.id === id)).map(appFromCatalog),
     stacks: { spaces: [], activeSpace: '' },
@@ -51,7 +53,7 @@ export function defaultSettings(): Settings {
     sleep: { enabled: false, afterMin: 60 },
     newtab: {
       enabled: true,
-      look: 'auto',
+      look: 'space',
       calmImages: true,
       clock: true,
       aiTab: true,
