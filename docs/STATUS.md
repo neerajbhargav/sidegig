@@ -1,11 +1,13 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-23 17:15 (branch `upgrade/oct-2026` with `main` at `f64e4d9` merged in: 0.4.0 and the Arc redesign, plus this branch's scrub, evals and injection defenses, an injection eval, end-to-end checks, lint, a release workflow and the README rewrite. PR #1 into `main` is open and not merged; the owner's Aside runs `2f0ac56` from `main`).
+Last updated: 2026-10-23 17:30 (`main` at the 0.4.1 release commit: PR #1 merged as `dfb184a` on top of 0.4.0 and the Arc redesign; changelog regenerated; tag `v0.4.1` publishes the four zips through release.yml).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Merged and tagged, 2026-10-23 17:30 (owner: "push updates over the latest main branch of sidegig do not discard the work done"):** PR #1 (`upgrade/oct-2026`: personal-data scrub, sign-in code eval and detector, prompt-injection defenses and the opt-in ask-before-sending gate, the injection eval, Playwright checks, Biome, the release workflow) merged into `main` as `dfb184a` with a merge commit, so the Arc redesign and every branch commit are kept. Version 0.4.1, changelog regenerated, tag `v0.4.1`. Not checked live in Aside yet: the drawer port fix and the ask-before-sending setting (reload the unpacked extension from a fresh `node scripts/build.mjs chrome`).
 
 **Fix pass after the 2026-10-23 review (`upgrade/oct-2026`, PR #1):** every critical and major finding of the review is fixed or answered below, and the cheap minor ones too. Commits `9269a61` to the last STATUS commit.
 
