@@ -5,7 +5,10 @@ import { icon } from '../shared/icons.ts';
 
 /** Motion tokens for scripted animations: the same values as --dur-* and --ease in ui.css (test/design.test.ts). */
 export const DUR = { press: 120, change: 200, open: 320, scene: 480 } as const;
-export const EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+/** A spring that settles without overshoot (critically damped, sampled for linear()). */
+export const SPRING = 'linear(0, 0.168 3%, 0.312 6%, 0.471 10%, 0.597 14%, 0.716 19%, 0.816 25%, 0.89 32%, 0.94 40%, 0.972 50%, 0.989 62%, 0.996 76%, 1)';
+/** Browsers without linear() (Safari before 17.2) get the closest ease-out curve. */
+export const EASE = typeof CSS === 'undefined' || CSS.supports('transition-timing-function', SPRING) ? SPRING : 'cubic-bezier(0.2, 0.8, 0.2, 1)';
 
 type Kid = Node | string | number | null | undefined | false;
 type Props = Record<string, unknown>;

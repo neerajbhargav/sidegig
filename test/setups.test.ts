@@ -73,9 +73,9 @@ test('files: new setup files and old settings exports both import; junk is refus
 test('partial imported settings can be described before applying them', async () => {
   for (const settings of [{ version: 10, newtab: { name: 'Sam' } }, { version: 10, newtab: { look: '' } }]) {
     const legacy = await parseSetup(JSON.stringify(settings));
-    assert.match(describe(legacy), /Match browser theme/);
+    assert.match(describe(legacy), /Space theme/);
     const bundle = toBundle({ kind: 'sidegig-setup', format: 1, settings, parts: ['looks'] });
-    assert.equal(describe(bundle), 'Match browser theme');
+    assert.equal(describe(bundle), 'Space theme');
     assert.deepEqual(bundle.settings, settings, 'describing does not change the imported file');
   }
 });

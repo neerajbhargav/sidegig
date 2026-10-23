@@ -2,18 +2,11 @@
 
 sidegig itself is licensed under GPL-3.0-or-later. Every package it builds includes this file and these third-party parts:
 
-## Google Sans Flex (Latin subset)
-
-`src/assets/fonts/GoogleSansFlex-Latin.woff2`
-Copyright 2022 The Google Sans Flex Project Authors (https://github.com/googlefonts/googlesans-flex).
-Licensed under the SIL Open Font License, Version 1.1. Full text: `src/assets/fonts/OFL.txt`.
-The file is the Latin subset served by Google Fonts, unchanged.
-
 ## Barlow Condensed and IBM Plex Mono (Latin subsets)
 
-`src/assets/fonts/BarlowCondensed-*.woff2` and `src/assets/fonts/IBMPlexMono-*.woff2`, fetched by `scripts/fetch-assets.mjs`.
-Barlow: Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow).
-IBM Plex Mono: Copyright 2017 IBM Corp., with Reserved Font Name "Plex".
+`src/assets/fonts/BarlowCondensed-*.woff2` and `src/assets/fonts/IBMPlexMono-*.woff2`, used by the studio looks, fetched by `scripts/fetch-assets.mjs`.
+Barlow Condensed: Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow).
+IBM Plex Mono: Copyright © 2017 IBM Corp. with Reserved Font Name "Plex".
 Both are licensed under the SIL Open Font License, Version 1.1. Full texts: `src/assets/fonts/BarlowCondensed-OFL.txt` and `src/assets/fonts/IBMPlexMono-OFL.txt`.
 The files are the Latin subsets served by Google Fonts, unchanged. The OFL texts ship next to them in each package's `fonts/` folder.
 

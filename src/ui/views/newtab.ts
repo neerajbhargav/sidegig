@@ -59,9 +59,14 @@ export function fitOnSignal() {
   root.style.setProperty('--c-signal-fill', `rgb(${fill.join(' ')})`);
 }
 
-export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }) {
+/** The calm looks: Space (Arc's space colour) and Match browser. The rest are studio looks. */
+export const calmLook = () => ['space', 'native'].includes(document.documentElement.dataset.look ?? '');
+
+export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }, themeMode = 'system') {
   const root = document.documentElement;
   root.dataset.look = look === 'auto' ? 'native' : look;
+  // Space wears the theme's space colour; first paint used the last one saved (nt-boot.js).
+  for (const v of ['--sp-frame', '--sp-1', '--sp-ink']) root.style.removeProperty(v);
   // Your own theme: three colours, the rest is mixed from them in CSS.
   for (const v of ['--c-bg', '--c-ink', '--c-signal']) root.style.removeProperty(v);
   if (look === 'custom' && custom) {
@@ -97,7 +102,16 @@ export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', 
   if (accent) root.dataset.accent = 'user';
   else delete root.dataset.accent;
   fitOnSignal();
-  root.dataset.scheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const osDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.scheme = look === 'space' && (themeMode === 'light' || themeMode === 'dark') ? themeMode : osDark ? 'dark' : 'light';
+  if (look === 'space') {
+    const cs = getComputedStyle(root);
+    try {
+      localStorage.setItem('sidegig.ntSpace', JSON.stringify({ frame: cs.getPropertyValue('--sp-frame').trim(), bg: cs.getPropertyValue('--sp-1').trim(), ink: cs.getPropertyValue('--sp-ink').trim(), scheme: root.dataset.scheme }));
+    } catch {
+      /* fine */
+    }
+  }
   if (browser) {
     root.dataset.browser = browser.id;
     // Arc shares the current space's colours: wear them.
@@ -124,7 +138,7 @@ function soundToggle(ctx: Ctx): HTMLElement {
       'aria-label': 'Interface sounds',
       'aria-pressed': String(on),
       onclick: () => {
-        configureSound(!on, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
+        configureSound(!on, calmLook() ? 'velvet' : 'crisp');
         play(!on ? 'on' : 'off');
         void updateSettings((s) => void (s.newtab.sounds = !on));
       },
@@ -338,8 +352,8 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   if (signal.aborted) return h('div');
   const n = ctx.settings.newtab;
   const w = n.widgets;
-  applyLook(n.look, browser, n.accent, n.custom);
-  configureSound(n.sounds, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
+  applyLook(n.look, browser, n.accent, n.custom, ctx.settings.theme.mode);
+  configureSound(n.sounds, calmLook() ? 'velvet' : 'crisp');
   document.body.toggleAttribute('data-calm', n.calmImages);
   const root = h('div', { class: 'nt2', dataset: { panels: n.panels } });
 
@@ -510,7 +524,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   };
   addEventListener('keydown', onKey, { signal });
   addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => { k.classList.remove('pressed'); }), { signal });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(n.look, browser, n.accent, n.custom), { signal });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(n.look, browser, n.accent, n.custom, ctx.settings.theme.mode), { signal });
 
   // Drop any picture (or an image link) on the page to make it the background.
   const dropHint = h('div', { class: 'nt-drop', hidden: true }, h('span', {}, 'Drop to make this your background'));
