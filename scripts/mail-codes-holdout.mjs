@@ -1,10 +1,16 @@
 // Drafts a held-out set for the sign-in code eval with a local model, so the
-// rows are not written by the person who tuned findCode(). The model writes
-// subjects and previews; every label is then checked by hand (see "reviewed"
-// in each row) before the set is scored.
+// subjects and previews are not written by whoever tuned findCode(). The same
+// author wrote these prompts and the labelling rules, and picked the negative
+// categories after reading the old detector's false positives.
 //
-// Usage: node scripts/mail-codes-holdout.mjs > scratch.jsonl
-//   needs Ollama on 127.0.0.1:11434 with qwen2.5-coder:7b (free, local)
+// The labels in test/fixtures/mail-codes-holdout.jsonl are the model's own
+// "code" fields, corrected by three written rules; no person reviewed every row.
+// scripts/mail-codes-label-diff.mjs lists each changed label and its rule.
+//
+// Usage: node scripts/mail-codes-holdout.mjs > test/fixtures/mail-codes-holdout-drafts.jsonl
+//   needs Ollama on 127.0.0.1:11434 with qwen2.5-coder:7b (free, local). Seeded:
+//   with the same model build (digest dae161e27b0e, Ollama 0.40.8) the output is
+//   the same byte for byte; a retagged model can change it.
 const MODEL = 'qwen2.5-coder:7b';
 const PER_PROMPT = 10;
 
