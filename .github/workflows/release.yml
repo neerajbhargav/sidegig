@@ -1,29 +1,64 @@
-# On a version tag (v*): check, build the four browser packages and publish them as a
-# GitHub release with generated notes. The tag must match package.json's version.
+# On a version tag (v*): check, run the Playwright checks, build the four browser packages and
+# publish them with a SHA256SUMS file as a GitHub release with generated notes. The tag must
+# match package.json's version and point at a commit on main.
+#
+# Two jobs, so the write token never sits next to the install scripts that npm ci runs: `build`
+# has a read-only token and does not keep it in .git/config; `publish` has contents: write,
+# installs nothing and only uploads the files that `build` made.
 name: Release
 on:
   push:
     tags: ['v*']
 permissions:
-  contents: write
+  contents: read
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
+      - name: Tag matches package.json and is on main
+        run: |
+          test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - run: npm ci
-      - name: Tag matches package.json
-        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
       - run: npm run lint
       - run: npx tsc --noEmit -p .
       - run: npm test
+      # Full Chromium (new headless mode loads extensions; the headless shell does not).
+      - run: npx playwright install --with-deps --no-shell chromium
+      - run: node scripts/build.mjs chrome && node scripts/build.mjs preview
+      - run: npm run e2e
       - run: node scripts/build.mjs --zip
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum sidegig-chrome.zip sidegig-opera.zip sidegig-firefox.zip sidegig-safari.zip > SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: |
+            dist/sidegig-*.zip
+            dist/SHA256SUMS
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
       - name: Publish the release
-        run: gh release create "$GITHUB_REF_NAME" dist/sidegig-chrome.zip dist/sidegig-opera.zip dist/sidegig-firefox.zip dist/sidegig-safari.zip --title "sidegig $GITHUB_REF_NAME" --generate-notes --verify-tag
+        run: gh release create "$GITHUB_REF_NAME" release/sidegig-chrome.zip release/sidegig-opera.zip release/sidegig-firefox.zip release/sidegig-safari.zip release/SHA256SUMS --repo "$GITHUB_REPOSITORY" --title "sidegig $GITHUB_REF_NAME" --generate-notes --verify-tag
         env:
           GH_TOKEN: ${{ github.token }}
