@@ -43,6 +43,12 @@ test('numbers next to a code word but not codes', () => {
   assert.equal(findCode('Security report 20261019', 'Your weekly security summary is ready.'), null);
   assert.equal(findCode('Your code inside: SAVE20', 'Use code SAVE20 for 20% off this weekend.'), null);
   assert.equal(findCode('Confirm your rewards', 'You earned 1576 points this month.'), null);
+  // "code" at the end of a word that is not a sign-in code (a German compound still counts, see above).
+  assert.equal(findCode('Delivery update', 'Your zipcode 10001 is outside our delivery area.'), null);
+  assert.equal(findCode('Your barcode', 'Show barcode 48213907 at the counter to pick up your parcel.'), null);
+  assert.equal(findCode('Shipping', 'We ship to postcode 2000 and nearby suburbs.'), null);
+  assert.equal(findCode('Security notice', 'Calls from area code 212 are not from us.'), null);
+  assert.equal(findCode('Bestätigung', 'Ihr Bestätigungscode lautet 482913.'), '482913');
 });
 
 test('html becomes readable text', () => {
