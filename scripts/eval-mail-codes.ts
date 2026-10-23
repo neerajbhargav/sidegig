@@ -18,7 +18,7 @@ import { bootstrap95, round } from './evalstats.ts';
 export interface CodeRow { v: number; id: string; split: 'dev' | 'test' | 'holdout'; category: string; service: string; subject: string; snippet: string; code: string | null }
 export type Outcome = 'tp' | 'fp' | 'fn' | 'tn' | 'wrong';
 export interface Scored extends CodeRow { got: string | null; outcome: Outcome }
-type Find = (subject: string, snippet: string) => string | null;
+export type Find = (subject: string, snippet: string) => string | null;
 
 export const CORPUS = new URL('../test/fixtures/mail-codes.jsonl', import.meta.url);
 export const HOLDOUT = new URL('../test/fixtures/mail-codes-holdout.jsonl', import.meta.url);
@@ -32,6 +32,14 @@ export function scoreRow(r: CodeRow, find: Find = findCode): Scored {
   const got = find(r.subject, r.snippet);
   const outcome: Outcome = r.code ? (got ? (got === r.code ? 'tp' : 'wrong') : 'fn') : got ? 'fp' : 'tn';
   return { ...r, got, outcome };
+}
+
+/** findCode as it was at `rev`, imported from a temporary copy of src/shared (mail.ts imports its neighbours, such as prompt.ts). Call done() after scoring. */
+export async function findCodeAt(rev: string): Promise<{ find: Find; done: () => void }> {
+  const dir = mkdtempSync(join(tmpdir(), 'mailcodes-'));
+  execSync(`git archive ${rev} src/shared | tar -x -C ${JSON.stringify(dir)}`);
+  const find = (await import(pathToFileURL(join(dir, 'src/shared/mail.ts')).href)).findCode as Find;
+  return { find, done: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
 export function metrics(rows: Scored[]) {
@@ -66,17 +74,9 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     console.error('--misses lists only dev rows; the held-out set is never listed, so it stays untuned.');
     process.exit(2);
   }
-  let find: Find = findCode;
-  let tmp = '';
-  if (rev) {
-    // The detector as it was at that commit, imported from a temporary copy of src/shared
-    // (mail.ts imports its neighbours, such as prompt.ts).
-    tmp = mkdtempSync(join(tmpdir(), 'mailcodes-'));
-    execSync(`git archive ${rev} src/shared | tar -x -C ${JSON.stringify(tmp)}`);
-    find = (await import(pathToFileURL(join(tmp, 'src/shared/mail.ts')).href)).findCode;
-  }
-  const rows = loadCodeRows(corpusPath).map((r) => scoreRow(r, find));
-  if (tmp) rmSync(tmp, { recursive: true, force: true });
+  const at = rev ? await findCodeAt(rev) : { find: findCode, done: () => {} };
+  const rows = loadCodeRows(corpusPath).map((r) => scoreRow(r, at.find));
+  at.done();
   const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
   const head = execSync('git rev-parse --short HEAD').toString().trim();
   const report = {
