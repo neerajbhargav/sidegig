@@ -87,7 +87,7 @@ for(const name of ['wallpaper','edition','tools','desk','full']){
   const ask = structuredClone(sidebar);
   ask.sync.settings.ai = { askBeforeSending: true };
   ask.local.aiKeys = { local: 'http://fixture.invalid' };
-  const askScript = `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(ask)};window.__SIDEGIG_FIXTURES__.local.panelRequest={view:'chat',ts:Date.now()};window.LanguageModel=undefined;
+  const askScript = `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(ask)}${panelSwitches};window.__SIDEGIG_FIXTURES__.local.panelRequest={view:'chat',ts:Date.now()};window.LanguageModel=undefined;
 const askFetch=window.fetch;let askTurn=0;
 const askSse=(d,f)=>new Response('data: '+JSON.stringify({choices:[{delta:d}]})+'\\n\\ndata: '+JSON.stringify({choices:[{delta:{},finish_reason:f}]})+'\\n\\ndata: [DONE]\\n\\n',{headers:{'content-type':'text/event-stream'}});
 const askCall=(name,args)=>askSse({tool_calls:[{index:0,id:'c'+askTurn,function:{name,arguments:JSON.stringify(args)}}]},'tool_calls');

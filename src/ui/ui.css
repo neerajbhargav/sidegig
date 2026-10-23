@@ -2098,10 +2098,11 @@ html:is([data-look="native"], [data-look="space"]) .cv-empty h3 { font: 500 var(
 .cm-act:hover { background: var(--hov); color: var(--c-ink); }
 .cm-act:focus-visible { outline: 2px solid var(--c-signal); }
 .cm-model { margin-left: 0.375rem; font-size: var(--t-2); color: var(--c-mute); }
-.cm-err, .cm-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.625rem 0.75rem; border-radius: var(--r-2); border: 1px solid color-mix(in oklab, #c5221f 40%, transparent); font-size: var(--t-3); }
-.cm-ask { border-color: var(--c-line); color: var(--c-ink); }
-.cm-err > span, .cm-ask > span { flex: 1 1 14rem; overflow-wrap: anywhere; }
-.cm-ask > span { flex-basis: 100%; }
+.cm-err { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.625rem 0.75rem; border-radius: var(--r-2); border: 1px solid color-mix(in oklab, #c5221f 40%, transparent); font-size: var(--t-3); }
+.cm-err > span { flex: 1 1 14rem; }
+/* "Ask before sending page data out": a content card in the chat, like the composer. It sits in the flow, so it does not lift. */
+.cm-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.75rem; border-radius: var(--r-3); background: var(--c-card); color: var(--c-ink); font-size: var(--t-3); }
+.cm-ask > span { flex: 1 1 100%; overflow-wrap: anywhere; }
 
 /* The composer: tabs you attached, the box, the menus and send. */
 .cc { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem 0.5rem 0.5rem 0.875rem; border-radius: var(--r-4); border: 1px solid var(--c-line); background: var(--c-card); }
@@ -2572,7 +2573,7 @@ body:is(.ctx-panel, .ctx-drawer, .ctx-options)::before, html[data-look="space"] 
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.5 -.25'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 /* A content card takes the content palette back: white in light, near-black in dark. */
-.frames, .ctx-options .opts > main, .welcome-setup, :is(.ctx-panel, .ctx-drawer, .ctx-options) :is(.toast, .cc-pop, .frame-help, .shelf-menu) {
+.frames, .ctx-options .opts > main, .welcome-setup, :is(.ctx-panel, .ctx-drawer, .ctx-options) :is(.toast, .cc-pop, .frame-help, .shelf-menu, .cm-ask) {
   --m-bg: var(--k-bg); --m-surface: var(--k-surface); --m-surface2: var(--k-surface2); --m-hover: var(--k-hover); --m-border: var(--k-border);
   --m-fg: var(--k-fg); --m-fg-muted: var(--k-fg-muted); --m-fg-subtle: var(--k-fg-subtle); --m-accent: var(--k-accent); --m-accent-soft: var(--k-accent-soft); --m-accent-fg: var(--k-accent-fg);
   --c-bg: var(--k-bg); --c-card: var(--k-bg); --c-panel: var(--k-surface2); --c-ink: var(--k-fg); --c-mute: var(--k-fg-muted); --c-line: var(--k-border); --hov: var(--k-hover);
@@ -2643,7 +2644,7 @@ body:is(.ctx-panel, .ctx-drawer, .ctx-options)::before, html[data-look="space"] 
 .btn.primary { background: var(--m-accent); color: var(--m-accent-fg); }
 .btn.primary:hover { filter: brightness(1.06); background: var(--m-accent); }
 .btn.ghost:hover { background: var(--m-hover); }
-.frames .btn:hover, .ctx-options .opts > main .btn:hover { background: var(--m-hover); }
+.frames .btn:hover, .ctx-options .opts > main .btn:hover, .cm-ask .btn:hover { background: var(--m-hover); }
 .seg { background: var(--m-hover); border-radius: var(--r-2); padding: calc(2px * var(--ui-s, 1)); }
 .seg button { border-radius: var(--r-1); color: var(--m-fg-muted); transition: background var(--dur-press) var(--ease), color var(--dur-press) var(--ease); }
 .seg button[aria-pressed="true"] { background: var(--sp-sel); color: var(--m-fg); box-shadow: var(--lift-1); }

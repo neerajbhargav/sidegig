@@ -196,3 +196,9 @@ Commit `b0a4e4d` on branch `design/arc` (plus uncommitted work).
 <img src="2026-10-23-02-new-tab-space-look-b0a4e4d-fixtures-befo.jpg" width="49%" alt="New tab, Space look (b0a4e4d, fixtures): before (Match browser); after, the space colour with white widget cards and a lifted command bar">
 <img src="2026-10-23-03-settings-after-arc-b0a4e4d-fixtures-befo.jpg" width="49%" alt="Settings after Arc (b0a4e4d, fixtures): before; navigation on the space colour, the page on a card, the space colour picker">
 <img src="2026-10-23-04-space-look-in-dark-mode-and-the-page-rai.jpg" width="49%" alt="Space look in dark mode, and the page rail as a strip of the space colour (b0a4e4d, fixtures)">
+
+## 2026-10-23: Ask before sending, restyled after Arc (after main was merged in)
+
+Commit `706beab` on branch `upgrade/oct-2026` (plus uncommitted work).
+
+<img src="2026-10-23-05-ask-before-sending-restyled-after-arc-fi.jpg" width="49%" alt="Ask before sending, restyled after Arc (fixture chat): before, a hairline box with frame wells; after, a content card in light and dark, no lift">
