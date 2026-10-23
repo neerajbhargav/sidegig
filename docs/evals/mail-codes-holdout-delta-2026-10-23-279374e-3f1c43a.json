@@ -1,0 +1,76 @@
+{
+ "eval": "mail-codes-holdout-delta",
+ "corpus": "test/fixtures/mail-codes-holdout.jsonl",
+ "n": 330,
+ "with_code": 150,
+ "before": "findCode at 279374e",
+ "after": "findCode in the working tree at 3f1c43a",
+ "method": "Same rows for both detectors. Intervals: seeded percentile bootstrap, 10,000 resamples; deltas resample rows in pairs.",
+ "date": "2026-10-23T19:28:07.072Z",
+ "command": "node scripts/eval-mail-codes-delta.ts --before 279374e --write",
+ "before_scores": {
+  "precision": 0.9091,
+  "precision_ci95": [
+   0.8427,
+   0.9651
+  ],
+  "recall": 0.5333,
+  "recall_ci95": [
+   0.4533,
+   0.6154
+  ],
+  "false_codes": "8/180",
+  "false_code_rate": 0.0444,
+  "false_code_rate_ci95": [
+   0.0167,
+   0.0778
+  ],
+  "precision_if_5pct_have_codes": 0.3871,
+  "precision_if_2pct_have_codes": 0.1967
+ },
+ "after_scores": {
+  "precision": 0.9667,
+  "precision_ci95": [
+   0.9298,
+   0.9922
+  ],
+  "recall": 0.7733,
+  "recall_ci95": [
+   0.7042,
+   0.8392
+  ],
+  "false_codes": "3/180",
+  "false_code_rate": 0.0167,
+  "false_code_rate_ci95": [
+   0,
+   0.0389
+  ],
+  "precision_if_5pct_have_codes": 0.7095,
+  "precision_if_2pct_have_codes": 0.4864
+ },
+ "delta_after_minus_before": {
+  "precision": {
+   "value": 0.0576,
+   "ci95": [
+    0.0038,
+    0.1174
+   ]
+  },
+  "recall": {
+   "value": 0.24,
+   "ci95": [
+    0.1733,
+    0.3101
+   ]
+  },
+  "false_code_rate": {
+   "value": -0.0278,
+   "ci95": [
+    -0.0579,
+    0
+   ]
+  }
+ },
+ "only_after_right": 36,
+ "only_before_right": 0
+}

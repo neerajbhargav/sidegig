@@ -1,0 +1,304 @@
+{
+ "eval": "mail-codes",
+ "corpus": "test/fixtures/mail-codes.jsonl",
+ "corpus_version": 1,
+ "detector": "findCode in src/shared/mail.ts at 3f1c43a (working tree)",
+ "detector_dirty": false,
+ "match": "exact string match with the label",
+ "date": "2026-10-23T19:28:05.239Z",
+ "command": "node scripts/eval-mail-codes.ts --write",
+ "all": {
+  "n": 348,
+  "positives": 198,
+  "tp": 198,
+  "fp": 0,
+  "fn": 0,
+  "tn": 150,
+  "wrong": 0,
+  "precision": 1,
+  "recall": 1,
+  "precision_ci95": [
+   1,
+   1
+  ],
+  "recall_ci95": [
+   1,
+   1
+  ]
+ },
+ "dev": {
+  "n": 174,
+  "positives": 99,
+  "tp": 99,
+  "fp": 0,
+  "fn": 0,
+  "tn": 75,
+  "wrong": 0,
+  "precision": 1,
+  "recall": 1,
+  "precision_ci95": [
+   1,
+   1
+  ],
+  "recall_ci95": [
+   1,
+   1
+  ]
+ },
+ "test": {
+  "n": 174,
+  "positives": 99,
+  "tp": 99,
+  "fp": 0,
+  "fn": 0,
+  "tn": 75,
+  "wrong": 0,
+  "precision": 1,
+  "recall": 1,
+  "precision_ci95": [
+   1,
+   1
+  ],
+  "recall_ci95": [
+   1,
+   1
+  ]
+ },
+ "by_category": {
+  "address": {
+   "n": 6,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "alnum-5": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "alnum-6": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "alnum-dash": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "alnum-lower": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "booking": {
+   "n": 12,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "calendar": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "card": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "count": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "date": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-4": {
+   "n": 12,
+   "tp": 12,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-5": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-6": {
+   "n": 93,
+   "tp": 93,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-7": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-8": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-dash": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-spaced": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-amount": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-count": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-date": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-id": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-order": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-phone": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-ref": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "link": {
+   "n": 12,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "meeting": {
+   "n": 6,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "non-english": {
+   "n": 21,
+   "tp": 21,
+   "fp": 0,
+   "fn": 0
+  },
+  "order": {
+   "n": 12,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "phone": {
+   "n": 12,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "plain": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "prefix-digits": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "price": {
+   "n": 12,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "promo": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "subject-only": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "ticket": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "time": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "tracking": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "version": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "year-like": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  }
+ },
+ "errors": []
+}
