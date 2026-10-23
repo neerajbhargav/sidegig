@@ -45,7 +45,7 @@
   const loose = [];
   for (const el of document.querySelectorAll('body *')) {
     const text = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(' ').trim();
-    const field = el.matches('input, textarea') && (el.value || el.placeholder);
+    const field = el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), textarea') && (el.value || el.placeholder);
     if (!text && !field) continue;
     if (!el.getClientRects().length || el.closest('[hidden]')) continue;
     const s = getComputedStyle(el);

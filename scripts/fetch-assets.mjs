@@ -1,6 +1,6 @@
 // Fetches the third-party assets sidegig ships with, so they are reproducible:
 //   - Material Symbols Rounded icons (Apache-2.0) -> src/shared/icons.ts
-//   - Google Sans Flex, Latin subset (SIL OFL 1.1) -> src/assets/fonts/
+//   - Barlow Condensed and IBM Plex Mono for the studio looks (SIL OFL 1.1) -> src/assets/fonts/
 // Run: node scripts/fetch-assets.mjs
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
@@ -18,6 +18,9 @@ const ICONS = {
   pinOff: 'keep_off',
   sliders: 'tune',
   plus: 'add',
+  minus: 'remove',
+  sun: 'light_mode',
+  auto: 'contrast',
   close: 'close',
   back: 'arrow_back',
   forward: 'arrow_forward',
@@ -167,18 +170,7 @@ export type IconName = keyof typeof P | 'logo';
 await writeFile(path.join(root, 'src/shared/icons.ts'), ts);
 console.log(`\nwrote ${entries.length} icons`);
 
-// Font: ask Google Fonts for the woff2 a current Chrome would get, Latin subset only.
-const css = await (
-  await fetch('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400..700&display=swap', {
-    headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36' },
-  })
-).text();
-const latin = css.split('/* latin */')[1];
-const fontUrl = latin?.match(/url\((https:[^)]+\.woff2)\)/)?.[1];
-if (!fontUrl) throw new Error('font url not found');
 await mkdir(path.join(root, 'src/assets/fonts'), { recursive: true });
-const font = Buffer.from(await (await fetch(fontUrl)).arrayBuffer());
-await writeFile(path.join(root, 'src/assets/fonts/GoogleSansFlex-Latin.woff2'), font);
 // New tab type: Barlow Condensed (display) and IBM Plex Mono (labels), Latin subset, static weights.
 const UA = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36' };
 for (const [family, file, weights, license] of [
@@ -196,6 +188,3 @@ for (const [family, file, weights, license] of [
   }
   await writeFile(path.join(root, `src/assets/fonts/${file}-OFL.txt`), await (await fetch(license)).text());
 }
-const ofl = await (await fetch('https://raw.githubusercontent.com/googlefonts/googlesans-flex/main/OFL.txt')).text();
-await writeFile(path.join(root, 'src/assets/fonts/OFL.txt'), ofl);
-console.log(`font ${(font.length / 1024).toFixed(0)} KB, license ${ofl.length} chars`);

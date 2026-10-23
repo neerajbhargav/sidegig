@@ -21,7 +21,7 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 - **Always there, like Opera's sidebar.** Docked by default: the rail sits flush on the side you choose and every page makes room for it, so nothing is ever covered. Prefer more space? Switch to hover.
 - **Customizable.** Any site as an app, any bookmark folder as a space, theme from three inputs, custom CSS, per-site hiding, link rules.
 - **Adaptive.** By default it matches each website's light or dark look. Text contrast is checked by tests at every setting.
-- **Minimal and good looking.** Chrome's own design language: Google Sans Flex, Material Symbols, tonal surfaces, nothing loud until it has something to say.
+- **Minimal and good looking.** A design language after Arc's: your space colour as the frame, content on calm cards, the system font, Material Symbols, nothing loud until it has something to say.
 - **Free for everyone.** GPL-3.0. No paid tier, ever.
 
 ## Features
@@ -129,7 +129,7 @@ test/                  node:test unit tests
 
 ## Design system
 
-- **Type:** Google Sans Flex (SIL OFL), Latin subset, 36 KB, bundled.
+- **Type:** the system font (SF Pro on a Mac, Segoe UI on Windows); Barlow Condensed and IBM Plex Mono (SIL OFL) for the studio looks.
 - **Icons:** Material Symbols Rounded (Apache-2.0), fetched by `scripts/fetch-assets.mjs`.
 - **Color:** three inputs to an OKLCH palette, Linear-style; Google blue `#0b57d0` by default; neutral surfaces; contrast tested (body text ≥ 7:1, secondary ≥ 4.5:1).
 - **Shape and motion:** 10 px radius, bounded surfaces without drop shadows, 120–220 ms transitions, respects reduced motion.

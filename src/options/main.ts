@@ -7,7 +7,8 @@ import { themeCss } from '../shared/theme.ts';
 import { applyScale, clampScale, SCALE_MIN, SCALE_MAX } from '../shared/scale.ts';
 import type { AppEntry, LinkRule, OpenIn, Settings, StatusCard } from '../shared/types.ts';
 import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
-import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
+import { seg, toggle, opt, accentSwatches } from '../ui/views/quick.ts';
+import { spacePicker } from '../ui/spacepick.ts';
 import { send } from '../ui/ctx.ts';
 import { ENGINES } from '../shared/ntdata.ts';
 import { findPlace } from '../ui/views/ntwidgets.ts';
@@ -475,15 +476,15 @@ function appearanceSection(): HTMLElement {
   return section(
     'appearance',
     'Appearance',
-    'Three inputs make the whole palette: a base tint, an accent and a contrast level. Every combination stays readable.',
+    'Like Arc, one space colour paints the sidebar, the rail and the Space new tab. Pick up to three colours, then how much colour and grain. Text always stays readable.',
+    h('div', { class: 'group sp-group' }, spacePicker(s, { modes: false })),
     h(
       'div',
-      { class: 'group' },
+      { class: 'group', style: { marginTop: '12px' } },
       sizeControl(),
       opt('Theme', 'Page = match each website’s light or dark look', seg(s.theme.mode, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['page', 'Page']], (v) => commit((x) => void (x.theme.mode = v)))),
-      opt('Accent', null, h('div', { class: 'swatches', style: { alignItems: 'center' } }, ACCENTS.map((c) => h('button', { class: 'swatch', type: 'button', title: c, style: { background: c }, 'aria-pressed': String(c === s.theme.accent), onclick: () => commit((x) => void (x.theme.accent = c)) })), color(s.theme.accent, (v) => commit((x) => void (x.theme.accent = v))))),
+      opt('Accent', s.theme.accent ? null : 'Follows the space colour', h('div', { class: 'swatches', style: { alignItems: 'center' } }, accentSwatches(s, (c) => void commit((x) => void (x.theme.accent = c))), color(s.theme.accent || '#3b6ef5', (v) => commit((x) => void (x.theme.accent = v))))),
       opt('Icons', 'Themed draws known logos in your theme’s ink and greys the rest', seg(s.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => commit((x) => void (x.theme.icons = v)))),
-      opt('Base tint', 'A whisper of color in the surfaces', color(s.theme.base, (v) => commit((x) => void (x.theme.base = v)))),
       rangeOpt('Contrast', (v) => `${v} out of 100`, s.theme.contrast, { min: 0, max: 100, step: 5 }, (v) => void commit((x) => void (x.theme.contrast = v))),
       rangeOpt('Corner radius', (v) => `${v}px corners`, s.theme.radius, { min: 4, max: 16 }, (v) => void commit((x) => void (x.theme.radius = v))),
     ),

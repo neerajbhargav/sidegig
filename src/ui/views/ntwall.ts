@@ -323,7 +323,7 @@ export async function risograph(blob: Blob, w: number, h: number, ...set: number
 export function effectFor(bg: NtBackground, look = document.documentElement.dataset.look): Exclude<BgEffect, 'auto'> {
   if (bg.treatment && bg.treatment !== 'auto') return bg.treatment;
   if (bg.kind === 'monuments' || bg.ref.startsWith('m:')) return 'print';
-  if (look === 'native' || look === 'picture') return 'photo';
+  if (look === 'native' || look === 'space' || look === 'picture') return 'photo';
   if (bg.kind === 'collection' || bg.kind === 'upload' || bg.kind === 'url') return 'film';
   return 'print';
 }

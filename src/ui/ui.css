@@ -1,35 +1,36 @@
-/* sidegig UI. Colors come from the theme engine as --m-* variables. */
-@font-face {
-  font-family: "Google Sans Flex";
-  src: url("fonts/GoogleSansFlex-Latin.woff2") format("woff2");
-  font-weight: 400 700;
-  font-display: swap;
-}
+/* sidegig UI. Colors come from the theme engine as --m-* variables (content) and --sp-* (the space colour). */
 :root {
-  font: calc(14.5px * var(--ui-s, 1))/1.45 "Google Sans Flex", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  font-optical-sizing: auto;
+  font: calc(14px * var(--ui-s, 1))/1.4 var(--f-text);
   -webkit-font-smoothing: antialiased;
   /* Design tokens. Components use only these values: docs/DESIGN.md, checked by test/design.test.ts. */
   /* Type: seven steps of the body size. The new tab sets a smaller body; rem follows the window there. */
   --t-base: 1rem;
   --t-1: calc(var(--t-base) * 0.8); --t-2: calc(var(--t-base) * 0.8667); --t-3: var(--t-base); --t-4: calc(var(--t-base) * 1.2);
   --t-5: calc(var(--t-base) * 1.6); --t-6: calc(var(--t-base) * 2.4); --t-7: calc(var(--t-base) * 3.7333);
-  /* Corners: tiny marks, small marks, controls, tiles, cards. Pills for buttons and chips. */
-  --r-0: 0.1875rem; --r-1: 0.375rem; --r-2: 0.625rem; --r-3: 0.875rem; --r-4: 1.375rem; --r-full: 999px;
-  /* Motion: one ease-out curve. The duration says what changed: a press, a state, an opening, the whole scene. */
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Corners, after Arc: tiny marks, small marks, rows and fields, tiles and menus, cards and sheets. Pills for chips and counts. */
+  --r-0: 0.1875rem; --r-1: 0.375rem; --r-2: 0.5rem; --r-3: 0.625rem; --r-4: 0.875rem; --r-full: 999px;
+  /* Motion: a spring that settles without overshoot (critically damped, sampled). The duration says what changed. */
+  --ease: linear(0, 0.168 3%, 0.312 6%, 0.471 10%, 0.597 14%, 0.716 19%, 0.816 25%, 0.89 32%, 0.94 40%, 0.972 50%, 0.989 62%, 0.996 76%, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1); /* only for digits that change (owner, 2026-10-14) */
   --dur-press: 120ms; --dur-change: 200ms; --dur-open: 320ms; --dur-scene: 480ms;
+  /* Lift: only floating layers (menus, the command bar, sheets, toasts) and the selected row or tile (owner, 2026-10-23).
+     The theme engine (src/shared/theme.ts) replaces these with shadows in the space colour's hue. */
+  --lift-1: 0 1px 3px rgb(0 0 0 / 0.14), 0 0 0 0.5px rgb(0 0 0 / 0.08);
+  --lift-2: 0 14px 36px -8px rgb(0 0 0 / 0.26), 0 2px 8px rgb(0 0 0 / 0.08), 0 0 0 0.5px rgb(0 0 0 / 0.12);
   /* Icons: inline with small text, default, prominent. */
   --ico-s: calc(16px * var(--ui-s, 1)); --ico-m: calc(20px * var(--ui-s, 1)); --ico-l: calc(24px * var(--ui-s, 1)); --ico-xl: calc(32px * var(--ui-s, 1));
   --m-radius: var(--r-2);
   --m-radius-sm: var(--r-1);
-  /* Shared chat and help components inherit the current surface's theme. */
-  --f-text: "Google Sans Flex", ui-sans-serif, -apple-system, system-ui, sans-serif;
-  --f-mono: ui-monospace, Menlo, monospace;
+  /* The system face, like Arc: SF Pro on a Mac, Segoe UI on Windows. */
+  --f-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --f-round: ui-rounded, -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Segoe UI Variable Display", system-ui, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --c-bg: var(--m-bg); --c-panel: var(--m-surface2); --c-card: var(--m-surface);
   --c-ink: var(--m-fg); --c-mute: var(--m-fg-muted); --c-line: var(--m-border); --c-line2: var(--m-border);
   --c-signal: var(--m-accent); --c-on-signal: var(--m-accent-fg); --c-signal-fill: var(--c-signal); --hov: var(--m-hover);
+  /* The content palette, kept under its own names so a card on the space colour can take it back. */
+  --k-bg: var(--m-bg); --k-surface: var(--m-surface); --k-surface2: var(--m-surface2); --k-hover: var(--m-hover); --k-border: var(--m-border);
+  --k-fg: var(--m-fg); --k-fg-muted: var(--m-fg-muted); --k-fg-subtle: var(--m-fg-subtle); --k-accent: var(--m-accent); --k-accent-soft: var(--m-accent-soft); --k-accent-fg: var(--m-accent-fg);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--m-bg); color: var(--m-fg); }
@@ -380,9 +381,8 @@ html[data-look] {
   --t-base: 0.9375rem; --ico-s: 1rem; --ico-m: 1.25rem; --ico-l: 1.5rem; --ico-xl: 2rem; --r-btn: var(--r-full);
   --c-on-signal: #ffffff; --c-signal-fill: var(--c-signal);
   --c-signal-text: color-mix(in oklab, var(--c-signal) 72%, var(--c-ink));
-  --f-display: "Barlow Condensed", "Google Sans Flex", ui-sans-serif, sans-serif;
+  --f-display: "Barlow Condensed", ui-sans-serif, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  --f-text: "Google Sans Flex", ui-sans-serif, -apple-system, system-ui, sans-serif;
 }
 html[data-look="paper"] {
   --c-bg: #efefea; --c-panel: #e4e4de; --c-card: #f8f8f4; --c-ink: #121212; --c-mute: #58585c; --c-faint: #a3a39e;
@@ -567,10 +567,10 @@ body.ctx-newtab[data-calm] .ed-card:hover .ed-media img, body.ctx-newtab[data-ca
 }
 
 /* Studio looks speak in uppercase mono; the markup stays in plain sentence case for the native look. */
-html:not([data-look="native"]) :is(.nt-tag, .nt-mode, .nt-display-label, .scr-row, .nt-field-tag, .ai-key, .ai-to-label, .ai-native, .ai-send, .ai-link, .ai-chat-p, .ai-chat-a, .ed-lead-tag, .ed-end-mark, .ed-date, .nt-space, .nt-foot) { text-transform: uppercase; }
-html:not([data-look="native"]) .nt-date,
-html:not([data-look="native"]) .nt-input::placeholder,
-html:not([data-look="native"]) .ai-input::placeholder { text-transform: lowercase; }
+html:not([data-look="native"], [data-look="space"]) :is(.nt-tag, .nt-mode, .nt-display-label, .scr-row, .nt-field-tag, .ai-key, .ai-to-label, .ai-native, .ai-send, .ai-link, .ai-chat-p, .ai-chat-a, .ed-lead-tag, .ed-end-mark, .ed-date, .nt-space, .nt-foot) { text-transform: uppercase; }
+html:not([data-look="native"], [data-look="space"]) .nt-date,
+html:not([data-look="native"], [data-look="space"]) .nt-input::placeholder,
+html:not([data-look="native"], [data-look="space"]) .ai-input::placeholder { text-transform: lowercase; }
 .ai-key .fav.xs { width: 0.875rem; height: 0.875rem; border-radius: var(--r-0); }
 .nt-choice { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin: 1.375rem 0 0; padding: 0.875rem 1rem; border-radius: var(--r-2); background: var(--c-panel); font-size: var(--t-3); color: var(--c-mute); }
 .nt-choice b { color: var(--c-ink); font-weight: 600; }
@@ -582,11 +582,10 @@ html:not([data-look="native"]) .ai-input::placeholder { text-transform: lowercas
    Edge (Fluent), Aside / Dia / Comet / Arc (soft), Opera, Brave, Vivaldi,
    Firefox. Arc's space colours are used when Arc shares them.
    ====================================================================== */
-html[data-look="native"] {
-  --f-text: "Google Sans Flex", ui-sans-serif, -apple-system, system-ui, sans-serif;
-  --f-clock: var(--f-text); --clock-weight: 400;
-  --r-card: calc(16px * var(--ui-s, 1)); --r-field: calc(28px * var(--ui-s, 1)); --r-key: 50%; --r-btn: calc(999px * var(--ui-s, 1));
-  --field-border: transparent; --field-shadow: 0 0 0 1px rgb(32 33 36 / 0.14); --c-badge: #d93025;
+html:is([data-look="native"], [data-look="space"]) {
+  --f-clock: var(--f-text); --clock-weight: 500;
+  --r-card: var(--r-4); --r-field: var(--r-3); --r-key: var(--r-3); --r-btn: var(--r-2);
+  --field-border: transparent; --field-shadow: 0 0 0 1px var(--c-line); --c-badge: #d93025;
   --grain-op: 0;
 }
 html[data-look="native"][data-scheme="light"] {
@@ -602,22 +601,9 @@ html[data-look="native"][data-scheme="dark"] {
   --c-cap-top: #303134; --c-cap-bot: #303134; --c-cap-edge: transparent; --c-shade: rgba(0, 0, 0, 0.45);
   --field-shadow: 0 0 0 1px rgb(255 255 255 / 0.1); --c-badge: #f28b82; --c-orange: #fcad70;
 }
-/* Edge: Fluent 2 */
-html[data-look="native"][data-browser="edge"] {
-  --f-text: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --f-clock: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; --clock-weight: 300;
-  --r-card: calc(8px * var(--ui-s, 1)); --r-field: calc(8px * var(--ui-s, 1)); --r-key: calc(8px * var(--ui-s, 1)); --r-btn: calc(6px * var(--ui-s, 1));
-  --field-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-}
+/* Match browser keeps each browser's colours; the shapes and type are sidegig's own (one component set, after Arc). */
 html[data-look="native"][data-browser="edge"][data-scheme="light"] { --c-bg: #f3f3f3; --c-panel: #ebebeb; --c-card: #ffffff; --c-signal: #0f6cbd; --c-blue: #0f6cbd; --c-line: #e0e0e0; --c-cap-top: #ffffff; --c-cap-bot: #ffffff; }
-html[data-look="native"][data-browser="edge"][data-scheme="dark"] { --c-bg: #202020; --c-panel: #2b2b2b; --c-card: #2d2d2d; --c-signal: #479ef5; --c-blue: #479ef5; --c-cap-top: #2d2d2d; --c-cap-bot: #2d2d2d; --field-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); }
-/* Aside, Dia, Comet, Arc, Safari: calm white, generous corners, soft shadow, system type */
-html[data-look="native"]:is([data-browser="aside"], [data-browser="dia"], [data-browser="comet"], [data-browser="arc"], [data-browser="safari"]) {
-  --f-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
-  --f-clock: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif; --clock-weight: 200;
-  --r-card: calc(16px * var(--ui-s, 1)); --r-field: calc(20px * var(--ui-s, 1)); --r-key: calc(16px * var(--ui-s, 1)); --r-btn: calc(10px * var(--ui-s, 1));
-  --field-border: rgba(0, 0, 0, 0.08); --field-shadow: 0 0 0 1px rgb(0 0 0 / 0.08);
-}
+html[data-look="native"][data-browser="edge"][data-scheme="dark"] { --c-bg: #202020; --c-panel: #2b2b2b; --c-card: #2d2d2d; --c-signal: #479ef5; --c-blue: #479ef5; --c-cap-top: #2d2d2d; --c-cap-bot: #2d2d2d; }
 html[data-look="native"]:is([data-browser="aside"], [data-browser="dia"], [data-browser="comet"], [data-browser="arc"], [data-browser="safari"])[data-scheme="light"] {
   --c-bg: #ffffff; --c-panel: #f5f5f4; --c-card: #ffffff; --c-ink: #141414; --c-mute: #616161; --c-faint: #a0a0a0; --c-line: #ececec; --c-line2: #dcdcdc;
   --c-signal: #2f6bff; --c-cap-top: #f5f5f4; --c-cap-bot: #f5f5f4;
@@ -634,69 +620,66 @@ html[data-look="native"][data-browser="arc"] body.ctx-newtab {
   background: radial-gradient(calc(1100px * var(--ui-s, 1)) calc(620px * var(--ui-s, 1)) at 8% -12%, color-mix(in srgb, var(--c-signal) 16%, transparent), transparent 62%),
     radial-gradient(calc(900px * var(--ui-s, 1)) calc(520px * var(--ui-s, 1)) at 108% 6%, color-mix(in srgb, var(--c-blue) 12%, transparent), transparent 60%), var(--c-bg);
 }
-/* Opera, Brave, Vivaldi, Firefox: their accents and corners */
-html[data-look="native"][data-browser="opera"] { --f-text: system-ui, -apple-system, "Segoe UI", sans-serif; --c-signal: #ff1b2d; --r-card: calc(12px * var(--ui-s, 1)); --r-field: calc(12px * var(--ui-s, 1)); --r-key: calc(12px * var(--ui-s, 1)); --r-btn: calc(8px * var(--ui-s, 1)); }
-html[data-look="native"][data-browser="brave"] { --f-text: "Inter", system-ui, -apple-system, sans-serif; --c-signal: #fb542b; --r-card: calc(12px * var(--ui-s, 1)); --r-field: calc(12px * var(--ui-s, 1)); --r-key: calc(12px * var(--ui-s, 1)); --r-btn: calc(8px * var(--ui-s, 1)); }
-html[data-look="native"][data-browser="vivaldi"] { --f-text: system-ui, -apple-system, "Segoe UI", sans-serif; --c-signal: #ef3939; --r-card: calc(8px * var(--ui-s, 1)); --r-field: calc(8px * var(--ui-s, 1)); --r-key: calc(8px * var(--ui-s, 1)); --r-btn: calc(6px * var(--ui-s, 1)); }
-html[data-look="native"][data-browser="firefox"] { --f-text: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; --c-signal: #0061e0; --r-card: calc(8px * var(--ui-s, 1)); --r-field: calc(8px * var(--ui-s, 1)); --r-key: calc(8px * var(--ui-s, 1)); --r-btn: calc(4px * var(--ui-s, 1)); }
-html[data-look="native"] { --f-display: var(--f-text); --f-mono: var(--f-text); }
+/* Opera, Brave, Vivaldi, Firefox: their accents */
+html[data-look="native"][data-browser="opera"] { --c-signal: #ff1b2d; }
+html[data-look="native"][data-browser="brave"] { --c-signal: #fb542b; }
+html[data-look="native"][data-browser="vivaldi"] { --c-signal: #ef3939; }
+html[data-look="native"][data-browser="firefox"] { --c-signal: #0061e0; }
+html:is([data-look="native"], [data-look="space"]) { --f-display: var(--f-text); --f-mono: var(--f-text); }
 
 /* Native look: the instruments turn into ordinary, well-made controls. */
-html[data-look="native"] :is(.nt-frame, .nt-grain, .nt-ascii, .nt-tag, .nt-display-label, .nt-field-tag, .nt-num) { display: none; }
-html[data-look="native"] :is(.nt-top, .nt-mode, .nt-label, .ed-sec-h, .ed-kicker, .ed-date, .seg button, .chip, .btn, .ed-links a, .ed-end-mark, .nt-space, .nt-foot, .ai-sub, .ai-to-label, .ai-key, .ai-link, .ai-send, .ai-hint, .ai-chat-p, .ai-chat-a, .stack-name, .scr-row, .ed-lead-tag, .nt-modes-hint) {
+html:is([data-look="native"], [data-look="space"]) :is(.nt-frame, .nt-grain, .nt-ascii, .nt-tag, .nt-display-label, .nt-field-tag, .nt-num) { display: none; }
+html:is([data-look="native"], [data-look="space"]) :is(.nt-top, .nt-mode, .nt-label, .ed-sec-h, .ed-kicker, .ed-date, .seg button, .chip, .btn, .ed-links a, .ed-end-mark, .nt-space, .nt-foot, .ai-sub, .ai-to-label, .ai-key, .ai-link, .ai-send, .ai-hint, .ai-chat-p, .ai-chat-a, .stack-name, .scr-row, .ed-lead-tag, .nt-modes-hint) {
   text-transform: none; letter-spacing: 0; font-family: var(--f-text);
 }
-html[data-look="native"] .nt-top { font-size: var(--t-3); }
-html[data-look="native"] .nt-word { font-family: var(--f-text); font-weight: 600; font-size: var(--t-4); letter-spacing: -0.01em; }
-html[data-look="native"] .nt-time { font-family: var(--f-clock); font-weight: var(--clock-weight); font-size: clamp(4.75rem, 9vw, 7.75rem); letter-spacing: -0.045em; line-height: 0.9; margin-left: 0; }
-html[data-look="native"] .nt-ampm { font-family: var(--f-text); letter-spacing: 0; font-size: var(--t-3); text-transform: none; }
-html[data-look="native"] .nt-date { font-family: var(--f-text); font-weight: 400; font-size: var(--t-4); margin-top: 0.625rem; }
-html[data-look="native"] .dim { color: var(--c-mute); }
-html[data-look="native"] .led { box-shadow: none; }
-html[data-look="native"] .nt-input::placeholder, html[data-look="native"] .ai-input::placeholder { font-family: var(--f-text); letter-spacing: 0; font-size: var(--t-3); }
-html[data-look="native"] .nt-results { border-radius: var(--r-card); border-color: var(--c-line); box-shadow: none; }
-html[data-look="native"] .nt-keys { justify-content: center; gap: 0.875rem 0.625rem; margin-top: 1.75rem; }
-html[data-look="native"] .nt-key { width: 5.5rem; gap: 0.5rem; }
-html[data-look="native"] .nt-cap { width: 3.5rem; height: 3.5rem; border-radius: var(--r-key); background: var(--c-panel); box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .nt-top { font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .nt-word { font-family: var(--f-text); font-weight: 600; font-size: var(--t-4); letter-spacing: -0.01em; }
+html:is([data-look="native"], [data-look="space"]) .nt-time { font-family: var(--f-clock); font-weight: var(--clock-weight); font-size: clamp(4.75rem, 9vw, 7.75rem); letter-spacing: -0.045em; line-height: 0.9; margin-left: 0; }
+html:is([data-look="native"], [data-look="space"]) .nt-ampm { font-family: var(--f-text); letter-spacing: 0; font-size: var(--t-3); text-transform: none; }
+html:is([data-look="native"], [data-look="space"]) .nt-date { font-family: var(--f-text); font-weight: 400; font-size: var(--t-4); margin-top: 0.625rem; }
+html:is([data-look="native"], [data-look="space"]) .dim { color: var(--c-mute); }
+html:is([data-look="native"], [data-look="space"]) .led { box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .nt-input::placeholder, html:is([data-look="native"], [data-look="space"]) .ai-input::placeholder { font-family: var(--f-text); letter-spacing: 0; font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .nt-results { border-radius: var(--r-card); border-color: var(--c-line); box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .nt-keys { justify-content: center; gap: 0.875rem 0.625rem; margin-top: 1.75rem; }
+html:is([data-look="native"], [data-look="space"]) .nt-key { width: 5.5rem; gap: 0.5rem; }
+html:is([data-look="native"], [data-look="space"]) .nt-cap { width: 3.5rem; height: 3.5rem; border-radius: var(--r-key); background: var(--c-panel); box-shadow: none; }
 html[data-look="native"]:is([data-browser="edge"], [data-browser="aside"], [data-browser="dia"], [data-browser="comet"], [data-browser="arc"], [data-browser="safari"]) .nt-cap { background: var(--c-card); box-shadow: 0 0 0 1px var(--c-line); }
-html[data-look="native"] .nt-key:hover .nt-cap { transform: none; background: color-mix(in srgb, var(--c-ink) 7%, var(--c-panel)); }
-html[data-look="native"] .nt-key:active .nt-cap, html[data-look="native"] .nt-key.pressed .nt-cap { transform: scale(0.95); box-shadow: none; }
-html[data-look="native"] .nt-label { font-size: var(--t-3); color: var(--c-ink); max-width: 5.375rem; }
-html[data-look="native"] .ed-sec-h { font-size: var(--t-3); font-weight: 600; gap: 0.625rem; }
-html[data-look="native"] .sec-no { font-size: var(--t-3); font-weight: 500; font-variant-numeric: tabular-nums; }
-html[data-look="native"] .sec-count { font-size: var(--t-3); }
-html[data-look="native"] .sec-dot { width: 0.5rem; height: 0.5rem; box-shadow: none; }
-html[data-look="native"] .ed-head { border-bottom: 1px solid var(--c-line); }
-html[data-look="native"] .ed-name { font-family: var(--f-clock); font-weight: 600; font-size: var(--t-5); letter-spacing: -0.02em; line-height: 1.1; }
-html[data-look="native"] .ed-date { font-size: var(--t-3); margin-top: 0.25rem; }
-html[data-look="native"] .seg { background: var(--c-panel); border: 0; border-radius: var(--r-full); padding: 0.25rem; }
-html[data-look="native"] .seg button { font-size: var(--t-3); border-radius: var(--r-full); padding: 0.375rem 0.75rem; }
-html[data-look="native"] .seg button[aria-pressed="true"] { background: var(--c-card); color: var(--c-ink); box-shadow: none; }
-html[data-look="native"] .ed-card { border-radius: var(--r-card); }
-html[data-look="native"] .ed-card:hover { border-color: var(--c-line2); box-shadow: none; }
-html[data-look="native"] .ed-card[data-shape="lead"] { border: 1px solid var(--c-line); box-shadow: none; }
-html[data-look="native"] .ed-card[data-shape="lead"] .ed-title { font-family: var(--f-clock); font-weight: 600; font-size: var(--t-6); line-height: 1.15; letter-spacing: -0.02em; }
-html[data-look="native"] .ed-kicker { font-size: var(--t-3); }
-html[data-look="native"] .ed-lead-tag { background: color-mix(in srgb, var(--c-signal) 14%, transparent); color: var(--c-signal-text) !important; font-size: var(--t-2); font-weight: 600; }
-html[data-look="native"] .chip { font-size: var(--t-3); border-radius: var(--r-btn); }
-html[data-look="native"] .chip[aria-pressed="true"] { background: var(--c-ink); color: var(--c-bg); }
-html[data-look="native"] .ed-links a { font-size: var(--t-3); }
-html[data-look="native"] .ed-end { border-top: 1px solid var(--c-line); }
-html[data-look="native"] .ed-end-mark { font-weight: 600; font-size: var(--t-3); }
-html[data-look="native"] .ed-setup { border: 1px solid var(--c-line); box-shadow: none; border-radius: var(--r-card); }
-html[data-look="native"] .ed-setup-title { font-family: var(--f-clock); font-weight: 600; font-size: var(--t-5); letter-spacing: -0.02em; }
-html[data-look="native"] .ed-ichip { font-family: var(--f-text); font-size: var(--t-3); }
-html[data-look="native"] .stack-name { font-size: var(--t-3); }
-html[data-look="native"] .ai-input { padding-left: 1.375rem; }
-html[data-look="native"] .ai-key { height: 2rem; font-size: var(--t-3); border-radius: var(--r-full); background: var(--c-panel); box-shadow: none; color: var(--c-mute); padding: 0 0.75rem 0 0.625rem; }
-html[data-look="native"] .ai-key[aria-checked="true"] { background: var(--c-card); color: var(--c-ink); box-shadow: 0 0 0 1.5px var(--c-ink); }
-html[data-look="native"] .nt-choice { border-radius: var(--r-card); }
-html[data-look="native"] .ctx-newtab ::selection, html[data-look="native"] ::selection { background: color-mix(in srgb, var(--c-signal) 30%, transparent); color: inherit; }
+html:is([data-look="native"], [data-look="space"]) .nt-key:hover .nt-cap { transform: none; background: color-mix(in srgb, var(--c-ink) 7%, var(--c-panel)); }
+html:is([data-look="native"], [data-look="space"]) .nt-key:active .nt-cap, html:is([data-look="native"], [data-look="space"]) .nt-key.pressed .nt-cap { transform: scale(0.95); box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .nt-label { font-size: var(--t-3); color: var(--c-ink); max-width: 5.375rem; }
+html:is([data-look="native"], [data-look="space"]) .ed-sec-h { font-size: var(--t-3); font-weight: 600; gap: 0.625rem; }
+html:is([data-look="native"], [data-look="space"]) .sec-no { font-size: var(--t-3); font-weight: 500; font-variant-numeric: tabular-nums; }
+html:is([data-look="native"], [data-look="space"]) .sec-count { font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .sec-dot { width: 0.5rem; height: 0.5rem; box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .ed-head { border-bottom: 1px solid var(--c-line); }
+html:is([data-look="native"], [data-look="space"]) .ed-name { font-family: var(--f-clock); font-weight: 600; font-size: var(--t-5); letter-spacing: -0.02em; line-height: 1.1; }
+html:is([data-look="native"], [data-look="space"]) .ed-date { font-size: var(--t-3); margin-top: 0.25rem; }
+html:is([data-look="native"], [data-look="space"]) .seg { background: var(--c-panel); border: 0; border-radius: var(--r-full); padding: 0.25rem; }
+html:is([data-look="native"], [data-look="space"]) .seg button { font-size: var(--t-3); border-radius: var(--r-full); padding: 0.375rem 0.75rem; }
+html:is([data-look="native"], [data-look="space"]) .seg button[aria-pressed="true"] { background: var(--c-card); color: var(--c-ink); box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .ed-card { border-radius: var(--r-card); }
+html:is([data-look="native"], [data-look="space"]) .ed-card:hover { border-color: var(--c-line2); box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .ed-card[data-shape="lead"] { border: 1px solid var(--c-line); box-shadow: none; }
+html:is([data-look="native"], [data-look="space"]) .ed-card[data-shape="lead"] .ed-title { font-family: var(--f-clock); font-weight: 600; font-size: var(--t-6); line-height: 1.15; letter-spacing: -0.02em; }
+html:is([data-look="native"], [data-look="space"]) .ed-kicker { font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .ed-lead-tag { background: color-mix(in srgb, var(--c-signal) 14%, transparent); color: var(--c-signal-text) !important; font-size: var(--t-2); font-weight: 600; }
+html:is([data-look="native"], [data-look="space"]) .chip { font-size: var(--t-3); border-radius: var(--r-btn); }
+html:is([data-look="native"], [data-look="space"]) .chip[aria-pressed="true"] { background: var(--c-ink); color: var(--c-bg); }
+html:is([data-look="native"], [data-look="space"]) .ed-links a { font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .ed-end { border-top: 1px solid var(--c-line); }
+html:is([data-look="native"], [data-look="space"]) .ed-end-mark { font-weight: 600; font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .ed-setup { border: 1px solid var(--c-line); box-shadow: none; border-radius: var(--r-card); }
+html:is([data-look="native"], [data-look="space"]) .ed-setup-title { font-family: var(--f-clock); font-weight: 600; font-size: var(--t-5); letter-spacing: -0.02em; }
+html:is([data-look="native"], [data-look="space"]) .ed-ichip { font-family: var(--f-text); font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .stack-name { font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .ai-input { padding-left: 1.375rem; }
+html:is([data-look="native"], [data-look="space"]) .ai-key { height: 2rem; font-size: var(--t-3); border-radius: var(--r-full); background: var(--c-panel); box-shadow: none; color: var(--c-mute); padding: 0 0.75rem 0 0.625rem; }
+html:is([data-look="native"], [data-look="space"]) .ai-key[aria-checked="true"] { background: var(--c-card); color: var(--c-ink); box-shadow: 0 0 0 1.5px var(--c-ink); }
+html:is([data-look="native"], [data-look="space"]) .nt-choice { border-radius: var(--r-card); }
+html:is([data-look="native"], [data-look="space"]) .ctx-newtab ::selection, html:is([data-look="native"], [data-look="space"]) ::selection { background: color-mix(in srgb, var(--c-signal) 30%, transparent); color: inherit; }
 
 /* Sidebar panel, drawer and settings follow the browser's type too. */
-body[data-browser="edge"]:not(.ctx-newtab) { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
-body:is([data-browser="aside"], [data-browser="dia"], [data-browser="comet"], [data-browser="arc"], [data-browser="safari"]):not(.ctx-newtab) { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif; }
-body[data-browser="brave"]:not(.ctx-newtab), body[data-browser="firefox"]:not(.ctx-newtab) { font-family: "Inter", system-ui, -apple-system, sans-serif; }
 
 /* ---------- everyday tools (both looks) ---------- */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -745,22 +728,22 @@ body[data-browser="brave"]:not(.ctx-newtab), body[data-browser="firefox"]:not(.c
 .nt2[data-wall] .nt-page { z-index: 1; }
 
 /* native versions */
-html[data-look="native"] .nt-greet { font-family: var(--f-text); text-transform: none; letter-spacing: -0.01em; font-size: var(--t-5); font-weight: 500; color: var(--c-ink); margin-bottom: 0.25rem; }
-html[data-look="native"] .nt-analog .face { fill: var(--c-panel); stroke: none; }
-html[data-look="native"] .wx-temp { font-family: var(--f-clock); font-weight: 400; font-size: var(--t-5); }
-html[data-look="native"] .launch-item { font-family: var(--f-text); text-transform: none; letter-spacing: 0; font-size: var(--t-3); }
-html[data-look="native"] .nt-pop { border-color: var(--c-line); border-radius: var(--r-card); }
-html[data-look="native"] .todo-check { border-radius: 50%; }
-html[data-look="native"] .todo-check[aria-checked="true"] { background: var(--c-signal); border-color: var(--c-signal); }
+html:is([data-look="native"], [data-look="space"]) .nt-greet { font-family: var(--f-text); text-transform: none; letter-spacing: -0.01em; font-size: var(--t-5); font-weight: 500; color: var(--c-ink); margin-bottom: 0.25rem; }
+html:is([data-look="native"], [data-look="space"]) .nt-analog .face { fill: var(--c-panel); stroke: none; }
+html:is([data-look="native"], [data-look="space"]) .wx-temp { font-family: var(--f-clock); font-weight: 400; font-size: var(--t-5); }
+html:is([data-look="native"], [data-look="space"]) .launch-item { font-family: var(--f-text); text-transform: none; letter-spacing: 0; font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .nt-pop { border-color: var(--c-line); border-radius: var(--r-card); }
+html:is([data-look="native"], [data-look="space"]) .todo-check { border-radius: 50%; }
+html:is([data-look="native"], [data-look="space"]) .todo-check[aria-checked="true"] { background: var(--c-signal); border-color: var(--c-signal); }
 
 /* risograph wallpaper: two inks, crisp grain, fading into the page */
 html[data-look="paper"] { --riso-op: 0.55; }
 html[data-look="night"] { --riso-op: 0.5; }
 html[data-look="ultramarine"] { --riso-op: 0.62; }
-html[data-look="native"] { --riso-op: 0.3; }
+html:is([data-look="native"], [data-look="space"]) { --riso-op: 0.3; }
 .nt-brief { margin: 0 0 1.125rem; font-family: var(--f-mono); font-size: var(--t-2); letter-spacing: 0.04em; color: var(--c-mute); max-width: 40rem; line-height: 1.6; }
 .nt-brief b { color: var(--c-ink); font-weight: 500; }
-html[data-look="native"] .nt-brief { font-family: var(--f-text); font-size: var(--t-3); letter-spacing: 0; margin: calc(2px * var(--ui-s, 1)) 0 1rem; }
+html:is([data-look="native"], [data-look="space"]) .nt-brief { font-family: var(--f-text); font-size: var(--t-3); letter-spacing: 0; margin: calc(2px * var(--ui-s, 1)) 0 1rem; }
 .nt-gear[aria-pressed="true"] { color: var(--c-signal-text); }
 @media (prefers-reduced-motion: reduce) { .nt-wall img.riso { transition: none; } }
 
@@ -866,7 +849,7 @@ html:is([data-look="custom"], [data-look="picture"]) {
 .nt-cz-btn:hover { border-color: var(--c-ink); }
 .nt-cz-btn:focus-visible { outline: calc(2px * var(--ui-s, 1)) solid var(--c-signal); outline-offset: calc(2px * var(--ui-s, 1)); }
 .cz-dot { width: 0.9375rem; height: 0.9375rem; border-radius: 50%; flex: none; }
-html[data-look="native"] .nt-cz-btn { font-family: var(--f-text); text-transform: none; letter-spacing: 0; font-size: var(--t-3); border-color: var(--c-line); }
+html:is([data-look="native"], [data-look="space"]) .nt-cz-btn { font-family: var(--f-text); text-transform: none; letter-spacing: 0; font-size: var(--t-3); border-color: var(--c-line); }
 .nt-cz {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(25rem, 92vw); display: flex; flex-direction: column;
   background: linear-gradient(var(--c-card), var(--c-card)), var(--c-bg); color: var(--c-ink);
@@ -877,7 +860,7 @@ html[data-cz] .nt2 { padding-right: min(25rem, 92vw); }
 .cz-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.625rem; padding: 0.75rem 0.875rem; border-bottom: 1px solid var(--c-line); }
 .cz-head > .nt-gear { grid-column: 2; grid-row: 1; }
 .cz-head b { font-family: var(--f-display); font-weight: 500; font-size: var(--t-5); letter-spacing: -0.01em; }
-html[data-look="native"] .cz-head b { font-family: var(--f-text); font-weight: 600; font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .cz-head b { font-family: var(--f-text); font-weight: 600; font-size: var(--t-3); }
 .cz-tabs { grid-column: 1 / -1; grid-row: 2; display: flex; gap: calc(2px * var(--ui-s, 1)); padding: 0.25rem; border-radius: var(--r-full); background: var(--c-panel); }
 .cz-tabs button { all: unset; flex: 1; text-align: center; cursor: pointer; padding: 0.375rem 0.5rem; border-radius: var(--r-full); font-size: var(--t-3); color: var(--c-mute); }
 .cz-tabs [aria-selected="true"] { background: var(--c-card); color: var(--c-ink); box-shadow: none; }
@@ -889,7 +872,7 @@ html[data-look="native"] .cz-head b { font-family: var(--f-text); font-weight: 6
 .cz-theme:focus-visible { outline: calc(2px * var(--ui-s, 1)) solid var(--c-signal); outline-offset: calc(2px * var(--ui-s, 1)); }
 .cz-prev { position: relative; display: block; height: 4.875rem; border-radius: var(--r-2); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
 .cz-time { position: absolute; left: 0.625rem; top: 0.4375rem; font-family: "Barlow Condensed", var(--f-text); font-weight: 200; font-size: var(--t-6); line-height: 1; letter-spacing: -0.03em; }
-.cz-prev[data-studio="false"] .cz-time { font-family: "Google Sans Flex", system-ui, sans-serif; font-weight: 400; font-size: var(--t-5); top: 0.625rem; }
+.cz-prev[data-studio="false"] .cz-time { font-family: var(--f-text); font-weight: 400; font-size: var(--t-5); top: 0.625rem; }
 .cz-bar { position: absolute; left: 0.625rem; bottom: 0.6875rem; width: 52%; height: 0.5625rem; border-radius: var(--r-0); }
 .cz-keys { position: absolute; right: 0.625rem; bottom: 0.625rem; display: flex; gap: 0.25rem; }
 .cz-keys i { width: 0.6875rem; height: 0.6875rem; border-radius: var(--r-0); border: 1.5px solid; box-sizing: border-box; }
@@ -897,7 +880,7 @@ html[data-look="native"] .cz-head b { font-family: var(--f-text); font-weight: 6
 .cz-note { font-size: var(--t-2); color: var(--c-mute); padding: 0 0.25rem 0.25rem; }
 .cz-sec { margin-top: 1.375rem; }
 .cz-sec-h { margin-bottom: 0.625rem; font-family: var(--f-mono); font-size: var(--t-2); letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-mute); }
-html[data-look="native"] .cz-sec-h { font-family: var(--f-text); font-size: var(--t-3); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--c-ink); }
+html:is([data-look="native"], [data-look="space"]) .cz-sec-h { font-family: var(--f-text); font-size: var(--t-3); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--c-ink); }
 .cz-custom { display: flex; gap: 0.875rem; }
 .cz-color { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; font-size: var(--t-3); color: var(--c-mute); cursor: pointer; }
 .cz-color input { width: 3.25rem; height: 2.25rem; padding: calc(2px * var(--ui-s, 1)); border: 1px solid var(--c-line2); border-radius: var(--r-2); background: var(--c-card); cursor: pointer; }
@@ -1037,7 +1020,7 @@ html[data-look] { font-size: calc(clamp(13px, calc(6.4px + 0.4vw + 0.36vh), 19.5
 .nt-greet { margin-bottom: 0.625rem; }
 .nt-brief { margin: 0 auto 0.875rem; text-align: center; }
 .nt-time { margin-left: 0; font-size: clamp(5.5rem, min(11vw, 19vh), 13.125rem); }
-html[data-look="native"] .nt-time { font-size: clamp(4.5rem, min(8.5vw, 15vh), 9.375rem); }
+html:is([data-look="native"], [data-look="space"]) .nt-time { font-size: clamp(4.5rem, min(8.5vw, 15vh), 9.375rem); }
 .nt-date { margin-top: 0.75rem; }
 .nt-keys { justify-content: center; gap: 1rem 0.875rem; margin-top: 1.75rem; }
 /* Today: the list and the edition readout, two equal cards. */
@@ -1124,7 +1107,7 @@ svg[aria-hidden][width="32"] { width: var(--ico-xl); height: var(--ico-xl); }
 }
 .nt2[data-panels="clear"] { --card-bg: color-mix(in oklab, var(--c-card) 8%, transparent); --card-line: color-mix(in oklab, var(--c-ink) 18%, transparent); --card-blur: blur(calc(2px * var(--ui-s, 1))); }
 /* Dark pages: the glass darkens what's behind it instead of lightening it. */
-html:is([data-look="night"], [data-look="cobalt"], [data-look="phosphor"], [data-look="ultramarine"], [data-look="native"][data-scheme="dark"], [data-look="picture"][data-pal="dark"]) .nt2 { --glass-tone: 0.72; --card-edge: color-mix(in oklab, #fff 14%, transparent); }
+html:is([data-look="night"], [data-look="cobalt"], [data-look="phosphor"], [data-look="ultramarine"], [data-look="native"][data-scheme="dark"], [data-look="space"][data-scheme="dark"], [data-look="picture"][data-pal="dark"]) .nt2 { --glass-tone: 0.72; --card-edge: color-mix(in oklab, #fff 14%, transparent); }
 /* Grey text inside cards leans toward the ink so it reads on glass. */
 .nt2[data-wall] { --c-mute-glass: color-mix(in oklab, var(--c-ink) 38%, var(--c-mute)); }
 .nt2[data-wall] .nt-card { --c-mute: var(--c-mute-glass); }
@@ -1182,12 +1165,12 @@ html[data-look] .nt2 .nt-cz-btn:hover { background: var(--hov); }
 html[data-look] .nt2 .nt-time { font-size: clamp(4rem, 5.6vw, 7.25rem); line-height: 0.85; margin: 0; letter-spacing: -0.03em; white-space: nowrap; }
 html[data-look] .nt2 .nt-ampm { font-size: var(--t-3); margin-left: 0.5rem; vertical-align: top; }
 html[data-look] .nt2 .nt-date { font-size: var(--t-5); margin-top: 0.625rem; }
-html[data-look="native"] .nt2 .nt-date { font-size: var(--t-4); }
+html:is([data-look="native"], [data-look="space"]) .nt2 .nt-date { font-size: var(--t-4); }
 .nt-hm { display: inline-flex; }
 
 /* Greeting over the box: a statement, centred. */
 html[data-look] .nt2 .nt-greet { margin: 0; font: 300 clamp(2.25rem, 3vw, 3.5rem)/1.05 var(--f-display); letter-spacing: -0.01em; text-transform: none; color: var(--c-ink); }
-html[data-look="native"] .nt2 .nt-greet { font: 500 clamp(1.875rem, 2.4vw, 2.75rem)/1.15 var(--f-text); letter-spacing: -0.025em; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .nt-greet { font: 500 clamp(1.875rem, 2.4vw, 2.75rem)/1.15 var(--f-text); letter-spacing: -0.025em; }
 html[data-look] .nt2 .nt-brief { margin: 0.625rem auto 0; text-align: center; }
 
 /* The box: Search | AI tabs inside it, one glowing button. */
@@ -1241,9 +1224,9 @@ html[data-look] .nt2 .nt-cap .fav { width: 1.875rem; height: 1.875rem; }
 .wx-now { display: flex; align-items: center; gap: 0.75rem; }
 .wx-icon { color: var(--c-ink); }
 .wx-deg { font: 300 0.5em/1 var(--f-text); vertical-align: 0.75em; margin-left: 0.04em; }
-html:not([data-look="native"]) .nt2 .nt-label { letter-spacing: 0.04em; font-size: var(--t-2); }
+html:not([data-look="native"], [data-look="space"]) .nt2 .nt-label { letter-spacing: 0.04em; font-size: var(--t-2); }
 .wx-temp { font: 300 var(--t-7)/1 var(--f-display); letter-spacing: -0.02em; }
-html[data-look="native"] .wx-temp { font: 400 var(--t-6)/1 var(--f-text); letter-spacing: -0.03em; }
+html:is([data-look="native"], [data-look="space"]) .wx-temp { font: 400 var(--t-6)/1 var(--f-text); letter-spacing: -0.03em; }
 .wx-desc { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; font-size: var(--t-3); color: var(--c-mute); }
 .wx-desc b { color: var(--c-ink); font-weight: 500; }
 .wx-days { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.25rem; margin-top: 0.875rem; padding-top: 0.75rem; border-top: 1px solid var(--card-line); }
@@ -1279,7 +1262,7 @@ html[data-look="native"] .wx-temp { font: 400 var(--t-6)/1 var(--f-text); letter
 /* Pomodoro: quiet until it runs, then the one coloured card on the page. */
 .pomo-read { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .pomo-time { display: inline-flex; justify-content: center; font: 300 var(--t-6)/1 var(--f-display); font-variant-numeric: tabular-nums; }
-html[data-look="native"] .pomo-time { font: 500 var(--t-5)/1 var(--f-text); letter-spacing: -0.02em; }
+html:is([data-look="native"], [data-look="space"]) .pomo-time { font: 500 var(--t-5)/1 var(--f-text); letter-spacing: -0.02em; }
 .pomo-phase { margin-top: 0.375rem; font-size: var(--t-2); color: var(--c-mute); }
 html[data-look] .nt2 .pomo-go { width: auto; min-width: 6rem; box-sizing: border-box; align-self: flex-start; border-radius: var(--r-full); }
 .pomo-dots { display: flex; gap: 0.375rem; }
@@ -1446,11 +1429,11 @@ html[data-look="phosphor"] :is(.nt-time, .ai-title) { text-shadow: none; }
 }
 
 /* Studio looks keep their colours and display face, not the all-caps mono chrome. */
-html:not([data-look="native"]) :is(.nt-tag, .ai-key, .ai-to-label, .ai-link, .ai-chat-p, .ai-chat-a, .ed-lead-tag, .ed-end-mark, .ed-date, .nt-space, .nt-top, .cz-sec-h, .ed-sec-h, .ed-kicker, .ctx-newtab .seg button, .ctx-newtab .chip, .nt-credit, .cz-tabs button) {
+html:not([data-look="native"], [data-look="space"]) :is(.nt-tag, .ai-key, .ai-to-label, .ai-link, .ai-chat-p, .ai-chat-a, .ed-lead-tag, .ed-end-mark, .ed-date, .nt-space, .nt-top, .cz-sec-h, .ed-sec-h, .ed-kicker, .ctx-newtab .seg button, .ctx-newtab .chip, .nt-credit, .cz-tabs button) {
   text-transform: none; letter-spacing: 0; font-family: var(--f-text);
 }
-html:not([data-look="native"]) .nt-date { text-transform: none; }
-html:not([data-look="native"]) .nt-input::placeholder, html:not([data-look="native"]) .ai-input::placeholder { text-transform: none; }
+html:not([data-look="native"], [data-look="space"]) .nt-date { text-transform: none; }
+html:not([data-look="native"], [data-look="space"]) .nt-input::placeholder, html:not([data-look="native"], [data-look="space"]) .ai-input::placeholder { text-transform: none; }
 html[data-look] .nt2 .nt-label { font: 500 var(--t-3)/1.2 var(--f-text); letter-spacing: 0; text-transform: none; }
 html[data-look] .nt2 .nt-credit { font: 500 var(--t-2)/1 var(--f-text); letter-spacing: 0.02em; }
 .ctx-newtab .ed-sec-h { font: 600 var(--t-3)/1.3 var(--f-text); letter-spacing: 0; text-transform: none; color: var(--c-ink); }
@@ -1495,7 +1478,7 @@ html[data-icons="themed"] img.fav { filter: grayscale(1) contrast(1.05); }
 /* Black-only icons turn white on dark surfaces so they never vanish. */
 html[data-ui="dark"] img.fav[data-ink],
 html:is([data-look="night"], [data-look="cobalt"], [data-look="phosphor"], [data-look="ultramarine"], [data-pal="dark"]) img.fav[data-ink],
-html[data-look="native"][data-scheme="dark"] img.fav[data-ink] { filter: invert(1); }
+html[data-look="native"][data-scheme="dark"] img.fav[data-ink], html[data-look="space"][data-scheme="dark"] img.fav[data-ink] { filter: invert(1); }
 /* Letters: one quiet tone, the size of a square icon. */
 .mono { background: color-mix(in oklch, var(--m-fg) 9%, var(--m-surface)); color: var(--m-fg); border-radius: 24%; transform: scale(0.9); }
 .ctx-newtab .mono { background: color-mix(in oklab, var(--c-ink) 9%, transparent); color: var(--c-ink); }
@@ -1514,7 +1497,7 @@ html[data-look] .nt2 .nt-cap :is(img.fav, .glyph, .mono) { width: 2rem; height: 
 /* The greeting heads the search box. */
 .nt-ask .ask-head { padding: 0.75rem 1.125rem 0.125rem; }
 html[data-look] .nt2 .nt-ask .nt-greet { margin: 0; text-align: left; font: 400 clamp(1.625rem, 2.2vw, 2.25rem)/1.15 var(--f-display); letter-spacing: -0.01em; color: var(--c-ink); }
-html[data-look="native"] .nt2 .nt-ask .nt-greet { font: 500 clamp(1.5rem, 2vw, 2rem)/1.2 var(--f-text); letter-spacing: -0.02em; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .nt-ask .nt-greet { font: 500 clamp(1.5rem, 2vw, 2rem)/1.2 var(--f-text); letter-spacing: -0.02em; }
 html[data-look] .nt2 .nt-ask .nt-brief { margin: 0.375rem 0 0; text-align: left; }
 /* Bookmarks: one tray; the tiles inside are plain, so labels sit on glass, not on the photo. */
 .nt2 .nt-shelf.nt-card { width: min(54rem, 100%); margin: 1.5rem auto 0; padding: 1.125rem 1rem 1rem; }
@@ -1602,7 +1585,7 @@ html[data-look] .nt2 .nt-ampm { font: 400 var(--t-3)/1 var(--f-text); text-trans
   --anatomy-mono: var(--f-text);
   --anatomy-red: var(--c-pink, #e5484d); --anatomy-green: var(--c-green, #30a46c); --anatomy-blue: var(--c-blue, #3e63dd);
 }
-html:is([data-look="night"], [data-look="cobalt"], [data-look="phosphor"], [data-look="ultramarine"], [data-look="native"][data-scheme="dark"], [data-look="picture"][data-pal="dark"]) :is(.nt2, .nt-cz) .iso {
+html:is([data-look="night"], [data-look="cobalt"], [data-look="phosphor"], [data-look="ultramarine"], [data-look="native"][data-scheme="dark"], [data-look="space"][data-scheme="dark"], [data-look="picture"][data-pal="dark"]) :is(.nt2, .nt-cz) .iso {
   --fig-paper: color-mix(in oklab, var(--c-bg) 88%, var(--c-ink));
   --anatomy-face: color-mix(in oklab, var(--fig-paper) 88%, #fff);
   --anatomy-top: color-mix(in oklab, var(--fig-paper) 84%, #fff);
@@ -2056,7 +2039,7 @@ html[data-look] .nt2 .gw-search > .nt-ask { height: 100%; display: flex; flex-di
 .cv-empty { margin: auto 0; padding: clamp(1rem, 12vh, 7rem) 0 1rem; display: flex; flex-direction: column; gap: 1rem; }
 .cv-panel .cv-empty { margin: 0; padding: 0.75rem 0 1rem; }
 .cv-empty h3 { margin: 0; font: 400 clamp(1.5rem, 2.6vw, 2rem)/1.2 var(--f-display); letter-spacing: -0.01em; }
-html[data-look="native"] .cv-empty h3 { font: 500 var(--t-5)/1.2 var(--f-text); letter-spacing: -0.02em; }
+html:is([data-look="native"], [data-look="space"]) .cv-empty h3 { font: 500 var(--t-5)/1.2 var(--f-text); letter-spacing: -0.02em; }
 .cv-starters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .cv-starter { all: unset; box-sizing: border-box; cursor: pointer; padding: 0.5rem 0.875rem; border-radius: var(--r-full); border: 1px solid var(--c-line); font-size: var(--t-3); color: var(--c-ink); transition: background var(--dur-press) var(--ease); }
 .cv-starter:hover { background: var(--hov); }
@@ -2304,18 +2287,18 @@ html[data-chat] .nt2 .nt-page, html[data-chat] .nt2 .gw-scrim { visibility: hidd
 .gw.is-open .gw-close { display: grid; }
 .gw.is-open .gw-more { display: none; }
 .gw[data-w="todo"][data-size="s"] .todo-input { display: block; min-height: 2rem; width: calc(100% - 1.75rem); }
-html[data-look="native"] .nt2:not([data-wall]) { background: color-mix(in srgb, var(--c-panel) 50%, var(--c-bg)); }
-html[data-look="native"] .nt2:not([data-wall]) .gw > .nt-card { border-color: transparent; }
-html[data-look="native"] .nt2 .gw[data-w="calendar"][data-size="s"] .nt-cal { display: flex; flex-direction: column; }
-html[data-look="native"] .nt2 .gw[data-w="calendar"][data-size="s"] .nt-card-a { display: none; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .nt-pomo { display: flex; flex-direction: column; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-go { display: inline-flex; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-time { font-size: clamp(1.5rem, 21cqh, 2.25rem); }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-row { justify-content: space-between; flex: 1; gap: 0.5rem; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-read { align-items: flex-start; text-align: left; }
-html[data-look="native"] .nt2 .gw[data-w="notes"][data-size="s"] :is(.notes, .notes-empty) { display: block; }
-html[data-look="native"] .nt2 .gw[data-w="notes"][data-size="s"] .note { min-height: 5rem; }
-html[data-look="native"] .nt2 .gw[data-w="notes"][data-size="s"] .note-t { min-height: 3.25rem; }
+html:is([data-look="native"], [data-look="space"]) .nt2:not([data-wall]) { background: color-mix(in srgb, var(--c-panel) 50%, var(--c-bg)); }
+html:is([data-look="native"], [data-look="space"]) .nt2:not([data-wall]) .gw > .nt-card { border-color: transparent; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="calendar"][data-size="s"] .nt-cal { display: flex; flex-direction: column; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="calendar"][data-size="s"] .nt-card-a { display: none; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="s"] .nt-pomo { display: flex; flex-direction: column; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-go { display: inline-flex; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-time { font-size: clamp(1.5rem, 21cqh, 2.25rem); }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-row { justify-content: space-between; flex: 1; gap: 0.5rem; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="s"] .pomo-read { align-items: flex-start; text-align: left; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="notes"][data-size="s"] :is(.notes, .notes-empty) { display: block; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="notes"][data-size="s"] .note { min-height: 5rem; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="notes"][data-size="s"] .note-t { min-height: 3.25rem; }
 @media (max-width: 860px) {
   .welcome { padding: 1.5rem; }
   .welcome-layout { grid-template-columns: 1fr; gap: 1.5rem; }
@@ -2353,8 +2336,8 @@ input.todo-check { appearance: auto; accent-color: var(--c-signal); margin: 0; }
   .welcome-start { margin-top: 1.25rem; }
 }
 /* Native mode keeps the tools prominent at every size. Studio palettes retain the objects. */
-html[data-look="native"] .nt2 .gw :is(.fig-watch, .fig-cubes, .fig-pad, .fig-spike, .pomo-figbtn) { display: none; }
-html[data-look="native"] .nt2 .gw[data-w="clock"] .nt-timeblock.has-fig { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw :is(.fig-watch, .fig-cubes, .fig-pad, .fig-spike, .pomo-figbtn) { display: none; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="clock"] .nt-timeblock.has-fig { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 
 /* Interaction stays within its surface, including during movement. */
 html[data-look] .nt2 .nt-key:hover .nt-cap, button.fig:hover svg { transform: none; }
@@ -2495,7 +2478,7 @@ textarea.mail-draft { width: 100%; box-sizing: border-box; font-family: inherit;
 .nt-zone2 { font: 500 var(--t-2)/1.4 var(--f-mono); letter-spacing: 0.04em; color: var(--c-mute); margin-top: 0.25rem; }
 .nt-zone2[hidden] { display: none; }
 .nt-zone2 .z-time { color: var(--c-ink); }
-html[data-look="native"] .nt-zone2 { font-family: var(--f-text); letter-spacing: 0; font-size: var(--t-3); }
+html:is([data-look="native"], [data-look="space"]) .nt-zone2 { font-family: var(--f-text); letter-spacing: 0; font-size: var(--t-3); }
 
 /* The timer's controls and its history share one column beside the figure. */
 .pomo-side { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
@@ -2503,11 +2486,11 @@ html[data-look="native"] .nt-zone2 { font-family: var(--f-text); letter-spacing:
 /* Illustrated looks: at medium size the timer figure is the picture. */
 html[data-look] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-history { display: none; }
 /* Native look (no figure): controls on the left, twelve weeks of focus on the right. */
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .nt-pomo { grid-template-columns: minmax(0, 1fr); }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-fig { display: none; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side { flex-direction: row; align-items: center; gap: 1.5rem; height: 100%; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side .pomo-row { flex: 0 0 auto; }
-html[data-look="native"] .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-history { display: flex; flex: 1 1 auto; max-width: 20rem; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="m"] .nt-pomo { grid-template-columns: minmax(0, 1fr); }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-fig { display: none; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side { flex-direction: row; align-items: center; gap: 1.5rem; height: 100%; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-side .pomo-row { flex: 0 0 auto; }
+html:is([data-look="native"], [data-look="space"]) .nt2 .gw[data-w="pomodoro"][data-size="m"] .pomo-history { display: flex; flex: 1 1 auto; max-width: 20rem; }
 
 /* Stack counts as an outline pill, quieter than a badge. */
 .stack-count { min-width: calc(20px * var(--ui-s, 1)); padding: 0 calc(6px * var(--ui-s, 1)); box-sizing: border-box; border: 1px solid var(--m-border); border-radius: var(--r-full); text-align: center; line-height: calc(18px * var(--ui-s, 1)); font-size: var(--t-1); }
@@ -2570,3 +2553,201 @@ html .ai-elsewhere-bar .ai-key:hover { background: var(--hov); }
   background: rgb(var(--desk-rgb) / 0.55); border-color: var(--desk-line); -webkit-backdrop-filter: none; backdrop-filter: none;
   --c-ink: var(--desk-ink); --c-mute: var(--desk-mute); --c-bg: var(--desk-bg); --c-card: var(--desk-card); --c-panel: var(--desk-card); color: var(--desk-ink);
 }
+
+/* ======================================================================
+   Arc (owner, 2026-10-23: "take full inspiration from the design system
+   of Arc"). Three layers, like Arc's window: the frame (the space colour,
+   with grain) holds navigation; cards hold content; floating layers lift.
+   ====================================================================== */
+/* The frame: the sidebar panel, the in-page drawer and the settings page wear the space colour. */
+body:is(.ctx-panel, .ctx-drawer, .ctx-options) {
+  --m-bg: var(--sp-1); --m-surface: var(--sp-card); --m-surface2: var(--sp-card); --m-hover: var(--sp-hover); --m-border: var(--sp-line);
+  --m-fg: var(--sp-ink); --m-fg-muted: var(--sp-mute); --m-fg-subtle: var(--sp-mute); --m-accent: var(--sp-accent); --m-accent-soft: var(--sp-hover);
+  background: var(--sp-1) var(--sp-frame) fixed; color: var(--sp-ink); isolation: isolate;
+}
+html:has(> body:is(.ctx-panel, .ctx-drawer, .ctx-options)) { background: var(--sp-1); }
+/* Grain sits on the colour, under everything you read. */
+body:is(.ctx-panel, .ctx-drawer, .ctx-options)::before, html[data-look="space"] .nt2:not([data-wall])::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: var(--sp-grain); mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.5 -.25'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+/* A content card takes the content palette back: white in light, near-black in dark. */
+.frames, .ctx-options .opts > main, .welcome-setup, :is(.ctx-panel, .ctx-drawer, .ctx-options) :is(.toast, .cc-pop, .frame-help, .shelf-menu) {
+  --m-bg: var(--k-bg); --m-surface: var(--k-surface); --m-surface2: var(--k-surface2); --m-hover: var(--k-hover); --m-border: var(--k-border);
+  --m-fg: var(--k-fg); --m-fg-muted: var(--k-fg-muted); --m-fg-subtle: var(--k-fg-subtle); --m-accent: var(--k-accent); --m-accent-soft: var(--k-accent-soft); --m-accent-fg: var(--k-accent-fg);
+  --c-bg: var(--k-bg); --c-card: var(--k-bg); --c-panel: var(--k-surface2); --c-ink: var(--k-fg); --c-mute: var(--k-fg-muted); --c-line: var(--k-border); --hov: var(--k-hover);
+  color: var(--m-fg);
+}
+
+/* Toolbar rows sit on the frame: no rules under them, quiet icon buttons. */
+.bar { height: calc(44px * var(--ui-s, 1)); padding: 0 calc(6px * var(--ui-s, 1)) 0 calc(12px * var(--ui-s, 1)); }
+.bar .title { font-weight: 600; }
+.iconbtn { width: calc(30px * var(--ui-s, 1)); height: calc(30px * var(--ui-s, 1)); border-radius: var(--r-2); }
+.iconbtn[aria-pressed="true"] { color: var(--m-fg); background: var(--m-surface); }
+.appbar { border-bottom: 0; padding: calc(6px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)) calc(4px * var(--ui-s, 1)); }
+.appbar .sep { background: var(--m-border); }
+
+/* The search field is Arc's address pill: a soft white fill on the colour. */
+.field { margin: calc(2px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)); }
+.input { height: calc(36px * var(--ui-s, 1)); border-radius: var(--r-2); border: 0; background: var(--m-surface); font-size: var(--t-3); transition: background var(--dur-press) var(--ease), box-shadow var(--dur-press) var(--ease); }
+.input:hover { background: color-mix(in oklab, var(--sp-sel) 70%, transparent); }
+.input:focus { background: var(--sp-sel); box-shadow: var(--lift-1); }
+.kbd { border: 0; background: var(--m-hover); }
+
+/* Section heads are dividers: the name, a hairline, then the section's one action. */
+.label { margin: calc(16px * var(--ui-s, 1)) calc(4px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)); font-size: var(--t-2); font-weight: 600; color: var(--m-fg-muted); }
+.label .grow { height: 1px; background: var(--m-border); margin-inline: calc(4px * var(--ui-s, 1)); }
+.label .link { padding: calc(2px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)); border-radius: var(--r-1); color: var(--m-fg-muted); }
+.label .link:hover { background: var(--m-hover); }
+
+/* Favorites: Arc's tile grid. Each saved site is a soft plate; the open one is white and lifts. */
+.tiles.icons { grid-template-columns: repeat(auto-fill, minmax(calc(64px * var(--ui-s, 1)), 1fr)); gap: calc(8px * var(--ui-s, 1)); }
+.tiles.icons .tile { height: calc(44px * var(--ui-s, 1)); padding: 0; justify-content: center; border-radius: var(--r-3); background: var(--m-surface); }
+.tiles.icons .tile:hover { background: color-mix(in oklab, var(--sp-sel) 75%, transparent); }
+.tiles.icons .tile:active { transform: scale(0.97); }
+.tile { transition: background var(--dur-press) var(--ease), transform var(--dur-press) var(--ease); }
+
+/* Rows: Arc's tabs. One line, a 16px icon, the open one a white lifted row. */
+.row { min-height: calc(36px * var(--ui-s, 1)); padding: calc(6px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)); gap: calc(10px * var(--ui-s, 1)); border-radius: var(--r-2); transition: background var(--dur-press) var(--ease); }
+:is(.ctx-panel, .ctx-drawer) .row .t { font-weight: 500; }
+.row:hover, .row.active { background: var(--m-hover); }
+.row.current { background: var(--sp-sel); box-shadow: var(--lift-1); }
+.tablist .row .m { display: none; }
+.row .x { width: calc(24px * var(--ui-s, 1)); height: calc(24px * var(--ui-s, 1)); border-radius: var(--r-1); }
+
+/* Folders: a row with its icons; open, the sites sit indented under it, no box. */
+.stack-head { padding: calc(6px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)); min-height: calc(36px * var(--ui-s, 1)); border-radius: var(--r-2); }
+.stack-name { font-weight: 600; }
+/* On a gradient a ring in one colour shows as a halo; the peeking icons just overlap. */
+.faces > * { box-shadow: none; background: transparent; }
+.stack.open { background: transparent; }
+.stack-body { padding: calc(2px * var(--ui-s, 1)) 0 calc(4px * var(--ui-s, 1)) calc(14px * var(--ui-s, 1)); }
+
+/* Spaces are dots at the foot of the sidebar, like Arc's: the current one dark, the name on hover and in the label above. */
+.home-foot { flex: none; display: flex; justify-content: center; align-items: center; gap: calc(2px * var(--ui-s, 1)); padding: calc(4px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)) calc(8px * var(--ui-s, 1)); }
+.space-dots { display: flex; gap: calc(2px * var(--ui-s, 1)); }
+.space-dot { all: unset; box-sizing: border-box; width: calc(24px * var(--ui-s, 1)); height: calc(24px * var(--ui-s, 1)); display: grid; place-items: center; border-radius: var(--r-1); cursor: pointer; }
+.space-dot i { width: calc(6px * var(--ui-s, 1)); height: calc(6px * var(--ui-s, 1)); border-radius: 50%; background: color-mix(in oklab, var(--m-fg) 40%, transparent); transition: background var(--dur-press) var(--ease), transform var(--dur-press) var(--ease); }
+.space-dot:hover i { background: color-mix(in oklab, var(--m-fg) 70%, transparent); transform: scale(1.25); }
+.space-dot[aria-pressed="true"] i { background: var(--m-fg); }
+.space-dot:focus-visible { outline: calc(2px * var(--ui-s, 1)) solid var(--m-accent); }
+
+/* Panels on the frame (status cards, settings groups): soft white, no border. */
+.card, .group, .site-card { background: var(--m-surface); border-radius: var(--r-3); }
+.ctx-options .group { border: 0; }
+
+/* Controls. */
+.btn { min-height: calc(32px * var(--ui-s, 1)); padding-inline: calc(12px * var(--ui-s, 1)); border-radius: var(--r-2); background: var(--m-surface); font-weight: 500; transition: background var(--dur-press) var(--ease), transform var(--dur-press) var(--ease); }
+.btn:hover { background: color-mix(in oklab, var(--sp-sel) 75%, transparent); }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--m-accent); color: var(--m-accent-fg); }
+.btn.primary:hover { filter: brightness(1.06); background: var(--m-accent); }
+.btn.ghost:hover { background: var(--m-hover); }
+.frames .btn:hover, .ctx-options .opts > main .btn:hover { background: var(--m-hover); }
+.seg { background: var(--m-hover); border-radius: var(--r-2); padding: calc(2px * var(--ui-s, 1)); }
+.seg button { border-radius: var(--r-1); color: var(--m-fg-muted); transition: background var(--dur-press) var(--ease), color var(--dur-press) var(--ease); }
+.seg button[aria-pressed="true"] { background: var(--sp-sel); color: var(--m-fg); box-shadow: var(--lift-1); }
+:is(.frames, .ctx-options .opts > main) .seg button[aria-pressed="true"] { background: var(--m-bg); }
+.toggle { background: color-mix(in oklab, var(--m-fg) 18%, transparent); border-radius: var(--r-full); }
+.toggle::after { background: #fff; box-shadow: var(--lift-1); transition: transform var(--dur-change) var(--ease); }
+.text-input { border-radius: var(--r-2); }
+.chip { border-radius: var(--r-2); }
+
+/* The panel rail: on the colour, plates for apps, the open one white and lifted. */
+.prail { background: transparent; }
+.pshell[data-side] .prail { border: 0; }
+.psep { background: var(--m-border); }
+.pitem { width: calc(36px * var(--ui-s, 1)); height: calc(36px * var(--ui-s, 1)); border-radius: var(--r-2); }
+.pitem[aria-pressed="true"] { background: var(--sp-sel); color: var(--m-fg); box-shadow: var(--lift-1); }
+.pitem.app { background: var(--m-surface); box-shadow: none; }
+.pitem.app:hover { background: color-mix(in oklab, var(--sp-sel) 75%, transparent); }
+.pitem.app[aria-pressed="true"] { background: var(--sp-sel); box-shadow: var(--lift-1); }
+
+/* The open app is the content card, inset in the frame like Arc's page. */
+.frames { margin: 0 calc(8px * var(--ui-s, 1)) calc(8px * var(--ui-s, 1)); border-radius: var(--r-2); overflow: hidden; background: var(--m-bg); box-shadow: 0 0 0 1px var(--sp-line); }
+
+/* Floating layers lift. */
+.toast { border-radius: var(--r-3); background: var(--m-fg); color: var(--m-bg); box-shadow: var(--lift-2); padding: calc(8px * var(--ui-s, 1)) calc(14px * var(--ui-s, 1)); font-weight: 500; }
+.cc-pop, .frame-help, .shelf-menu, .nt-pop { box-shadow: var(--lift-2); border-color: transparent; border-radius: var(--r-3); }
+
+/* Settings: the navigation on the colour, the page on a card. */
+.ctx-options .opts { grid-template-columns: calc(220px * var(--ui-s, 1)) minmax(0, calc(820px * var(--ui-s, 1))); gap: calc(20px * var(--ui-s, 1)); padding: calc(10px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)) calc(14px * var(--ui-s, 1)); justify-content: center; }
+.ctx-options .opts nav { padding-top: calc(18px * var(--ui-s, 1)); top: calc(10px * var(--ui-s, 1)); }
+.ctx-options .opts nav a { padding: calc(6px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1)); border-radius: var(--r-2); color: var(--m-fg); font-weight: 500; }
+.ctx-options .opts nav a:hover { background: var(--m-hover); }
+.ctx-options .opts nav a.on { background: var(--sp-sel); color: var(--m-fg); box-shadow: var(--lift-1); }
+.ctx-options .opts > main { min-height: calc(100dvh - 20px * var(--ui-s, 1)); padding: 0 calc(40px * var(--ui-s, 1)) calc(80px * var(--ui-s, 1)); border-radius: var(--r-4); background: var(--m-bg); box-shadow: 0 0 0 1px var(--sp-line); }
+.opts-head { background: var(--m-bg); border-bottom-color: var(--m-border); border-radius: var(--r-4) var(--r-4) 0 0; }
+.opts-search { border-radius: var(--r-2); border: 0; background: var(--m-surface2); }
+.opts-search:focus { background: var(--m-bg); box-shadow: 0 0 0 2px var(--m-accent); }
+.ctx-options .opts > main .group { border-radius: var(--r-3); background: var(--m-surface); }
+.ctx-options .btn { border-radius: var(--r-2); height: auto; }
+.opts.opts-welcome { padding: calc(10px * var(--ui-s, 1)); }
+@media (max-width: 860px) { .ctx-options .opts > main { padding-inline: calc(18px * var(--ui-s, 1)); } }
+
+/* The Space look: the page is the space colour; widgets are content cards on it. */
+html[data-look="space"] {
+  --c-bg: var(--k-bg); --c-card: var(--k-bg); --c-panel: var(--k-surface2); --c-ink: var(--k-fg); --c-mute: var(--k-fg-muted); --c-faint: var(--k-fg-subtle);
+  --c-line: var(--k-border); --c-line2: color-mix(in oklab, var(--k-fg) 16%, var(--k-bg)); --c-signal: var(--k-accent);
+  --c-cap-top: var(--k-surface); --c-cap-bot: var(--k-surface); --c-cap-edge: transparent; --c-shade: rgb(0 0 0 / 0.15);
+  --c-blue: #3b6ef5; --c-green: #1f9d55; --c-yellow: #c98a00; --c-sand: #8d6e3f; --c-cyan: #0e8a96; --c-pink: #d6336c; --c-orange: #e8710a;
+  background: var(--sp-1) var(--sp-frame) fixed;
+}
+html[data-look="space"][data-scheme="light"] { color-scheme: light; }
+html[data-look="space"][data-scheme="dark"] { color-scheme: dark; --c-blue: #8ab4ff; --c-green: #6dd58c; --c-yellow: #fdd663; --c-sand: #d7c39b; --c-cyan: #78d9ec; --c-pink: #f6aea9; --c-orange: #fcad70; }
+html[data-look="space"] body.ctx-newtab { background: transparent; }
+html[data-look="space"] .nt2:not([data-wall]) { background: transparent; isolation: isolate; --card-bg: var(--c-card); --card-line: transparent; --card-blur: none; }
+/* Straight on the colour (no wallpaper), the top bar reads in the frame's ink. */
+html[data-look="space"] .nt2:not([data-wall]) :is(.nt-top, .nt-pages) {
+  --c-bg: var(--sp-1); --c-card: var(--sp-sel); --c-panel: var(--sp-card); --c-ink: var(--sp-ink); --c-mute: var(--sp-mute); --hov: var(--sp-hover); color: var(--sp-ink);
+}
+
+/* New tab components, after Arc. The search box is the command bar: it lifts, and so does what drops from it. */
+html[data-look] .nt2 .nt-ask { box-shadow: var(--lift-2); }
+html[data-look] .nt2 .nt-ask:focus-within { box-shadow: var(--lift-2); border-color: transparent; }
+html[data-look] .nt2 .nt-results, .nt2 .gw-search > .nt-ai-host { box-shadow: var(--lift-2); border-color: transparent; border-radius: var(--r-3); }
+.nt-seg { border-radius: var(--r-2); }
+.nt-seg::before { border-radius: var(--r-1); box-shadow: var(--lift-1); }
+.nt-seg button { border-radius: var(--r-1); }
+.ctx-newtab .toggle::after { box-shadow: var(--lift-1); }
+.ctx-newtab .seg { border: 0; background: color-mix(in oklab, var(--c-ink) 7%, transparent); border-radius: var(--r-2); padding: 0.125rem; }
+.ctx-newtab .seg button { border-radius: var(--r-1); }
+.ctx-newtab .seg button[aria-pressed="true"] { background: var(--c-card); color: var(--c-ink); box-shadow: var(--lift-1); }
+/* Customize is a sheet that floats inside the window, like Arc's panels. */
+.nt-cz { top: 0.5rem; right: 0.5rem; bottom: 0.5rem; width: min(24rem, calc(100vw - 1rem)); border: 0; border-radius: var(--r-4); overflow: hidden; box-shadow: var(--lift-2); background: var(--c-card); }
+html[data-cz] .nt2 { padding-right: min(25rem, 92vw); }
+.cz-tabs { border-radius: var(--r-2); }
+.cz-tabs button { border-radius: var(--r-1); }
+.cz-tabs [aria-selected="true"] { box-shadow: var(--lift-1); }
+
+/* The space colour picker. */
+.sp { display: flex; flex-direction: column; gap: 0.75rem; }
+.sp-modes { align-self: flex-start; display: inline-flex; }
+.sp-modes button { display: inline-flex; align-items: center; gap: 0.375rem; }
+.sp-field {
+  position: relative; height: 9rem; border-radius: var(--r-3); cursor: crosshair; touch-action: none;
+  background: linear-gradient(to bottom, transparent, oklch(0.82 0 0)), linear-gradient(to right in oklch longer hue, oklch(0.72 0.2 0), oklch(0.72 0.2 360));
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+.sp-compact .sp-field { height: 7rem; }
+.sp-dot { all: unset; position: absolute; box-sizing: border-box; width: 1.375rem; height: 1.375rem; border-radius: 50%; border: 3px solid #fff; box-shadow: var(--lift-1); cursor: grab; transform: translate(-50%, -50%); transition: transform var(--dur-press) var(--ease); }
+.sp-dot[aria-current="true"] { transform: translate(-50%, -50%) scale(1.2); }
+.sp-dot:focus-visible { outline: 2px solid var(--m-fg); outline-offset: 2px; }
+.sp-tools { display: flex; align-items: center; gap: 0.25rem; }
+.sp-bar { flex: 1; height: 0.5rem; border-radius: var(--r-full); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08); }
+.sp-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.sp-preset { all: unset; cursor: pointer; width: 1.75rem; height: 1.75rem; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+.sp-preset[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--m-bg), 0 0 0 4px var(--m-fg); }
+.sp-preset:focus-visible { outline: 2px solid var(--m-fg); outline-offset: 2px; }
+.sp-row { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 2.5rem; align-items: center; gap: 0.5rem; font-size: var(--t-2); color: var(--m-fg-muted); }
+.sp-row input { width: 100%; accent-color: var(--m-accent); }
+.sp-group { padding: 0.875rem; }
+@media (prefers-reduced-motion: reduce) { .sp-dot { transition: none; } }
+/* The assistant in the sidebar: its starters are wells on the colour, read as a list. */
+:is(.ctx-panel, .ctx-drawer) .cv-panel .cv-starter { justify-content: flex-start; border: 0; background: var(--sp-card); color: var(--sp-ink); }
+:is(.ctx-panel, .ctx-drawer) .cv-panel .cv-starter:hover { background: var(--sp-hover); }
+:is(.ctx-panel, .ctx-drawer) .cv-panel :is(.cv-title, .cv-empty h3) { color: var(--sp-ink); }
+/* First run: the same card on the colour; its little browser shows the rail as a strip of the space colour. */
+.ctx-options .opts > main.welcome { padding: 2rem 3rem 3rem; min-height: calc(100dvh - 20px * var(--ui-s, 1)); }
+.welcome-preview-apps { background: var(--sp-1) var(--sp-frame); border-color: var(--sp-line); }
+@media (max-width: 860px) { .ctx-options .opts > main.welcome { padding: 1.5rem; } }
