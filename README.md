@@ -131,8 +131,8 @@ test/                  node:test unit tests
 
 - **Type:** the system font (SF Pro on a Mac, Segoe UI on Windows); Barlow Condensed and IBM Plex Mono (SIL OFL) for the studio looks.
 - **Icons:** Material Symbols Rounded (Apache-2.0), fetched by `scripts/fetch-assets.mjs`.
-- **Color:** three inputs to an OKLCH palette, Linear-style; Google blue `#0b57d0` by default; neutral surfaces; contrast tested (body text ≥ 7:1, secondary ≥ 4.5:1).
-- **Shape and motion:** 10 px radius, bounded surfaces without drop shadows, 120–220 ms transitions, respects reduced motion.
+- **Color:** a space colour of one to three hues frames navigation; content sits on white or near-black cards; the accent follows the space colour unless you pick one; contrast tested (body text ≥ 7:1, secondary ≥ 4.5:1).
+- **Shape and motion:** corners from 3 to 14 px; a soft lift only on floating layers and the selected item; spring motion that settles without overshoot, 120 to 480 ms; respects reduced motion.
 
 ## Privacy
 
