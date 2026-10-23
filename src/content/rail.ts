@@ -55,6 +55,8 @@ class Rail {
   private flyTimer = 0;
   private ready = false;
   private port?: MessagePort;
+  /** Ports offered to the drawer on its last load; the one that answers becomes `port`. */
+  private offered: MessagePort[] = [];
   private pending: Record<string, unknown> | null = null;
   private hint = document.createElement('div');
   private iframe: HTMLIFrameElement | null = null;
@@ -493,7 +495,8 @@ class Rail {
 
   /** Hand the drawer a private port (see ui/main.ts); nothing else crosses the page. */
   private connect(f: HTMLIFrameElement) {
-    this.port?.close();
+    for (const p of this.offered) p.close();
+    this.offered = [];
     this.port = undefined;
     this.ready = false;
     // Never '*'. The drawer loads from a per-session random host (use_dynamic_url), but
@@ -504,9 +507,15 @@ class Rail {
     for (const origin of origins) {
       const ch = new MessageChannel();
       ch.port1.onmessage = (e) => {
-        this.port ??= ch.port1;
+        if (!this.port) {
+          // The first port that answers is the drawer's; close the ports offered to the other origins.
+          this.port = ch.port1;
+          for (const p of this.offered) if (p !== ch.port1) p.close();
+          this.offered = [ch.port1];
+        }
         if (this.port === ch.port1 && e.data) this.fromDrawer(e.data);
       };
+      this.offered.push(ch.port1);
       f.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, type: 'port' }, origin, [ch.port2]);
     }
   }
