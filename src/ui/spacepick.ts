@@ -62,6 +62,7 @@ export function spacePicker(settings: Settings, opts: { compact?: boolean; modes
     d.style.left = `${x * 100}%`;
     d.style.top = `${y * 100}%`;
     d.style.background = space.colors[i];
+    d.setAttribute('aria-valuenow', String(Math.round(x * 360)));
     d.setAttribute('aria-valuetext', `hue ${Math.round(x * 360)} degrees, colour ${Math.round((1 - y) * 100)} percent`);
     d.setAttribute('aria-current', String(i === active));
   };
@@ -100,14 +101,15 @@ export function spacePicker(settings: Settings, opts: { compact?: boolean; modes
     dots[active]?.focus();
     field.setPointerCapture(e.pointerId);
     at(e);
-    const onMove = (ev: PointerEvent) => at(ev);
+    // One drag, one set of listeners: whichever ends it removes them all.
+    const drag = new AbortController();
     const done = () => {
-      field.removeEventListener('pointermove', onMove);
+      drag.abort();
       save();
     };
-    field.addEventListener('pointermove', onMove);
-    field.addEventListener('pointerup', done, { once: true });
-    field.addEventListener('pointercancel', done, { once: true });
+    field.addEventListener('pointermove', at, { signal: drag.signal });
+    field.addEventListener('pointerup', done, { signal: drag.signal });
+    field.addEventListener('pointercancel', done, { signal: drag.signal });
   });
 
   const bar = h('span', { class: 'sp-bar', 'aria-hidden': 'true' });
