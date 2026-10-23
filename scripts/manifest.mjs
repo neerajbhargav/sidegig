@@ -71,7 +71,7 @@ export function manifestFor(target) {
     short_name: pkg.name,
     version: pkg.version,
     description:
-      'A free, open-source sidebar for every browser. Hover the edge of any page for your apps, one-tap AI, bookmark stacks and search.',
+      'A free, open-source browser sidebar. Hover the edge of a web page for your apps, one-tap AI, bookmark stacks and search.',
     icons,
     action: { default_title: 'sidegig', default_icon: icons },
     permissions,
