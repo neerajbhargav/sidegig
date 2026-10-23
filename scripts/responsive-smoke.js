@@ -1,6 +1,6 @@
-// Run after npm run preview, with dist/ served on 127.0.0.1:8765.
-// aside repl "$(cat scripts/responsive-smoke.js)"
-// Uses only synthetic fixture data. Images stay in the Aside session folder.
+// Run with `npm run e2e` (e2e/preview.spec.ts) after `npm run preview`.
+// It also runs unchanged in the Aside REPL, with dist/ served on 127.0.0.1:8765.
+// Uses only synthetic fixture data. Images go to ./refine-qa: test-results/e2e under Playwright.
 await fs.mkdir('./refine-qa',{recursive:true});
 const t=await openTab('http://127.0.0.1:8765/preview/qa-viewport.html?w=1280&h=720&page=qa-wallpaper.html');console.log((await snapshot(t,{interactive:true})).tree);
 for(const [w,h,p,name] of [[1280,720,'qa-wallpaper.html','wallpaper-1280'],[1440,900,'qa-wallpaper.html','wallpaper-1440'],[1920,1080,'qa-wallpaper.html','wallpaper-wide'],[390,844,'qa-wallpaper.html','wallpaper-narrow'],[1280,720,'qa-wallpaper.html?scale=140','wallpaper-large-text'],[390,844,'qa-edition.html','for-you-narrow'],[1440,900,'qa-edition.html','for-you'],[1280,720,'qa-tools.html','extra-widgets'],[360,720,'panel.html','panel-360'],[420,720,'panel.html','panel-420']]){

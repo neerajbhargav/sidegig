@@ -1,0 +1,1073 @@
+{
+ "eval": "mail-codes",
+ "corpus": "test/fixtures/mail-codes.jsonl",
+ "corpus_version": 1,
+ "detector": "findCode in src/shared/mail.ts at 279374e",
+ "detector_dirty": false,
+ "match": "exact string match with the label",
+ "date": "2026-10-22T03:46:34.588Z",
+ "command": "node scripts/eval-mail-codes.ts --rev 279374e --write",
+ "all": {
+  "n": 348,
+  "positives": 198,
+  "tp": 176,
+  "fp": 75,
+  "fn": 22,
+  "tn": 76,
+  "wrong": 1,
+  "precision": 0.7012,
+  "recall": 0.8889,
+  "precision_ci95": [
+   0.6444,
+   0.7569
+  ],
+  "recall_ci95": [
+   0.8429,
+   0.9307
+  ]
+ },
+ "dev": {
+  "n": 174,
+  "positives": 99,
+  "tp": 90,
+  "fp": 37,
+  "fn": 9,
+  "tn": 38,
+  "wrong": 0,
+  "precision": 0.7087,
+  "recall": 0.9091,
+  "precision_ci95": [
+   0.6281,
+   0.7857
+  ],
+  "recall_ci95": [
+   0.8485,
+   0.9608
+  ]
+ },
+ "test": {
+  "n": 174,
+  "positives": 99,
+  "tp": 86,
+  "fp": 38,
+  "fn": 13,
+  "tn": 38,
+  "wrong": 1,
+  "precision": 0.6935,
+  "recall": 0.8687,
+  "precision_ci95": [
+   0.6098,
+   0.7724
+  ],
+  "recall_ci95": [
+   0.7976,
+   0.9307
+  ]
+ },
+ "by_category": {
+  "address": {
+   "n": 6,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "alnum-5": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 3
+  },
+  "alnum-6": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 3
+  },
+  "alnum-dash": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "alnum-lower": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 3
+  },
+  "booking": {
+   "n": 12,
+   "tp": 0,
+   "fp": 9,
+   "fn": 0
+  },
+  "calendar": {
+   "n": 3,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "card": {
+   "n": 9,
+   "tp": 0,
+   "fp": 9,
+   "fn": 0
+  },
+  "count": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "date": {
+   "n": 9,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "digits-4": {
+   "n": 12,
+   "tp": 12,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-5": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-6": {
+   "n": 93,
+   "tp": 93,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-7": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-8": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-dash": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "digits-spaced": {
+   "n": 6,
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-amount": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-count": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-date": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-id": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-order": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "distractor-phone": {
+   "n": 6,
+   "tp": 5,
+   "fp": 1,
+   "fn": 1
+  },
+  "distractor-ref": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "link": {
+   "n": 12,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "meeting": {
+   "n": 6,
+   "tp": 0,
+   "fp": 6,
+   "fn": 0
+  },
+  "non-english": {
+   "n": 21,
+   "tp": 15,
+   "fp": 0,
+   "fn": 6
+  },
+  "order": {
+   "n": 12,
+   "tp": 0,
+   "fp": 6,
+   "fn": 0
+  },
+  "phone": {
+   "n": 12,
+   "tp": 0,
+   "fp": 8,
+   "fn": 0
+  },
+  "plain": {
+   "n": 9,
+   "tp": 0,
+   "fp": 0,
+   "fn": 0
+  },
+  "prefix-digits": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 3
+  },
+  "price": {
+   "n": 12,
+   "tp": 0,
+   "fp": 6,
+   "fn": 0
+  },
+  "promo": {
+   "n": 9,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "subject-only": {
+   "n": 3,
+   "tp": 3,
+   "fp": 0,
+   "fn": 0
+  },
+  "ticket": {
+   "n": 9,
+   "tp": 0,
+   "fp": 6,
+   "fn": 0
+  },
+  "time": {
+   "n": 3,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "tracking": {
+   "n": 9,
+   "tp": 0,
+   "fp": 6,
+   "fn": 0
+  },
+  "version": {
+   "n": 9,
+   "tp": 0,
+   "fp": 3,
+   "fn": 0
+  },
+  "year-like": {
+   "n": 3,
+   "tp": 0,
+   "fp": 0,
+   "fn": 3
+  }
+ },
+ "errors": [
+  {
+   "id": "pos-16-1",
+   "split": "test",
+   "category": "prefix-digits",
+   "outcome": "fn",
+   "want": "44027",
+   "got": null
+  },
+  {
+   "id": "pos-16-2",
+   "split": "test",
+   "category": "prefix-digits",
+   "outcome": "fn",
+   "want": "14327",
+   "got": null
+  },
+  {
+   "id": "pos-16-3",
+   "split": "test",
+   "category": "prefix-digits",
+   "outcome": "fn",
+   "want": "69511",
+   "got": null
+  },
+  {
+   "id": "pos-19-1",
+   "split": "dev",
+   "category": "alnum-lower",
+   "outcome": "fn",
+   "want": "769qwbsr",
+   "got": null
+  },
+  {
+   "id": "pos-19-2",
+   "split": "dev",
+   "category": "alnum-lower",
+   "outcome": "fn",
+   "want": "nzz2y478",
+   "got": null
+  },
+  {
+   "id": "pos-19-3",
+   "split": "dev",
+   "category": "alnum-lower",
+   "outcome": "fn",
+   "want": "nc455hhj",
+   "got": null
+  },
+  {
+   "id": "pos-21-1",
+   "split": "dev",
+   "category": "alnum-5",
+   "outcome": "fn",
+   "want": "MWWE6",
+   "got": null
+  },
+  {
+   "id": "pos-21-2",
+   "split": "dev",
+   "category": "alnum-5",
+   "outcome": "fn",
+   "want": "ZF66R",
+   "got": null
+  },
+  {
+   "id": "pos-21-3",
+   "split": "dev",
+   "category": "alnum-5",
+   "outcome": "fn",
+   "want": "M7JP3",
+   "got": null
+  },
+  {
+   "id": "pos-36-1",
+   "split": "test",
+   "category": "alnum-6",
+   "outcome": "fn",
+   "want": "QBBB8S",
+   "got": null
+  },
+  {
+   "id": "pos-36-2",
+   "split": "test",
+   "category": "alnum-6",
+   "outcome": "fn",
+   "want": "87M499",
+   "got": null
+  },
+  {
+   "id": "pos-36-3",
+   "split": "test",
+   "category": "alnum-6",
+   "outcome": "fn",
+   "want": "E8MRDS",
+   "got": null
+  },
+  {
+   "id": "pos-50-1",
+   "split": "test",
+   "category": "non-english",
+   "outcome": "fn",
+   "want": "616533",
+   "got": null
+  },
+  {
+   "id": "pos-50-2",
+   "split": "test",
+   "category": "non-english",
+   "outcome": "fn",
+   "want": "604125",
+   "got": null
+  },
+  {
+   "id": "pos-50-3",
+   "split": "test",
+   "category": "non-english",
+   "outcome": "fn",
+   "want": "138200",
+   "got": null
+  },
+  {
+   "id": "pos-54-1",
+   "split": "test",
+   "category": "non-english",
+   "outcome": "fn",
+   "want": "451908",
+   "got": null
+  },
+  {
+   "id": "pos-54-2",
+   "split": "test",
+   "category": "non-english",
+   "outcome": "fn",
+   "want": "191274",
+   "got": null
+  },
+  {
+   "id": "pos-54-3",
+   "split": "test",
+   "category": "non-english",
+   "outcome": "fn",
+   "want": "638220",
+   "got": null
+  },
+  {
+   "id": "pos-57-1",
+   "split": "dev",
+   "category": "year-like",
+   "outcome": "fn",
+   "want": "2003",
+   "got": null
+  },
+  {
+   "id": "pos-57-2",
+   "split": "dev",
+   "category": "year-like",
+   "outcome": "fn",
+   "want": "2003",
+   "got": null
+  },
+  {
+   "id": "pos-57-3",
+   "split": "dev",
+   "category": "year-like",
+   "outcome": "fn",
+   "want": "2048",
+   "got": null
+  },
+  {
+   "id": "pos-60-2",
+   "split": "test",
+   "category": "distractor-phone",
+   "outcome": "wrong",
+   "want": "95561414",
+   "got": "415555"
+  },
+  {
+   "id": "neg-2-1",
+   "split": "test",
+   "category": "order",
+   "outcome": "fp",
+   "want": null,
+   "got": "884495"
+  },
+  {
+   "id": "neg-2-2",
+   "split": "test",
+   "category": "order",
+   "outcome": "fp",
+   "want": null,
+   "got": "958328"
+  },
+  {
+   "id": "neg-2-3",
+   "split": "test",
+   "category": "order",
+   "outcome": "fp",
+   "want": null,
+   "got": "32306"
+  },
+  {
+   "id": "neg-4-1",
+   "split": "test",
+   "category": "order",
+   "outcome": "fp",
+   "want": null,
+   "got": "154155"
+  },
+  {
+   "id": "neg-4-2",
+   "split": "test",
+   "category": "order",
+   "outcome": "fp",
+   "want": null,
+   "got": "676133"
+  },
+  {
+   "id": "neg-4-3",
+   "split": "test",
+   "category": "order",
+   "outcome": "fp",
+   "want": null,
+   "got": "007168"
+  },
+  {
+   "id": "neg-6-1",
+   "split": "test",
+   "category": "price",
+   "outcome": "fp",
+   "want": null,
+   "got": "9932"
+  },
+  {
+   "id": "neg-6-2",
+   "split": "test",
+   "category": "price",
+   "outcome": "fp",
+   "want": null,
+   "got": "6151"
+  },
+  {
+   "id": "neg-6-3",
+   "split": "test",
+   "category": "price",
+   "outcome": "fp",
+   "want": null,
+   "got": "3455"
+  },
+  {
+   "id": "neg-8-1",
+   "split": "test",
+   "category": "price",
+   "outcome": "fp",
+   "want": null,
+   "got": "9726"
+  },
+  {
+   "id": "neg-8-2",
+   "split": "test",
+   "category": "price",
+   "outcome": "fp",
+   "want": null,
+   "got": "5405"
+  },
+  {
+   "id": "neg-8-3",
+   "split": "test",
+   "category": "price",
+   "outcome": "fp",
+   "want": null,
+   "got": "9397"
+  },
+  {
+   "id": "neg-9-2",
+   "split": "dev",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "5550148"
+  },
+  {
+   "id": "neg-9-3",
+   "split": "dev",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "5550870"
+  },
+  {
+   "id": "neg-10-1",
+   "split": "test",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "5550457"
+  },
+  {
+   "id": "neg-11-1",
+   "split": "dev",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "5550820"
+  },
+  {
+   "id": "neg-11-2",
+   "split": "dev",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "79460309"
+  },
+  {
+   "id": "neg-12-1",
+   "split": "test",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "7597"
+  },
+  {
+   "id": "neg-12-2",
+   "split": "test",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "5550710"
+  },
+  {
+   "id": "neg-12-3",
+   "split": "test",
+   "category": "phone",
+   "outcome": "fp",
+   "want": null,
+   "got": "79460526"
+  },
+  {
+   "id": "neg-15-1",
+   "split": "dev",
+   "category": "date",
+   "outcome": "fp",
+   "want": null,
+   "got": "20261019"
+  },
+  {
+   "id": "neg-15-2",
+   "split": "dev",
+   "category": "date",
+   "outcome": "fp",
+   "want": null,
+   "got": "20261019"
+  },
+  {
+   "id": "neg-15-3",
+   "split": "dev",
+   "category": "date",
+   "outcome": "fp",
+   "want": null,
+   "got": "20260930"
+  },
+  {
+   "id": "neg-16-1",
+   "split": "test",
+   "category": "time",
+   "outcome": "fp",
+   "want": null,
+   "got": "1430"
+  },
+  {
+   "id": "neg-16-2",
+   "split": "test",
+   "category": "time",
+   "outcome": "fp",
+   "want": null,
+   "got": "0930"
+  },
+  {
+   "id": "neg-16-3",
+   "split": "test",
+   "category": "time",
+   "outcome": "fp",
+   "want": null,
+   "got": "2215"
+  },
+  {
+   "id": "neg-18-1",
+   "split": "test",
+   "category": "tracking",
+   "outcome": "fp",
+   "want": null,
+   "got": "94003360"
+  },
+  {
+   "id": "neg-18-2",
+   "split": "test",
+   "category": "tracking",
+   "outcome": "fp",
+   "want": null,
+   "got": "94002984"
+  },
+  {
+   "id": "neg-18-3",
+   "split": "test",
+   "category": "tracking",
+   "outcome": "fp",
+   "want": null,
+   "got": "94000213"
+  },
+  {
+   "id": "neg-19-1",
+   "split": "dev",
+   "category": "tracking",
+   "outcome": "fp",
+   "want": null,
+   "got": "01772655"
+  },
+  {
+   "id": "neg-19-2",
+   "split": "dev",
+   "category": "tracking",
+   "outcome": "fp",
+   "want": null,
+   "got": "55857415"
+  },
+  {
+   "id": "neg-19-3",
+   "split": "dev",
+   "category": "tracking",
+   "outcome": "fp",
+   "want": null,
+   "got": "24756074"
+  },
+  {
+   "id": "neg-21-1",
+   "split": "dev",
+   "category": "version",
+   "outcome": "fp",
+   "want": null,
+   "got": "1703"
+  },
+  {
+   "id": "neg-21-2",
+   "split": "dev",
+   "category": "version",
+   "outcome": "fp",
+   "want": null,
+   "got": "9035"
+  },
+  {
+   "id": "neg-21-3",
+   "split": "dev",
+   "category": "version",
+   "outcome": "fp",
+   "want": null,
+   "got": "6625"
+  },
+  {
+   "id": "neg-23-1",
+   "split": "dev",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "0732"
+  },
+  {
+   "id": "neg-23-2",
+   "split": "dev",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "2254"
+  },
+  {
+   "id": "neg-23-3",
+   "split": "dev",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "2645"
+  },
+  {
+   "id": "neg-24-1",
+   "split": "test",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "5082"
+  },
+  {
+   "id": "neg-24-2",
+   "split": "test",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "4814"
+  },
+  {
+   "id": "neg-24-3",
+   "split": "test",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "8490"
+  },
+  {
+   "id": "neg-25-1",
+   "split": "dev",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "7572"
+  },
+  {
+   "id": "neg-25-2",
+   "split": "dev",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "8378"
+  },
+  {
+   "id": "neg-25-3",
+   "split": "dev",
+   "category": "card",
+   "outcome": "fp",
+   "want": null,
+   "got": "8167"
+  },
+  {
+   "id": "neg-26-1",
+   "split": "test",
+   "category": "meeting",
+   "outcome": "fp",
+   "want": null,
+   "got": "526008"
+  },
+  {
+   "id": "neg-26-2",
+   "split": "test",
+   "category": "meeting",
+   "outcome": "fp",
+   "want": null,
+   "got": "443171"
+  },
+  {
+   "id": "neg-26-3",
+   "split": "test",
+   "category": "meeting",
+   "outcome": "fp",
+   "want": null,
+   "got": "053013"
+  },
+  {
+   "id": "neg-27-1",
+   "split": "dev",
+   "category": "meeting",
+   "outcome": "fp",
+   "want": null,
+   "got": "328206"
+  },
+  {
+   "id": "neg-27-2",
+   "split": "dev",
+   "category": "meeting",
+   "outcome": "fp",
+   "want": null,
+   "got": "934401"
+  },
+  {
+   "id": "neg-27-3",
+   "split": "dev",
+   "category": "meeting",
+   "outcome": "fp",
+   "want": null,
+   "got": "170770"
+  },
+  {
+   "id": "neg-28-1",
+   "split": "test",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "6682378"
+  },
+  {
+   "id": "neg-28-2",
+   "split": "test",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "2180255"
+  },
+  {
+   "id": "neg-28-3",
+   "split": "test",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "2102134"
+  },
+  {
+   "id": "neg-29-1",
+   "split": "dev",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "0033"
+  },
+  {
+   "id": "neg-29-2",
+   "split": "dev",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "3528"
+  },
+  {
+   "id": "neg-29-3",
+   "split": "dev",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "3625"
+  },
+  {
+   "id": "neg-31-1",
+   "split": "dev",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "7202"
+  },
+  {
+   "id": "neg-31-2",
+   "split": "dev",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "2992"
+  },
+  {
+   "id": "neg-31-3",
+   "split": "dev",
+   "category": "booking",
+   "outcome": "fp",
+   "want": null,
+   "got": "1235"
+  },
+  {
+   "id": "neg-32-1",
+   "split": "test",
+   "category": "ticket",
+   "outcome": "fp",
+   "want": null,
+   "got": "25132620"
+  },
+  {
+   "id": "neg-32-2",
+   "split": "test",
+   "category": "ticket",
+   "outcome": "fp",
+   "want": null,
+   "got": "38291047"
+  },
+  {
+   "id": "neg-32-3",
+   "split": "test",
+   "category": "ticket",
+   "outcome": "fp",
+   "want": null,
+   "got": "98117865"
+  },
+  {
+   "id": "neg-33-1",
+   "split": "dev",
+   "category": "ticket",
+   "outcome": "fp",
+   "want": null,
+   "got": "93513"
+  },
+  {
+   "id": "neg-33-2",
+   "split": "dev",
+   "category": "ticket",
+   "outcome": "fp",
+   "want": null,
+   "got": "08356"
+  },
+  {
+   "id": "neg-33-3",
+   "split": "dev",
+   "category": "ticket",
+   "outcome": "fp",
+   "want": null,
+   "got": "24292"
+  },
+  {
+   "id": "neg-37-1",
+   "split": "dev",
+   "category": "promo",
+   "outcome": "fp",
+   "want": null,
+   "got": "1576"
+  },
+  {
+   "id": "neg-37-2",
+   "split": "dev",
+   "category": "promo",
+   "outcome": "fp",
+   "want": null,
+   "got": "9161"
+  },
+  {
+   "id": "neg-37-3",
+   "split": "dev",
+   "category": "promo",
+   "outcome": "fp",
+   "want": null,
+   "got": "9156"
+  },
+  {
+   "id": "neg-42-1",
+   "split": "test",
+   "category": "address",
+   "outcome": "fp",
+   "want": null,
+   "got": "96157"
+  },
+  {
+   "id": "neg-42-2",
+   "split": "test",
+   "category": "address",
+   "outcome": "fp",
+   "want": null,
+   "got": "95974"
+  },
+  {
+   "id": "neg-42-3",
+   "split": "test",
+   "category": "address",
+   "outcome": "fp",
+   "want": null,
+   "got": "43222"
+  },
+  {
+   "id": "neg-47-1",
+   "split": "dev",
+   "category": "calendar",
+   "outcome": "fp",
+   "want": null,
+   "got": "4207"
+  },
+  {
+   "id": "neg-47-2",
+   "split": "dev",
+   "category": "calendar",
+   "outcome": "fp",
+   "want": null,
+   "got": "2840"
+  },
+  {
+   "id": "neg-47-3",
+   "split": "dev",
+   "category": "calendar",
+   "outcome": "fp",
+   "want": null,
+   "got": "6417"
+  }
+ ]
+}

@@ -1,5 +1,5 @@
-// Run after npm run preview, with dist/ served on 127.0.0.1:8765.
-// aside repl "$(cat scripts/refinement-smoke.js)"
+// Run with `npm run e2e` (e2e/preview.spec.ts) after `npm run preview`.
+// It also runs unchanged in the Aside REPL, with dist/ served on 127.0.0.1:8765.
 // Uses synthetic fixture data. No installed extension or external model requests.
 const base = 'http://127.0.0.1:8765/preview/';
 const ensure = (v, why) => { if (!v) throw Error(why); };

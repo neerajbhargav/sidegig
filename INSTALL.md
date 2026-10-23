@@ -34,7 +34,7 @@ The sidegig bridge is a small helper in the `bridge` folder. It needs Node 18 or
 1. Run `node bridge/sidegig-bridge.mjs setup`. It prints a pairing code and the commands that connect Claude Code, Codex or Cursor.
 2. Start it with `node bridge/sidegig-bridge.mjs`.
 3. In **Settings → Ask AI → Agents on this computer**, paste the pairing code and choose **Read only** or **Full**.
-4. For your ChatGPT plan in the Assistant, install the official Codex app and sign in (`npm i -g @openai/codex && codex login`), then choose **Your ChatGPT plan** when you connect a model.
+4. For your ChatGPT plan in the Assistant, install the official Codex CLI and sign in (`npm i -g @openai/codex && codex login`), then choose **Your ChatGPT plan** when you connect a model.
 
 `node bridge/sidegig-bridge.mjs unpair` makes a new code; the old one stops working.
 

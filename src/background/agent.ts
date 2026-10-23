@@ -7,6 +7,7 @@ import { ext } from '../shared/api.ts';
 import { getLocal, setLocal } from '../shared/storage.ts';
 import { openBridge } from '../shared/ai/bridge.ts';
 import { isRestricted } from '../shared/rules.ts';
+import { neutralize } from '../shared/prompt.ts';
 
 export type AgentAccess = 'off' | 'read' | 'full';
 export interface AgentLink { state: 'off' | 'waiting' | 'connected'; at: number; error?: string }
@@ -24,6 +25,10 @@ export function refusal(name: string, access: AgentAccess): string {
   if (ACTIONS.has(name) && access !== 'full') return 'sidegig gives agents read-only access. The user can allow actions in sidegig Settings, AI.';
   return '';
 }
+
+/** What browser_read returns. Everything from the page is neutralized, so it cannot close <page> or fake a turn. */
+export const agentPage = (id: number, r: { title: string; url: string; controls: string[]; text: string }) =>
+  `Tab ${id}: ${neutralize(r.title)}\n${r.url}\n\nControls (use the number as ref):\n${neutralize(r.controls.join('\n')) || '(none)'}\n\n<page>\n${neutralize(r.text)}\n</page>`;
 
 const text = (t: string, isError = false): Result => ({ content: [{ type: 'text', text: t }], isError });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -96,12 +101,12 @@ async function runTool(name: string, args: Record<string, unknown>): Promise<Res
   switch (name) {
     case 'browser_tabs': {
       const tabs = (await ext.tabs.query({})).filter((t) => /^https?:/.test(t.url ?? ''));
-      return text(tabs.map((t) => `${t.id}\t${t.active ? '(active) ' : ''}${t.title}\t${t.url}`).join('\n') || 'No web tabs are open.');
+      return text(tabs.map((t) => `${t.id}\t${t.active ? '(active) ' : ''}${neutralize(t.title ?? '')}\t${t.url}`).join('\n') || 'No web tabs are open.');
     }
     case 'browser_history': {
       const days = Math.max(1, Math.min(365, Number(args.days) || 30));
       const items = await ext.history.search({ text: String(args.query ?? ''), startTime: Date.now() - days * 86_400_000, maxResults: 30 });
-      return text(items.map((i) => `${new Date(i.lastVisitTime ?? 0).toISOString().slice(0, 10)}\t${i.title}\t${i.url}`).join('\n') || 'Nothing in history matches.');
+      return text(items.map((i) => `${new Date(i.lastVisitTime ?? 0).toISOString().slice(0, 10)}\t${neutralize(i.title ?? '')}\t${i.url}`).join('\n') || 'Nothing in history matches.');
     }
     case 'browser_open': {
       const url = String(args.url ?? '');
@@ -119,7 +124,7 @@ async function runTool(name: string, args: Record<string, unknown>): Promise<Res
     case 'browser_read': {
       const r = await inPage(id, snapshotPage, [20_000]);
       if (!r) return text('The page didn’t answer.', true);
-      return text(`Tab ${id}: ${r.title}\n${r.url}\n\nControls (use the number as ref):\n${r.controls.join('\n') || '(none)'}\n\n<page>\n${r.text}\n</page>`);
+      return text(agentPage(id, r));
     }
     case 'browser_screenshot': {
       await ext.tabs.update(id, { active: true });
@@ -249,7 +254,7 @@ async function banner(tabId: number) {
       func: () => {
         const w = window as unknown as { __sidegigAgent?: { host: HTMLElement; timer: number } };
         let a = w.__sidegigAgent;
-        if (!a || !a.host.isConnected) {
+        if (!a?.host.isConnected) {
           const host = document.createElement('sidegig-agent');
           host.style.cssText = 'all:initial;position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;';
           const root = host.attachShadow({ mode: 'closed' });

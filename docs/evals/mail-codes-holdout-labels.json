@@ -1,0 +1,484 @@
+{
+ "drafts": "test/fixtures/mail-codes-holdout-drafts.jsonl",
+ "labels": "test/fixtures/mail-codes-holdout.jsonl",
+ "rows": 330,
+ "changed": 58,
+ "rules": {
+  "separators": "Digit codes lose their spaces and dashes",
+  "absent": "No code when the draft names a code that the subject and preview do not show",
+  "notSignIn": "No code for reward, offer and meeting codes: they are not sign-in codes"
+ },
+ "counts": {
+  "separators": 28,
+  "absent": 26,
+  "notSignIn": 4,
+  "other": 0
+ },
+ "command": "node scripts/mail-codes-label-diff.mjs --write",
+ "rows_changed": [
+  {
+   "id": "hold-008",
+   "rule": "separators",
+   "draft": "12345678-9",
+   "label": "123456789",
+   "subject": "Login Code for Your Account",
+   "snippet": "Your 8-digit code is: 12345678-9"
+  },
+  {
+   "id": "hold-009",
+   "rule": "separators",
+   "draft": "0123-4567",
+   "label": "01234567",
+   "subject": "Unlock Your Account",
+   "snippet": "Enter this code to unlock your account: 0123-4567"
+  },
+  {
+   "id": "hold-016",
+   "rule": "separators",
+   "draft": "67-89",
+   "label": "6789",
+   "subject": "Login Code: 67-89",
+   "snippet": "Use this code to access your account: 67-89"
+  },
+  {
+   "id": "hold-019",
+   "rule": "separators",
+   "draft": "11-22-33",
+   "label": "112233",
+   "subject": "Login Code: 11-22-33",
+   "snippet": "Enter this code to access your account: 11-22-33"
+  },
+  {
+   "id": "hold-021",
+   "rule": "absent",
+   "draft": "1234",
+   "label": null,
+   "subject": "Welcome back! Enter your 4-digit code to sign in.",
+   "snippet": "Click the link to log in: https://chat.teamwork.com/login Enter your 4-digit code here."
+  },
+  {
+   "id": "hold-022",
+   "rule": "absent",
+   "draft": "12345678",
+   "label": null,
+   "subject": "Sign in verification: 8-digit code needed.",
+   "snippet": "Please enter your 8-digit verification code to sign in."
+  },
+  {
+   "id": "hold-023",
+   "rule": "absent",
+   "draft": "5678",
+   "label": null,
+   "subject": "Sign in requested: 4-digit code.",
+   "snippet": "Use this 4-digit code to sign in to your account."
+  },
+  {
+   "id": "hold-025",
+   "rule": "absent",
+   "draft": "8765",
+   "label": null,
+   "subject": "Verify your sign-in: 4-digit code.",
+   "snippet": "Use this 4-digit code to verify your sign-in."
+  },
+  {
+   "id": "hold-026",
+   "rule": "absent",
+   "draft": "12345",
+   "label": null,
+   "subject": "Your sign-in code is here!",
+   "snippet": "Enter your 5-digit code to sign in."
+  },
+  {
+   "id": "hold-028",
+   "rule": "absent",
+   "draft": "9876",
+   "label": null,
+   "subject": "4-digit code needed to sign in.",
+   "snippet": "Use this 4-digit code to sign in to your account."
+  },
+  {
+   "id": "hold-030",
+   "rule": "absent",
+   "draft": "5432",
+   "label": null,
+   "subject": "Sign-in verification: 4-digit code required.",
+   "snippet": "Enter your 4-digit code to verify your sign-in."
+  },
+  {
+   "id": "hold-034",
+   "rule": "separators",
+   "draft": "123-4567",
+   "label": "1234567",
+   "subject": "Log in to MyStore: Code: 123-4567",
+   "snippet": "Sign in with code: 123-4567"
+  },
+  {
+   "id": "hold-044",
+   "rule": "separators",
+   "draft": "1111-2222",
+   "label": "11112222",
+   "subject": "Quick Sign-In with Code 1111-2222",
+   "snippet": "Please use this code to sign in: 1111-2222"
+  },
+  {
+   "id": "hold-046",
+   "rule": "separators",
+   "draft": "123-456",
+   "label": "123456",
+   "subject": "Sign-In with Code: 123-456",
+   "snippet": "Your sign-in code is 123-456. Sign in now!"
+  },
+  {
+   "id": "hold-050",
+   "rule": "separators",
+   "draft": "4567-8901",
+   "label": "45678901",
+   "subject": "Sign-In Code: 4567-8901",
+   "snippet": "Sign in using this code: 4567-8901"
+  },
+  {
+   "id": "hold-051",
+   "rule": "absent",
+   "draft": "3456",
+   "label": null,
+   "subject": "Sign In: Verify Your Email for CryptoTrade",
+   "snippet": "Click here to verify your email for CryptoTrade and continue trading."
+  },
+  {
+   "id": "hold-053",
+   "rule": "separators",
+   "draft": "1234-5678",
+   "label": "12345678",
+   "subject": "Login Verification for CryptoCoin Exchange",
+   "snippet": "Login to your account using the code 1234-5678."
+  },
+  {
+   "id": "hold-056",
+   "rule": "separators",
+   "draft": "567-890",
+   "label": "567890",
+   "subject": "CryptoAccess: Verification Code",
+   "snippet": "Your verification code is 567-890. Use it within 10 minutes."
+  },
+  {
+   "id": "hold-060",
+   "rule": "separators",
+   "draft": "2345-6789",
+   "label": "23456789",
+   "subject": "CryptoPortal: Sign In Code",
+   "snippet": "Login to CryptoPortal using the code 2345-6789."
+  },
+  {
+   "id": "hold-065",
+   "rule": "separators",
+   "draft": "456-789",
+   "label": "456789",
+   "subject": "Account Login Code",
+   "snippet": "Code: 456-789 to log in to your AccountZone account."
+  },
+  {
+   "id": "hold-069",
+   "rule": "separators",
+   "draft": "1234-5678",
+   "label": "12345678",
+   "subject": "Verify Email for Account",
+   "snippet": "Use the code 1234-5678 to verify your email for AccountCloud."
+  },
+  {
+   "id": "hold-071",
+   "rule": "absent",
+   "draft": "1234",
+   "label": null,
+   "subject": "Welcome to MyHealthPortal! Verify Your Email",
+   "snippet": "Verify your email to get started with MyHealthPortal."
+  },
+  {
+   "id": "hold-072",
+   "rule": "separators",
+   "draft": "5678-90",
+   "label": "567890",
+   "subject": "Your Verification Code: 5678-90",
+   "snippet": "Use this code to log in to your account on MyHealthPortal."
+  },
+  {
+   "id": "hold-075",
+   "rule": "absent",
+   "draft": "2023",
+   "label": null,
+   "subject": "MyHealthPortal: Verify Your Account",
+   "snippet": "Verify your account by entering this code."
+  },
+  {
+   "id": "hold-076",
+   "rule": "separators",
+   "draft": "555-6666",
+   "label": "5556666",
+   "subject": "Your Login Code: 555-6666",
+   "snippet": "Use this code to log in to your MyHealthPortal account."
+  },
+  {
+   "id": "hold-078",
+   "rule": "separators",
+   "draft": "123-4567",
+   "label": "1234567",
+   "subject": "Verify Your Email: Code 123-4567",
+   "snippet": "Enter this code to verify your email and log in."
+  },
+  {
+   "id": "hold-085",
+   "rule": "separators",
+   "draft": "4567-8901",
+   "label": "45678901",
+   "subject": "Verify Your Email",
+   "snippet": "Code to proceed: 4567-8901"
+  },
+  {
+   "id": "hold-087",
+   "rule": "separators",
+   "draft": "1122 3344",
+   "label": "11223344",
+   "subject": "Welcome to MySIM",
+   "snippet": "Your verification code: 1122 3344"
+  },
+  {
+   "id": "hold-089",
+   "rule": "separators",
+   "draft": "5566-7788-9900",
+   "label": "556677889900",
+   "subject": "MyMobile Activation",
+   "snippet": "Enter code: 5566-7788-9900"
+  },
+  {
+   "id": "hold-093",
+   "rule": "separators",
+   "draft": "9012-3456",
+   "label": "90123456",
+   "subject": "CloudZone: Account Activation",
+   "snippet": "Please enter this code to activate your account: 9012-3456"
+  },
+  {
+   "id": "hold-113",
+   "rule": "notSignIn",
+   "draft": "5678",
+   "label": null,
+   "subject": "Your Daily Mileage Update",
+   "snippet": "Sign in to claim your reward code: 5678!"
+  },
+  {
+   "id": "hold-115",
+   "rule": "notSignIn",
+   "draft": "12AB-34CD",
+   "label": null,
+   "subject": "New Sign-In Bonus",
+   "snippet": "Claim your bonus with code: 12AB-34CD!"
+  },
+  {
+   "id": "hold-119",
+   "rule": "notSignIn",
+   "draft": "123ABC",
+   "label": null,
+   "subject": "Unlock Exclusive Offers",
+   "snippet": "Use code: 123ABC to unlock exclusive offers!"
+  },
+  {
+   "id": "hold-122",
+   "rule": "separators",
+   "draft": "567-89",
+   "label": "56789",
+   "subject": "Código de Verificación",
+   "snippet": "Tu código de verificación es: 567-89"
+  },
+  {
+   "id": "hold-125",
+   "rule": "separators",
+   "draft": "123-456",
+   "label": "123456",
+   "subject": "Código de Inicio de Sesión",
+   "snippet": "Código de inicio de sesión: 123-456"
+  },
+  {
+   "id": "hold-131",
+   "rule": "absent",
+   "draft": "1234",
+   "label": null,
+   "subject": "Bienvenue à SafeGuard Inc. - Vérifiez votre compte",
+   "snippet": "Un code de vérification vous a été envoyé par SafeGuard Inc. Veuillez le saisir pour vous connecter."
+  },
+  {
+   "id": "hold-132",
+   "rule": "separators",
+   "draft": "5678-90",
+   "label": "567890",
+   "subject": "Code de connexion à votre compte SafeGuard",
+   "snippet": "Votre code de connexion est 5678-90. Connectez-vous dès maintenant."
+  },
+  {
+   "id": "hold-133",
+   "rule": "absent",
+   "draft": "ABCD",
+   "label": null,
+   "subject": "Vérifiez votre email - SafeGuard Inc.",
+   "snippet": "Un code de vérification vous a été envoyé par SafeGuard Inc. Veuillez le saisir pour confirmer votre email."
+  },
+  {
+   "id": "hold-134",
+   "rule": "absent",
+   "draft": "123456",
+   "label": null,
+   "subject": "Bienvenue à SafeGuard - Vérifiez votre email",
+   "snippet": "Un code de vérification vous a été envoyé par SafeGuard. Veuillez le saisir pour vous connecter."
+  },
+  {
+   "id": "hold-136",
+   "rule": "absent",
+   "draft": "ABCD-1234",
+   "label": null,
+   "subject": "Bienvenue à SafeGuard - Vérifiez votre email",
+   "snippet": "Un code de vérification vous a été envoyé par SafeGuard. Veuillez le saisir pour confirmer votre email."
+  },
+  {
+   "id": "hold-138",
+   "rule": "absent",
+   "draft": "1234",
+   "label": null,
+   "subject": "Bienvenue à SafeGuard Inc. - Vérifiez votre email",
+   "snippet": "Un code de vérification vous a été envoyé par SafeGuard Inc. Veuillez le saisir pour confirmer votre email."
+  },
+  {
+   "id": "hold-140",
+   "rule": "absent",
+   "draft": "12345",
+   "label": null,
+   "subject": "Vérifiez votre compte - SafeGuard Inc.",
+   "snippet": "Un code de vérification vous a été envoyé par SafeGuard Inc. Veuillez le saisir pour vous connecter."
+  },
+  {
+   "id": "hold-141",
+   "rule": "notSignIn",
+   "draft": "1234",
+   "label": null,
+   "subject": "Ihre Einladung zur Sitzung",
+   "snippet": "Bitte melden Sie sich an, um die Sitzung zu beitreten. Code: 1234"
+  },
+  {
+   "id": "hold-142",
+   "rule": "separators",
+   "draft": "5678-9012",
+   "label": "56789012",
+   "subject": "Kontoverifizierung erforderlich",
+   "snippet": "Bitte überprüfen Sie Ihre E-Mail, um Ihr Konto zu aktivieren. Code: 5678-9012"
+  },
+  {
+   "id": "hold-146",
+   "rule": "separators",
+   "draft": "123-4567",
+   "label": "1234567",
+   "subject": "Bestätigung Ihrer Bestellung",
+   "snippet": "Bitte melden Sie sich an, um Ihre Bestellung zu bestätigen. Code: 123-4567"
+  },
+  {
+   "id": "hold-152",
+   "rule": "separators",
+   "draft": "5678-90",
+   "label": "567890",
+   "subject": "Código de verificação: 5678-90",
+   "snippet": "Seu código de verificação é 5678-90. Verifique sua conta agora."
+  },
+  {
+   "id": "hold-155",
+   "rule": "separators",
+   "draft": "123-456",
+   "label": "123456",
+   "subject": "Seu código de segurança: 123-456",
+   "snippet": "Seu código de segurança é 123-456. Entre em sua conta agora."
+  },
+  {
+   "id": "hold-169",
+   "rule": "separators",
+   "draft": "0123-4567",
+   "label": "01234567",
+   "subject": "Verifica il tuo account con il codice: 0123-4567",
+   "snippet": "Per accedere alla tua account di EasyCorp, inserisci il codice 0123-4567."
+  },
+  {
+   "id": "hold-171",
+   "rule": "absent",
+   "draft": "1234",
+   "label": null,
+   "subject": "MijnApp: Log in nu met je code",
+   "snippet": "Klik op de link om met je account te loggen."
+  },
+  {
+   "id": "hold-172",
+   "rule": "absent",
+   "draft": "ABCD",
+   "label": null,
+   "subject": "Code voor je account",
+   "snippet": "Gebruik deze code om je MijnApp-account te verifiëren."
+  },
+  {
+   "id": "hold-173",
+   "rule": "absent",
+   "draft": "7890",
+   "label": null,
+   "subject": "MijnBank: Log in met je code",
+   "snippet": "Voer deze code in om je bankrekening te openen."
+  },
+  {
+   "id": "hold-174",
+   "rule": "absent",
+   "draft": "EFGH",
+   "label": null,
+   "subject": "Code voor je profiel",
+   "snippet": "Gebruik deze code om je profiel bij MijnSite te activeren."
+  },
+  {
+   "id": "hold-175",
+   "rule": "absent",
+   "draft": "12-34",
+   "label": null,
+   "subject": "Log in code voor MijnStore",
+   "snippet": "Gebruik deze code om je winkelaccount in te loggen."
+  },
+  {
+   "id": "hold-176",
+   "rule": "absent",
+   "draft": "ijkl",
+   "label": null,
+   "subject": "Code voor je account",
+   "snippet": "Gebruik deze code om je account bij MijnShop te activeren."
+  },
+  {
+   "id": "hold-177",
+   "rule": "absent",
+   "draft": "5678",
+   "label": null,
+   "subject": "Log in code voor MijnNews",
+   "snippet": "Voer deze code in om je nieuwsabonnement te activeren."
+  },
+  {
+   "id": "hold-178",
+   "rule": "absent",
+   "draft": "mnop",
+   "label": null,
+   "subject": "Code voor je account",
+   "snippet": "Gebruik deze code om je account bij MijnForum te activeren."
+  },
+  {
+   "id": "hold-179",
+   "rule": "absent",
+   "draft": "3456",
+   "label": null,
+   "subject": "Log in code voor MijnGame",
+   "snippet": "Gebruik deze code om je account in te loggen."
+  },
+  {
+   "id": "hold-180",
+   "rule": "absent",
+   "draft": "qrst",
+   "label": null,
+   "subject": "Code voor je account",
+   "snippet": "Gebruik deze code om je account bij MijnMedia te activeren."
+  }
+ ]
+}

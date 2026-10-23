@@ -1,5 +1,5 @@
-// With the local preview built and served on 127.0.0.1:8765:
-// aside repl "$(cat scripts/portable-smoke.js)"
+// Run with `npm run e2e` (e2e/preview.spec.ts) after `npm run preview`.
+// It also runs unchanged in the Aside REPL, with dist/ served on 127.0.0.1:8765.
 const base='http://127.0.0.1:8765/preview/';
 const ok=(v,m)=>{if(!v)throw Error(m)};
 const t=await openTab(base+'qa-setups.html#backup');

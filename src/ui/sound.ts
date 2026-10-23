@@ -51,7 +51,7 @@ function click(a: AudioContext, at: number, peak: number) {
   const len = Math.floor(a.sampleRate * 0.03);
   const buf = a.createBuffer(1, len, a.sampleRate);
   const d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
   const src = a.createBufferSource();
   src.buffer = buf;
   const bp = a.createBiquadFilter();

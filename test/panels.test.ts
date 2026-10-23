@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-const event = () => { const listeners: ((...args: any[]) => void)[] = []; return { addListener: (fn: (...args: any[]) => void) => listeners.push(fn), fire: (...args: any[]) => listeners.forEach((fn) => fn(...args)) }; };
+const event = () => { const listeners: ((...args: any[]) => void)[] = []; return { addListener: (fn: (...args: any[]) => void) => listeners.push(fn), fire: (...args: any[]) => { for (const fn of listeners) fn(...args); } }; };
 const onConnect = event();
 let data: Record<string, any> = {};
 (globalThis as any).chrome = { runtime: { id: 'fixture', getURL: (p: string) => `chrome-extension://fixture/${p}`, onConnect }, storage: { local: { get: async (key: string) => ({ [key]: structuredClone(data[key]) }), set: async (value: object) => { Object.assign(data, structuredClone(value)); } } } };

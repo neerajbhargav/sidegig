@@ -71,7 +71,7 @@ export async function vercelCard(token?: string, teamId?: string): Promise<Statu
 }
 
 const tag = (xml: string, name: string) => xml.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`))?.[1]?.trim() ?? '';
-const unescape = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+const unescapeXml = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
 export interface FeedEntry { id: string; title: string; from: string; url: string; summary: string; at: number; email: string; mid: string }
 
@@ -79,7 +79,7 @@ export function parseGmailFeed(xml: string): { count: number; entries: FeedEntry
   const count = parseInt(tag(xml, 'fullcount') || '0', 10) || 0;
   const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map((m) => {
     const e = m[1];
-    const url = unescape(e.match(/<link[^>]*href="([^"]+)"/)?.[1] ?? 'https://mail.google.com/');
+    const url = unescapeXml(e.match(/<link[^>]*href="([^"]+)"/)?.[1] ?? 'https://mail.google.com/');
     let mid = '';
     try {
       mid = new URL(url).searchParams.get('message_id') ?? '';
@@ -88,12 +88,12 @@ export function parseGmailFeed(xml: string): { count: number; entries: FeedEntry
     }
     return {
       id: tag(e, 'id'),
-      title: unescape(tag(e, 'title')) || '(no subject)',
-      from: unescape(tag(tag(e, 'author'), 'name')),
+      title: unescapeXml(tag(e, 'title')) || '(no subject)',
+      from: unescapeXml(tag(tag(e, 'author'), 'name')),
       url,
-      summary: unescape(tag(e, 'summary')),
+      summary: unescapeXml(tag(e, 'summary')),
       at: Date.parse(tag(e, 'issued')) || 0,
-      email: unescape(tag(tag(e, 'author'), 'email')),
+      email: unescapeXml(tag(tag(e, 'author'), 'email')),
       mid: /^[0-9a-f]{6,24}$/i.test(mid) ? mid : '',
     };
   });

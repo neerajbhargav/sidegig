@@ -1,5 +1,5 @@
-// Run after `npm run preview` and serve dist/ on 127.0.0.1:8765:
-//   aside repl "$(cat scripts/product-smoke.js)"
+// Run with `npm run e2e` (e2e/preview.spec.ts) after `npm run preview`.
+// It also runs unchanged in the Aside REPL, with dist/ served on 127.0.0.1:8765.
 // This changes only the local preview's fixture data. It never opens the installed extension.
 const base = 'http://127.0.0.1:8765/preview/';
 const ensure = (value, message) => { if (!value) throw new Error(message); };

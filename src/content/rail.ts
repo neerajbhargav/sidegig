@@ -55,6 +55,8 @@ class Rail {
   private flyTimer = 0;
   private ready = false;
   private port?: MessagePort;
+  /** Ports offered to the drawer on its last load; the one that answers becomes `port`. */
+  private offered: MessagePort[] = [];
   private pending: Record<string, unknown> | null = null;
   private hint = document.createElement('div');
   private iframe: HTMLIFrameElement | null = null;
@@ -493,14 +495,29 @@ class Rail {
 
   /** Hand the drawer a private port (see ui/main.ts); nothing else crosses the page. */
   private connect(f: HTMLIFrameElement) {
-    const ch = new MessageChannel();
-    this.port?.close();
-    this.port = ch.port1;
+    for (const p of this.offered) p.close();
+    this.offered = [];
+    this.port = undefined;
     this.ready = false;
-    ch.port1.onmessage = (e) => e.data && this.fromDrawer(e.data);
-    // The drawer's own origin (it may be a per-session random host), never '*'.
-    const origin = TARGET === 'preview' ? '*' : new URL(f.src).origin;
-    f.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, type: 'port' }, origin, [ch.port2]);
+    // Never '*'. The drawer loads from a per-session random host (use_dynamic_url), but
+    // Chromium 153 and Chrome 155 give its document the extension's own origin, so a message
+    // aimed at the random host is dropped (e2e/extension.spec.ts). Offer one port to each
+    // possible origin: only the matching one arrives, and the first port that answers is the drawer's.
+    const origins = TARGET === 'preview' ? ['*'] : [...new Set([new URL(ext.runtime.getURL('/')).origin, new URL(f.src).origin])];
+    for (const origin of origins) {
+      const ch = new MessageChannel();
+      ch.port1.onmessage = (e) => {
+        if (!this.port) {
+          // The first port that answers is the drawer's; close the ports offered to the other origins.
+          this.port = ch.port1;
+          for (const p of this.offered) if (p !== ch.port1) p.close();
+          this.offered = [ch.port1];
+        }
+        if (this.port === ch.port1 && e.data) this.fromDrawer(e.data);
+      };
+      this.offered.push(ch.port1);
+      f.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, type: 'port' }, origin, [ch.port2]);
+    }
   }
 
   private post(msg: Record<string, unknown>) {

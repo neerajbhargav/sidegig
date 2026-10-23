@@ -130,7 +130,7 @@ export async function createSearch(ctx: Ctx, input: HTMLInputElement, list: HTML
     if (!results.length) list.append(h('div', { class: 'empty' }, 'No matches'));
   };
   const highlight = () => {
-    list.querySelectorAll('.row').forEach((el, i) => el.classList.toggle('active', i === active));
+    list.querySelectorAll('.row').forEach((el, i) => { el.classList.toggle('active', i === active); });
     list.querySelectorAll('.row')[active]?.scrollIntoView({ block: 'nearest' });
   };
 

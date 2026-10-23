@@ -1,0 +1,348 @@
+{"v":1,"id":"pos-1-1","split":"dev","category":"digits-6","service":"Google","subject":"G-525313 is your Google verification code","snippet":"Use this code to verify it is you.","code":"525313"}
+{"v":1,"id":"pos-1-2","split":"dev","category":"digits-6","service":"Google","subject":"G-733745 is your Google verification code","snippet":"Use this code to verify it is you.","code":"733745"}
+{"v":1,"id":"pos-1-3","split":"dev","category":"digits-6","service":"Google","subject":"G-216029 is your Google verification code","snippet":"Use this code to verify it is you.","code":"216029"}
+{"v":1,"id":"pos-2-1","split":"test","category":"digits-6","service":"Google","subject":"Google verification code","snippet":"Your Google verification code is 737877. Do not share it with anyone.","code":"737877"}
+{"v":1,"id":"pos-2-2","split":"test","category":"digits-6","service":"Google","subject":"Google verification code","snippet":"Your Google verification code is 358258. Do not share it with anyone.","code":"358258"}
+{"v":1,"id":"pos-2-3","split":"test","category":"digits-6","service":"Google","subject":"Google verification code","snippet":"Your Google verification code is 183350. Do not share it with anyone.","code":"183350"}
+{"v":1,"id":"pos-3-1","split":"dev","category":"digits-6","service":"Microsoft","subject":"Microsoft account security code","snippet":"Please use the following security code for the Microsoft account j***@example.com. Security code: 670196","code":"670196"}
+{"v":1,"id":"pos-3-2","split":"dev","category":"digits-6","service":"Microsoft","subject":"Microsoft account security code","snippet":"Please use the following security code for the Microsoft account m***@example.com. Security code: 481123","code":"481123"}
+{"v":1,"id":"pos-3-3","split":"dev","category":"digits-6","service":"Microsoft","subject":"Microsoft account security code","snippet":"Please use the following security code for the Microsoft account r***@example.com. Security code: 450656","code":"450656"}
+{"v":1,"id":"pos-4-1","split":"test","category":"digits-7","service":"Microsoft","subject":"Your single-use code","snippet":"Hi j***@example.com, we received your request for a single-use code to use with your Microsoft account. Your single-use code is: 4017435","code":"4017435"}
+{"v":1,"id":"pos-4-2","split":"test","category":"digits-7","service":"Microsoft","subject":"Your single-use code","snippet":"Hi m***@example.com, we received your request for a single-use code to use with your Microsoft account. Your single-use code is: 5807801","code":"5807801"}
+{"v":1,"id":"pos-4-3","split":"test","category":"digits-7","service":"Microsoft","subject":"Your single-use code","snippet":"Hi j***@example.com, we received your request for a single-use code to use with your Microsoft account. Your single-use code is: 0877886","code":"0877886"}
+{"v":1,"id":"pos-5-1","split":"dev","category":"digits-6","service":"Apple","subject":"Verify your Apple Account email address","snippet":"Enter this verification code to finish: 459828. The code expires 3 hours after this email was sent.","code":"459828"}
+{"v":1,"id":"pos-5-2","split":"dev","category":"digits-6","service":"Apple","subject":"Verify your Apple Account email address","snippet":"Enter this verification code to finish: 621392. The code expires 3 hours after this email was sent.","code":"621392"}
+{"v":1,"id":"pos-5-3","split":"dev","category":"digits-6","service":"Apple","subject":"Verify your Apple Account email address","snippet":"Enter this verification code to finish: 279383. The code expires 3 hours after this email was sent.","code":"279383"}
+{"v":1,"id":"pos-6-1","split":"test","category":"digits-6","service":"Amazon","subject":"Verify your new account","snippet":"To verify your email address, please use the following One Time Password (OTP): 452929. Do not share this OTP with anyone.","code":"452929"}
+{"v":1,"id":"pos-6-2","split":"test","category":"digits-6","service":"Amazon","subject":"Verify your new account","snippet":"To verify your email address, please use the following One Time Password (OTP): 663930. Do not share this OTP with anyone.","code":"663930"}
+{"v":1,"id":"pos-6-3","split":"test","category":"digits-6","service":"Amazon","subject":"Verify your new account","snippet":"To verify your email address, please use the following One Time Password (OTP): 676215. Do not share this OTP with anyone.","code":"676215"}
+{"v":1,"id":"pos-7-1","split":"dev","category":"distractor-phone","service":"Amazon","subject":"Your one-time password","snippet":"222715 is your one-time password. It expires in 10 minutes. If you did not request it, call 415.555.0730.","code":"222715"}
+{"v":1,"id":"pos-7-2","split":"dev","category":"distractor-phone","service":"Amazon","subject":"Your one-time password","snippet":"080649 is your one-time password. It expires in 10 minutes. If you did not request it, call 1-800-555-0155.","code":"080649"}
+{"v":1,"id":"pos-7-3","split":"dev","category":"distractor-phone","service":"Amazon","subject":"Your one-time password","snippet":"000352 is your one-time password. It expires in 10 minutes. If you did not request it, call 1-800-555-0704.","code":"000352"}
+{"v":1,"id":"pos-8-1","split":"test","category":"digits-6","service":"GitHub","subject":"[GitHub] Please verify your device","snippet":"Hey mkatz! A sign in attempt requires further verification. Verification code: 623841","code":"623841"}
+{"v":1,"id":"pos-8-2","split":"test","category":"digits-6","service":"GitHub","subject":"[GitHub] Please verify your device","snippet":"Hey grace.h! A sign in attempt requires further verification. Verification code: 526847","code":"526847"}
+{"v":1,"id":"pos-8-3","split":"test","category":"digits-6","service":"GitHub","subject":"[GitHub] Please verify your device","snippet":"Hey grace.h! A sign in attempt requires further verification. Verification code: 462764","code":"462764"}
+{"v":1,"id":"pos-9-1","split":"dev","category":"digits-8","service":"GitHub","subject":"Your GitHub launch code","snippet":"Here is your GitHub launch code: 22368594. Continue signing up by entering the code.","code":"22368594"}
+{"v":1,"id":"pos-9-2","split":"dev","category":"digits-8","service":"GitHub","subject":"Your GitHub launch code","snippet":"Here is your GitHub launch code: 63582286. Continue signing up by entering the code.","code":"63582286"}
+{"v":1,"id":"pos-9-3","split":"dev","category":"digits-8","service":"GitHub","subject":"Your GitHub launch code","snippet":"Here is your GitHub launch code: 92297976. Continue signing up by entering the code.","code":"92297976"}
+{"v":1,"id":"pos-10-1","split":"test","category":"alnum-dash","service":"Slack","subject":"Slack confirmation code: 9SV-E3S","snippet":"Your confirmation code is below. Enter it in your open browser window and we will help you get signed in.","code":"9SV-E3S"}
+{"v":1,"id":"pos-10-2","split":"test","category":"alnum-dash","service":"Slack","subject":"Slack confirmation code: L3R-8QF","snippet":"Your confirmation code is below. Enter it in your open browser window and we will help you get signed in.","code":"L3R-8QF"}
+{"v":1,"id":"pos-10-3","split":"test","category":"alnum-dash","service":"Slack","subject":"Slack confirmation code: AW3-ZN2","snippet":"Your confirmation code is below. Enter it in your open browser window and we will help you get signed in.","code":"AW3-ZN2"}
+{"v":1,"id":"pos-11-1","split":"dev","category":"digits-6","service":"Discord","subject":"Your Discord verification code","snippet":"Here is your verification code: 698227. It expires in 10 minutes.","code":"698227"}
+{"v":1,"id":"pos-11-2","split":"dev","category":"digits-6","service":"Discord","subject":"Your Discord verification code","snippet":"Here is your verification code: 616451. It expires in 10 minutes.","code":"616451"}
+{"v":1,"id":"pos-11-3","split":"dev","category":"digits-6","service":"Discord","subject":"Your Discord verification code","snippet":"Here is your verification code: 826105. It expires in 10 minutes.","code":"826105"}
+{"v":1,"id":"pos-12-1","split":"test","category":"digits-6","service":"Stripe","subject":"Your Stripe verification code","snippet":"572974 is your Stripe verification code. Never share it.","code":"572974"}
+{"v":1,"id":"pos-12-2","split":"test","category":"digits-6","service":"Stripe","subject":"Your Stripe verification code","snippet":"750521 is your Stripe verification code. Never share it.","code":"750521"}
+{"v":1,"id":"pos-12-3","split":"test","category":"digits-6","service":"Stripe","subject":"Your Stripe verification code","snippet":"054470 is your Stripe verification code. Never share it.","code":"054470"}
+{"v":1,"id":"pos-13-1","split":"dev","category":"digits-6","service":"PayPal","subject":"Your security code","snippet":"PayPal: 854220 is your security code. Do not share your code.","code":"854220"}
+{"v":1,"id":"pos-13-2","split":"dev","category":"digits-6","service":"PayPal","subject":"Your security code","snippet":"PayPal: 681422 is your security code. Do not share your code.","code":"681422"}
+{"v":1,"id":"pos-13-3","split":"dev","category":"digits-6","service":"PayPal","subject":"Your security code","snippet":"PayPal: 858804 is your security code. Do not share your code.","code":"858804"}
+{"v":1,"id":"pos-14-1","split":"test","category":"digits-4","service":"Uber","subject":"Your Uber sign-in code","snippet":"Welcome back. Enter 4030 to sign in to Uber.","code":"4030"}
+{"v":1,"id":"pos-14-2","split":"test","category":"digits-4","service":"Uber","subject":"Your Uber sign-in code","snippet":"Welcome back. Enter 4911 to sign in to Uber.","code":"4911"}
+{"v":1,"id":"pos-14-3","split":"test","category":"digits-4","service":"Uber","subject":"Your Uber sign-in code","snippet":"Welcome back. Enter 2452 to sign in to Uber.","code":"2452"}
+{"v":1,"id":"pos-15-1","split":"dev","category":"digits-6","service":"Instagram","subject":"076553 is your Instagram code","snippet":"Someone tried to log in to your Instagram account. If this was you, enter this code.","code":"076553"}
+{"v":1,"id":"pos-15-2","split":"dev","category":"digits-6","service":"Instagram","subject":"354040 is your Instagram code","snippet":"Someone tried to log in to your Instagram account. If this was you, enter this code.","code":"354040"}
+{"v":1,"id":"pos-15-3","split":"dev","category":"digits-6","service":"Instagram","subject":"317183 is your Instagram code","snippet":"Someone tried to log in to your Instagram account. If this was you, enter this code.","code":"317183"}
+{"v":1,"id":"pos-16-1","split":"test","category":"prefix-digits","service":"Facebook","subject":"FB-44027 is your Facebook confirmation code","snippet":"Enter this code to confirm your account.","code":"44027"}
+{"v":1,"id":"pos-16-2","split":"test","category":"prefix-digits","service":"Facebook","subject":"FB-14327 is your Facebook confirmation code","snippet":"Enter this code to confirm your account.","code":"14327"}
+{"v":1,"id":"pos-16-3","split":"test","category":"prefix-digits","service":"Facebook","subject":"FB-69511 is your Facebook confirmation code","snippet":"Enter this code to confirm your account.","code":"69511"}
+{"v":1,"id":"pos-17-1","split":"dev","category":"digits-6","service":"Facebook","subject":"Your Facebook security code","snippet":"Your login code is 468397. Enter it to log in.","code":"468397"}
+{"v":1,"id":"pos-17-2","split":"dev","category":"digits-6","service":"Facebook","subject":"Your Facebook security code","snippet":"Your login code is 309783. Enter it to log in.","code":"309783"}
+{"v":1,"id":"pos-17-3","split":"dev","category":"digits-6","service":"Facebook","subject":"Your Facebook security code","snippet":"Your login code is 650644. Enter it to log in.","code":"650644"}
+{"v":1,"id":"pos-18-1","split":"test","category":"digits-6","service":"LinkedIn","subject":"Here is your verification code","snippet":"Please use this verification code to complete your sign in: 664432.","code":"664432"}
+{"v":1,"id":"pos-18-2","split":"test","category":"digits-6","service":"LinkedIn","subject":"Here is your verification code","snippet":"Please use this verification code to complete your sign in: 159689.","code":"159689"}
+{"v":1,"id":"pos-18-3","split":"test","category":"digits-6","service":"LinkedIn","subject":"Here is your verification code","snippet":"Please use this verification code to complete your sign in: 594158.","code":"594158"}
+{"v":1,"id":"pos-19-1","split":"dev","category":"alnum-lower","service":"X","subject":"Your X confirmation code is 769qwbsr","snippet":"Please enter this verification code to get started on X.","code":"769qwbsr"}
+{"v":1,"id":"pos-19-2","split":"dev","category":"alnum-lower","service":"X","subject":"Your X confirmation code is nzz2y478","snippet":"Please enter this verification code to get started on X.","code":"nzz2y478"}
+{"v":1,"id":"pos-19-3","split":"dev","category":"alnum-lower","service":"X","subject":"Your X confirmation code is nc455hhj","snippet":"Please enter this verification code to get started on X.","code":"nc455hhj"}
+{"v":1,"id":"pos-20-1","split":"test","category":"digits-7","service":"Coinbase","subject":"Coinbase verification code","snippet":"Your verification code is 1377844. Coinbase will never call you to ask for this code.","code":"1377844"}
+{"v":1,"id":"pos-20-2","split":"test","category":"digits-7","service":"Coinbase","subject":"Coinbase verification code","snippet":"Your verification code is 8745483. Coinbase will never call you to ask for this code.","code":"8745483"}
+{"v":1,"id":"pos-20-3","split":"test","category":"digits-7","service":"Coinbase","subject":"Coinbase verification code","snippet":"Your verification code is 6525465. Coinbase will never call you to ask for this code.","code":"6525465"}
+{"v":1,"id":"pos-21-1","split":"dev","category":"alnum-5","service":"Steam","subject":"Your Steam account: Access from new web or mobile device","snippet":"Here is the Steam Guard code you need to login to account ada: MWWE6","code":"MWWE6"}
+{"v":1,"id":"pos-21-2","split":"dev","category":"alnum-5","service":"Steam","subject":"Your Steam account: Access from new web or mobile device","snippet":"Here is the Steam Guard code you need to login to account ada: ZF66R","code":"ZF66R"}
+{"v":1,"id":"pos-21-3","split":"dev","category":"alnum-5","service":"Steam","subject":"Your Steam account: Access from new web or mobile device","snippet":"Here is the Steam Guard code you need to login to account linus_t: M7JP3","code":"M7JP3"}
+{"v":1,"id":"pos-22-1","split":"test","category":"distractor-count","service":"Epic Games","subject":"Your Epic Games security code","snippet":"Here is your 6-digit security code: 206641","code":"206641"}
+{"v":1,"id":"pos-22-2","split":"test","category":"distractor-count","service":"Epic Games","subject":"Your Epic Games security code","snippet":"Here is your 6-digit security code: 822058","code":"822058"}
+{"v":1,"id":"pos-22-3","split":"test","category":"distractor-count","service":"Epic Games","subject":"Your Epic Games security code","snippet":"Here is your 6-digit security code: 371872","code":"371872"}
+{"v":1,"id":"pos-23-1","split":"dev","category":"digits-6","service":"Zoom","subject":"Zoom sign in verification code","snippet":"Your verification code is: 856814. This code will expire in 10 minutes.","code":"856814"}
+{"v":1,"id":"pos-23-2","split":"dev","category":"digits-6","service":"Zoom","subject":"Zoom sign in verification code","snippet":"Your verification code is: 804726. This code will expire in 10 minutes.","code":"804726"}
+{"v":1,"id":"pos-23-3","split":"dev","category":"digits-6","service":"Zoom","subject":"Zoom sign in verification code","snippet":"Your verification code is: 235495. This code will expire in 10 minutes.","code":"235495"}
+{"v":1,"id":"pos-24-1","split":"test","category":"digits-6","service":"Dropbox","subject":"Your Dropbox security code","snippet":"Enter this code to finish signing in: 886381","code":"886381"}
+{"v":1,"id":"pos-24-2","split":"test","category":"digits-6","service":"Dropbox","subject":"Your Dropbox security code","snippet":"Enter this code to finish signing in: 187707","code":"187707"}
+{"v":1,"id":"pos-24-3","split":"test","category":"digits-6","service":"Dropbox","subject":"Your Dropbox security code","snippet":"Enter this code to finish signing in: 675998","code":"675998"}
+{"v":1,"id":"pos-25-1","split":"dev","category":"digits-6","service":"Okta","subject":"One-time verification code","snippet":"Your verification code is 539978. Enter this code in Okta Verify or your browser.","code":"539978"}
+{"v":1,"id":"pos-25-2","split":"dev","category":"digits-6","service":"Okta","subject":"One-time verification code","snippet":"Your verification code is 978363. Enter this code in Okta Verify or your browser.","code":"978363"}
+{"v":1,"id":"pos-25-3","split":"dev","category":"digits-6","service":"Okta","subject":"One-time verification code","snippet":"Your verification code is 957107. Enter this code in Okta Verify or your browser.","code":"957107"}
+{"v":1,"id":"pos-26-1","split":"test","category":"digits-6","service":"generic","subject":"Verification code","snippet":"Your verification code is: 867622","code":"867622"}
+{"v":1,"id":"pos-26-2","split":"test","category":"digits-6","service":"generic","subject":"Verification code","snippet":"Your verification code is: 634476","code":"634476"}
+{"v":1,"id":"pos-26-3","split":"test","category":"digits-6","service":"generic","subject":"Verification code","snippet":"Your verification code is: 782984","code":"782984"}
+{"v":1,"id":"pos-27-1","split":"dev","category":"digits-6","service":"Adobe","subject":"Your Adobe verification code","snippet":"372588 - use this code to verify your account.","code":"372588"}
+{"v":1,"id":"pos-27-2","split":"dev","category":"digits-6","service":"Adobe","subject":"Your Adobe verification code","snippet":"078784 - use this code to verify your account.","code":"078784"}
+{"v":1,"id":"pos-27-3","split":"dev","category":"digits-6","service":"Adobe","subject":"Your Adobe verification code","snippet":"763613 - use this code to verify your account.","code":"763613"}
+{"v":1,"id":"pos-28-1","split":"test","category":"digits-spaced","service":"Shopify","subject":"Your login code","snippet":"Your Shopify login code is 557 439","code":"557439"}
+{"v":1,"id":"pos-28-2","split":"test","category":"digits-spaced","service":"Shopify","subject":"Your login code","snippet":"Your Shopify login code is 337 651","code":"337651"}
+{"v":1,"id":"pos-28-3","split":"test","category":"digits-spaced","service":"Shopify","subject":"Your login code","snippet":"Your Shopify login code is 477 450","code":"477450"}
+{"v":1,"id":"pos-29-1","split":"dev","category":"digits-6","service":"Binance","subject":"[Binance] Login Verification Code","snippet":"Your verification code: 249038. The verification code will be valid for 30 minutes.","code":"249038"}
+{"v":1,"id":"pos-29-2","split":"dev","category":"digits-6","service":"Binance","subject":"[Binance] Login Verification Code","snippet":"Your verification code: 616033. The verification code will be valid for 30 minutes.","code":"616033"}
+{"v":1,"id":"pos-29-3","split":"dev","category":"digits-6","service":"Binance","subject":"[Binance] Login Verification Code","snippet":"Your verification code: 387130. The verification code will be valid for 30 minutes.","code":"387130"}
+{"v":1,"id":"pos-30-1","split":"test","category":"digits-4","service":"Netflix","subject":"Your sign-in code","snippet":"Enter this code to sign in: 5118. This code will expire in 15 minutes.","code":"5118"}
+{"v":1,"id":"pos-30-2","split":"test","category":"digits-4","service":"Netflix","subject":"Your sign-in code","snippet":"Enter this code to sign in: 1751. This code will expire in 15 minutes.","code":"1751"}
+{"v":1,"id":"pos-30-3","split":"test","category":"digits-4","service":"Netflix","subject":"Your sign-in code","snippet":"Enter this code to sign in: 8605. This code will expire in 15 minutes.","code":"8605"}
+{"v":1,"id":"pos-31-1","split":"dev","category":"digits-6","service":"Airbnb","subject":"Airbnb verification code","snippet":"Your Airbnb verification code is 104991.","code":"104991"}
+{"v":1,"id":"pos-31-2","split":"dev","category":"digits-6","service":"Airbnb","subject":"Airbnb verification code","snippet":"Your Airbnb verification code is 686843.","code":"686843"}
+{"v":1,"id":"pos-31-3","split":"dev","category":"digits-6","service":"Airbnb","subject":"Airbnb verification code","snippet":"Your Airbnb verification code is 542395.","code":"542395"}
+{"v":1,"id":"pos-32-1","split":"test","category":"digits-dash","service":"WhatsApp","subject":"WhatsApp code","snippet":"Your WhatsApp code: 431-484. Do not share this code with others.","code":"431484"}
+{"v":1,"id":"pos-32-2","split":"test","category":"digits-dash","service":"WhatsApp","subject":"WhatsApp code","snippet":"Your WhatsApp code: 513-900. Do not share this code with others.","code":"513900"}
+{"v":1,"id":"pos-32-3","split":"test","category":"digits-dash","service":"WhatsApp","subject":"WhatsApp code","snippet":"Your WhatsApp code: 678-106. Do not share this code with others.","code":"678106"}
+{"v":1,"id":"pos-33-1","split":"dev","category":"digits-5","service":"Telegram","subject":"Login code","snippet":"Login code: 51226. Do not give this code to anyone, even if they say they are from Telegram!","code":"51226"}
+{"v":1,"id":"pos-33-2","split":"dev","category":"digits-5","service":"Telegram","subject":"Login code","snippet":"Login code: 26300. Do not give this code to anyone, even if they say they are from Telegram!","code":"26300"}
+{"v":1,"id":"pos-33-3","split":"dev","category":"digits-5","service":"Telegram","subject":"Login code","snippet":"Login code: 74604. Do not give this code to anyone, even if they say they are from Telegram!","code":"74604"}
+{"v":1,"id":"pos-34-1","split":"test","category":"digits-dash","service":"Signal","subject":"Signal registration","snippet":"Your Signal registration code is 523-142","code":"523142"}
+{"v":1,"id":"pos-34-2","split":"test","category":"digits-dash","service":"Signal","subject":"Signal registration","snippet":"Your Signal registration code is 834-208","code":"834208"}
+{"v":1,"id":"pos-34-3","split":"test","category":"digits-dash","service":"Signal","subject":"Signal registration","snippet":"Your Signal registration code is 893-425","code":"893425"}
+{"v":1,"id":"pos-35-1","split":"dev","category":"digits-6","service":"ChatGPT","subject":"Your ChatGPT code is 999969","snippet":"Enter this temporary verification code to continue.","code":"999969"}
+{"v":1,"id":"pos-35-2","split":"dev","category":"digits-6","service":"ChatGPT","subject":"Your ChatGPT code is 927072","snippet":"Enter this temporary verification code to continue.","code":"927072"}
+{"v":1,"id":"pos-35-3","split":"dev","category":"digits-6","service":"ChatGPT","subject":"Your ChatGPT code is 612648","snippet":"Enter this temporary verification code to continue.","code":"612648"}
+{"v":1,"id":"pos-36-1","split":"test","category":"alnum-6","service":"generic","subject":"Your verification code","snippet":"Use this code to verify your email: QBBB8S","code":"QBBB8S"}
+{"v":1,"id":"pos-36-2","split":"test","category":"alnum-6","service":"generic","subject":"Your verification code","snippet":"Use this code to verify your email: 87M499","code":"87M499"}
+{"v":1,"id":"pos-36-3","split":"test","category":"alnum-6","service":"generic","subject":"Your verification code","snippet":"Use this code to verify your email: E8MRDS","code":"E8MRDS"}
+{"v":1,"id":"pos-37-1","split":"dev","category":"digits-8","service":"bank","subject":"Your one-time passcode","snippet":"Your one-time passcode is 35229446. Do not share it. We will never ask for it.","code":"35229446"}
+{"v":1,"id":"pos-37-2","split":"dev","category":"digits-8","service":"bank","subject":"Your one-time passcode","snippet":"Your one-time passcode is 51532366. Do not share it. We will never ask for it.","code":"51532366"}
+{"v":1,"id":"pos-37-3","split":"dev","category":"digits-8","service":"bank","subject":"Your one-time passcode","snippet":"Your one-time passcode is 18354813. Do not share it. We will never ask for it.","code":"18354813"}
+{"v":1,"id":"pos-38-1","split":"test","category":"distractor-amount","service":"bank","subject":"Confirm your payment","snippet":"Use code 681254 to confirm your payment of $38.80 to Springfield Grocers.","code":"681254"}
+{"v":1,"id":"pos-38-2","split":"test","category":"distractor-amount","service":"bank","subject":"Confirm your payment","snippet":"Use code 089529 to confirm your payment of $536.00 to Springfield Grocers.","code":"089529"}
+{"v":1,"id":"pos-38-3","split":"test","category":"distractor-amount","service":"bank","subject":"Confirm your payment","snippet":"Use code 785015 to confirm your payment of $84.61 to Springfield Grocers.","code":"785015"}
+{"v":1,"id":"pos-39-1","split":"dev","category":"distractor-date","service":"generic","subject":"Your verification code","snippet":"Your code is 678623. It expires at 11:59 pm on 21/10/2026.","code":"678623"}
+{"v":1,"id":"pos-39-2","split":"dev","category":"distractor-date","service":"generic","subject":"Your verification code","snippet":"Your code is 093067. It expires at 09:05 UTC on 21/10/2026.","code":"093067"}
+{"v":1,"id":"pos-39-3","split":"dev","category":"distractor-date","service":"generic","subject":"Your verification code","snippet":"Your code is 548740. It expires at 14:30 on 10/21/2026.","code":"548740"}
+{"v":1,"id":"pos-40-1","split":"test","category":"distractor-order","service":"shop","subject":"Confirm your order","snippet":"Enter 8636 to confirm order #8579.","code":"8636"}
+{"v":1,"id":"pos-40-2","split":"test","category":"distractor-order","service":"shop","subject":"Confirm your order","snippet":"Enter 3634 to confirm order #988651.","code":"3634"}
+{"v":1,"id":"pos-40-3","split":"test","category":"distractor-order","service":"shop","subject":"Confirm your order","snippet":"Enter 3703 to confirm order #756054.","code":"3703"}
+{"v":1,"id":"pos-41-1","split":"dev","category":"digits-6","service":"generic","subject":"Sign in to Contoso","snippet":"082953 is your Contoso sign-in code.","code":"082953"}
+{"v":1,"id":"pos-41-2","split":"dev","category":"digits-6","service":"generic","subject":"Sign in to Example Bank","snippet":"646086 is your Example Bank sign-in code.","code":"646086"}
+{"v":1,"id":"pos-41-3","split":"dev","category":"digits-6","service":"generic","subject":"Sign in to Acme","snippet":"312635 is your Acme sign-in code.","code":"312635"}
+{"v":1,"id":"pos-42-1","split":"test","category":"subject-only","service":"generic","subject":"Acme code: 476597","snippet":"","code":"476597"}
+{"v":1,"id":"pos-42-2","split":"test","category":"subject-only","service":"generic","subject":"Contoso code: 366502","snippet":"","code":"366502"}
+{"v":1,"id":"pos-42-3","split":"test","category":"subject-only","service":"generic","subject":"Northwind code: 790970","snippet":"","code":"790970"}
+{"v":1,"id":"pos-43-1","split":"dev","category":"digits-6","service":"generic","subject":"Your 2FA code","snippet":"161645","code":"161645"}
+{"v":1,"id":"pos-43-2","split":"dev","category":"digits-6","service":"generic","subject":"Your 2FA code","snippet":"028275","code":"028275"}
+{"v":1,"id":"pos-43-3","split":"dev","category":"digits-6","service":"generic","subject":"Your 2FA code","snippet":"161754","code":"161754"}
+{"v":1,"id":"pos-44-1","split":"test","category":"digits-6","service":"generic","subject":"Two-factor authentication code","snippet":"Your two-factor authentication code is 243994.","code":"243994"}
+{"v":1,"id":"pos-44-2","split":"test","category":"digits-6","service":"generic","subject":"Two-factor authentication code","snippet":"Your two-factor authentication code is 101724.","code":"101724"}
+{"v":1,"id":"pos-44-3","split":"test","category":"digits-6","service":"generic","subject":"Two-factor authentication code","snippet":"Your two-factor authentication code is 157700.","code":"157700"}
+{"v":1,"id":"pos-45-1","split":"dev","category":"digits-6","service":"generic","subject":"Your passcode","snippet":"Passcode: 783340","code":"783340"}
+{"v":1,"id":"pos-45-2","split":"dev","category":"digits-6","service":"generic","subject":"Your passcode","snippet":"Passcode: 308169","code":"308169"}
+{"v":1,"id":"pos-45-3","split":"dev","category":"digits-6","service":"generic","subject":"Your passcode","snippet":"Passcode: 081767","code":"081767"}
+{"v":1,"id":"pos-46-1","split":"test","category":"digits-4","service":"bank","subject":"Your login PIN","snippet":"Your PIN is 1233. It is valid for 5 minutes.","code":"1233"}
+{"v":1,"id":"pos-46-2","split":"test","category":"digits-4","service":"bank","subject":"Your login PIN","snippet":"Your PIN is 3136. It is valid for 5 minutes.","code":"3136"}
+{"v":1,"id":"pos-46-3","split":"test","category":"digits-4","service":"bank","subject":"Your login PIN","snippet":"Your PIN is 4835. It is valid for 5 minutes.","code":"4835"}
+{"v":1,"id":"pos-47-1","split":"dev","category":"digits-6","service":"generic","subject":"Your magic code","snippet":"Your magic code is 215233","code":"215233"}
+{"v":1,"id":"pos-47-2","split":"dev","category":"digits-6","service":"generic","subject":"Your magic code","snippet":"Your magic code is 521618","code":"521618"}
+{"v":1,"id":"pos-47-3","split":"dev","category":"digits-6","service":"generic","subject":"Your magic code","snippet":"Your magic code is 129093","code":"129093"}
+{"v":1,"id":"pos-48-1","split":"test","category":"digits-6","service":"generic","subject":"Your access code","snippet":"Here is your access code: 187548","code":"187548"}
+{"v":1,"id":"pos-48-2","split":"test","category":"digits-6","service":"generic","subject":"Your access code","snippet":"Here is your access code: 263852","code":"263852"}
+{"v":1,"id":"pos-48-3","split":"test","category":"digits-6","service":"generic","subject":"Your access code","snippet":"Here is your access code: 233101","code":"233101"}
+{"v":1,"id":"pos-49-1","split":"dev","category":"digits-spaced","service":"generic","subject":"Verification code","snippet":"Your code: 503 191","code":"503191"}
+{"v":1,"id":"pos-49-2","split":"dev","category":"digits-spaced","service":"generic","subject":"Verification code","snippet":"Your code: 704 073","code":"704073"}
+{"v":1,"id":"pos-49-3","split":"dev","category":"digits-spaced","service":"generic","subject":"Verification code","snippet":"Your code: 385 345","code":"385345"}
+{"v":1,"id":"pos-50-1","split":"test","category":"non-english","service":"generic","subject":"Ihr Bestätigungscode","snippet":"Ihr Bestätigungscode lautet 616533. Er ist 10 Minuten gültig.","code":"616533"}
+{"v":1,"id":"pos-50-2","split":"test","category":"non-english","service":"generic","subject":"Ihr Bestätigungscode","snippet":"Ihr Bestätigungscode lautet 604125. Er ist 10 Minuten gültig.","code":"604125"}
+{"v":1,"id":"pos-50-3","split":"test","category":"non-english","service":"generic","subject":"Ihr Bestätigungscode","snippet":"Ihr Bestätigungscode lautet 138200. Er ist 10 Minuten gültig.","code":"138200"}
+{"v":1,"id":"pos-51-1","split":"dev","category":"non-english","service":"generic","subject":"Votre code de vérification","snippet":"Votre code de vérification est 457064.","code":"457064"}
+{"v":1,"id":"pos-51-2","split":"dev","category":"non-english","service":"generic","subject":"Votre code de vérification","snippet":"Votre code de vérification est 903702.","code":"903702"}
+{"v":1,"id":"pos-51-3","split":"dev","category":"non-english","service":"generic","subject":"Votre code de vérification","snippet":"Votre code de vérification est 493625.","code":"493625"}
+{"v":1,"id":"pos-52-1","split":"test","category":"non-english","service":"generic","subject":"Tu código de verificación","snippet":"Tu código de verificación es 774329.","code":"774329"}
+{"v":1,"id":"pos-52-2","split":"test","category":"non-english","service":"generic","subject":"Tu código de verificación","snippet":"Tu código de verificación es 548988.","code":"548988"}
+{"v":1,"id":"pos-52-3","split":"test","category":"non-english","service":"generic","subject":"Tu código de verificación","snippet":"Tu código de verificación es 341907.","code":"341907"}
+{"v":1,"id":"pos-53-1","split":"dev","category":"non-english","service":"generic","subject":"Seu código de verificação","snippet":"Seu código é 621865.","code":"621865"}
+{"v":1,"id":"pos-53-2","split":"dev","category":"non-english","service":"generic","subject":"Seu código de verificação","snippet":"Seu código é 592201.","code":"592201"}
+{"v":1,"id":"pos-53-3","split":"dev","category":"non-english","service":"generic","subject":"Seu código de verificação","snippet":"Seu código é 125847.","code":"125847"}
+{"v":1,"id":"pos-54-1","split":"test","category":"non-english","service":"generic","subject":"認証コード","snippet":"認証コード: 451908","code":"451908"}
+{"v":1,"id":"pos-54-2","split":"test","category":"non-english","service":"generic","subject":"認証コード","snippet":"認証コード: 191274","code":"191274"}
+{"v":1,"id":"pos-54-3","split":"test","category":"non-english","service":"generic","subject":"認証コード","snippet":"認証コード: 638220","code":"638220"}
+{"v":1,"id":"pos-55-1","split":"dev","category":"non-english","service":"generic","subject":"Il tuo codice di verifica","snippet":"Il codice è 371274.","code":"371274"}
+{"v":1,"id":"pos-55-2","split":"dev","category":"non-english","service":"generic","subject":"Il tuo codice di verifica","snippet":"Il codice è 187799.","code":"187799"}
+{"v":1,"id":"pos-55-3","split":"dev","category":"non-english","service":"generic","subject":"Il tuo codice di verifica","snippet":"Il codice è 087014.","code":"087014"}
+{"v":1,"id":"pos-56-1","split":"test","category":"non-english","service":"generic","subject":"Je verificatiecode","snippet":"Je verificatiecode is 843068.","code":"843068"}
+{"v":1,"id":"pos-56-2","split":"test","category":"non-english","service":"generic","subject":"Je verificatiecode","snippet":"Je verificatiecode is 503091.","code":"503091"}
+{"v":1,"id":"pos-56-3","split":"test","category":"non-english","service":"generic","subject":"Je verificatiecode","snippet":"Je verificatiecode is 394507.","code":"394507"}
+{"v":1,"id":"pos-57-1","split":"dev","category":"year-like","service":"generic","subject":"Your sign-in code","snippet":"Your sign-in code is 2003.","code":"2003"}
+{"v":1,"id":"pos-57-2","split":"dev","category":"year-like","service":"generic","subject":"Your sign-in code","snippet":"Your sign-in code is 2003.","code":"2003"}
+{"v":1,"id":"pos-57-3","split":"dev","category":"year-like","service":"generic","subject":"Your sign-in code","snippet":"Your sign-in code is 2048.","code":"2048"}
+{"v":1,"id":"pos-58-1","split":"test","category":"digits-6","service":"generic","subject":"Security code","snippet":"Your security code is:\n052089","code":"052089"}
+{"v":1,"id":"pos-58-2","split":"test","category":"digits-6","service":"generic","subject":"Security code","snippet":"Your security code is:\n564367","code":"564367"}
+{"v":1,"id":"pos-58-3","split":"test","category":"digits-6","service":"generic","subject":"Security code","snippet":"Your security code is:\n571203","code":"571203"}
+{"v":1,"id":"pos-59-1","split":"dev","category":"distractor-ref","service":"generic","subject":"Your verification code","snippet":"Code 186158 (request reference 61386656).","code":"186158"}
+{"v":1,"id":"pos-59-2","split":"dev","category":"distractor-ref","service":"generic","subject":"Your verification code","snippet":"Code 300526 (request reference 44959887).","code":"300526"}
+{"v":1,"id":"pos-59-3","split":"dev","category":"distractor-ref","service":"generic","subject":"Your verification code","snippet":"Code 453373 (request reference 27278093).","code":"453373"}
+{"v":1,"id":"pos-60-1","split":"test","category":"distractor-phone","service":"bank","subject":"Your login code","snippet":"Your login code is 68550698. Questions? Call (415) 555-0192.","code":"68550698"}
+{"v":1,"id":"pos-60-2","split":"test","category":"distractor-phone","service":"bank","subject":"Your login code","snippet":"Your login code is 95561414. Questions? Call +1 415 555 0996.","code":"95561414"}
+{"v":1,"id":"pos-60-3","split":"test","category":"distractor-phone","service":"bank","subject":"Your login code","snippet":"Your login code is 86168409. Questions? Call +44 20 7946 0989.","code":"86168409"}
+{"v":1,"id":"pos-61-1","split":"dev","category":"digits-6","service":"generic","subject":"Verification code (909317)","snippet":"Enter it on the sign-in page.","code":"909317"}
+{"v":1,"id":"pos-61-2","split":"dev","category":"digits-6","service":"generic","subject":"Verification code (775398)","snippet":"Enter it on the sign-in page.","code":"775398"}
+{"v":1,"id":"pos-61-3","split":"dev","category":"digits-6","service":"generic","subject":"Verification code (943438)","snippet":"Enter it on the sign-in page.","code":"943438"}
+{"v":1,"id":"pos-62-1","split":"test","category":"digits-6","service":"generic","subject":"Use 316446 as your Northwind code","snippet":"This code works once.","code":"316446"}
+{"v":1,"id":"pos-62-2","split":"test","category":"digits-6","service":"generic","subject":"Use 248236 as your Tailspin code","snippet":"This code works once.","code":"248236"}
+{"v":1,"id":"pos-62-3","split":"test","category":"digits-6","service":"generic","subject":"Use 763600 as your Contoso code","snippet":"This code works once.","code":"763600"}
+{"v":1,"id":"pos-63-1","split":"dev","category":"digits-6","service":"1Password","subject":"Your 1Password verification code","snippet":"Enter 518422 to verify your email.","code":"518422"}
+{"v":1,"id":"pos-63-2","split":"dev","category":"digits-6","service":"1Password","subject":"Your 1Password verification code","snippet":"Enter 492023 to verify your email.","code":"492023"}
+{"v":1,"id":"pos-63-3","split":"dev","category":"digits-6","service":"1Password","subject":"Your 1Password verification code","snippet":"Enter 185019 to verify your email.","code":"185019"}
+{"v":1,"id":"pos-64-1","split":"test","category":"distractor-id","service":"generic","subject":"Sign-in attempt","snippet":"Code: 040433. Device ID: 3828-7548.","code":"040433"}
+{"v":1,"id":"pos-64-2","split":"test","category":"distractor-id","service":"generic","subject":"Sign-in attempt","snippet":"Code: 148901. Device ID: 9289-7307.","code":"148901"}
+{"v":1,"id":"pos-64-3","split":"test","category":"distractor-id","service":"generic","subject":"Sign-in attempt","snippet":"Code: 896772. Device ID: 6803-9423.","code":"896772"}
+{"v":1,"id":"pos-65-1","split":"dev","category":"digits-4","service":"generic","subject":"Your one-time code","snippet":"Your one-time code is 2402","code":"2402"}
+{"v":1,"id":"pos-65-2","split":"dev","category":"digits-4","service":"generic","subject":"Your one-time code","snippet":"Your one-time code is 9036","code":"9036"}
+{"v":1,"id":"pos-65-3","split":"dev","category":"digits-4","service":"generic","subject":"Your one-time code","snippet":"Your one-time code is 2213","code":"2213"}
+{"v":1,"id":"pos-66-1","split":"test","category":"digits-6","service":"generic","subject":"Confirm your email address","snippet":"Your confirmation code is 019199. Enter it in the app to finish signing up.","code":"019199"}
+{"v":1,"id":"pos-66-2","split":"test","category":"digits-6","service":"generic","subject":"Confirm your email address","snippet":"Your confirmation code is 395496. Enter it in the app to finish signing up.","code":"395496"}
+{"v":1,"id":"pos-66-3","split":"test","category":"digits-6","service":"generic","subject":"Confirm your email address","snippet":"Your confirmation code is 007347. Enter it in the app to finish signing up.","code":"007347"}
+{"v":1,"id":"neg-1-1","split":"dev","category":"order","service":"","subject":"Your order #7605 has shipped","snippet":"Track your package. Confirmation will follow.","code":null}
+{"v":1,"id":"neg-1-2","split":"dev","category":"order","service":"","subject":"Your order #750742 has shipped","snippet":"Track your package. Confirmation will follow.","code":null}
+{"v":1,"id":"neg-1-3","split":"dev","category":"order","service":"","subject":"Your order #433118 has shipped","snippet":"Track your package. Confirmation will follow.","code":null}
+{"v":1,"id":"neg-2-1","split":"test","category":"order","service":"","subject":"Order 884495 confirmed","snippet":"Thanks for your purchase. We will email you when it ships.","code":null}
+{"v":1,"id":"neg-2-2","split":"test","category":"order","service":"","subject":"Order 958328 confirmed","snippet":"Thanks for your purchase. We will email you when it ships.","code":null}
+{"v":1,"id":"neg-2-3","split":"test","category":"order","service":"","subject":"Order 32306 confirmed","snippet":"Thanks for your purchase. We will email you when it ships.","code":null}
+{"v":1,"id":"neg-3-1","split":"dev","category":"order","service":"","subject":"Your order of headphones has shipped","snippet":"Order 112-2469011-7660685. Your confirmation and receipt are attached.","code":null}
+{"v":1,"id":"neg-3-2","split":"dev","category":"order","service":"","subject":"Your order of headphones has shipped","snippet":"Order 112-6127585-5045460. Your confirmation and receipt are attached.","code":null}
+{"v":1,"id":"neg-3-3","split":"dev","category":"order","service":"","subject":"Your order of headphones has shipped","snippet":"Order 112-7598149-0180729. Your confirmation and receipt are attached.","code":null}
+{"v":1,"id":"neg-4-1","split":"test","category":"order","service":"","subject":"Order No. 154155 confirmed","snippet":"Estimated delivery: 2026-10-21.","code":null}
+{"v":1,"id":"neg-4-2","split":"test","category":"order","service":"","subject":"Order No. 676133 confirmed","snippet":"Estimated delivery: Oct 21, 2026.","code":null}
+{"v":1,"id":"neg-4-3","split":"test","category":"order","service":"","subject":"Order No. 007168 confirmed","snippet":"Estimated delivery: 21.10.2026.","code":null}
+{"v":1,"id":"neg-5-1","split":"dev","category":"price","service":"","subject":"Payment confirmation","snippet":"Your payment of $67.15 was received on 21.10.2026.","code":null}
+{"v":1,"id":"neg-5-2","split":"dev","category":"price","service":"","subject":"Payment confirmation","snippet":"Your payment of $82.31 was received on 2026-10-21.","code":null}
+{"v":1,"id":"neg-5-3","split":"dev","category":"price","service":"","subject":"Payment confirmation","snippet":"Your payment of $894.00 was received on Oct 21, 2026.","code":null}
+{"v":1,"id":"neg-6-1","split":"test","category":"price","service":"","subject":"Payment confirmed: 9932 USD","snippet":"Thanks, linus_t. Your receipt is attached.","code":null}
+{"v":1,"id":"neg-6-2","split":"test","category":"price","service":"","subject":"Payment confirmed: 6151 USD","snippet":"Thanks, mkatz. Your receipt is attached.","code":null}
+{"v":1,"id":"neg-6-3","split":"test","category":"price","service":"","subject":"Payment confirmed: 3455 USD","snippet":"Thanks, linus_t. Your receipt is attached.","code":null}
+{"v":1,"id":"neg-7-1","split":"dev","category":"price","service":"","subject":"Confirm your subscription","snippet":"€896.00 per month, renews on 21/10/2026.","code":null}
+{"v":1,"id":"neg-7-2","split":"dev","category":"price","service":"","subject":"Confirm your subscription","snippet":"€9,149.70 per month, renews on 10/21/2026.","code":null}
+{"v":1,"id":"neg-7-3","split":"dev","category":"price","service":"","subject":"Confirm your subscription","snippet":"€39.83 per month, renews on 21/10/2026.","code":null}
+{"v":1,"id":"neg-8-1","split":"test","category":"price","service":"","subject":"Security deposit received","snippet":"We received your security deposit of 9726 EUR.","code":null}
+{"v":1,"id":"neg-8-2","split":"test","category":"price","service":"","subject":"Security deposit received","snippet":"We received your security deposit of 5405 EUR.","code":null}
+{"v":1,"id":"neg-8-3","split":"test","category":"price","service":"","subject":"Security deposit received","snippet":"We received your security deposit of 9397 EUR.","code":null}
+{"v":1,"id":"neg-9-1","split":"dev","category":"phone","service":"","subject":"Security alert","snippet":"If this was not you, call us at 415.555.0482.","code":null}
+{"v":1,"id":"neg-9-2","split":"dev","category":"phone","service":"","subject":"Security alert","snippet":"If this was not you, call us at (415) 555-0148.","code":null}
+{"v":1,"id":"neg-9-3","split":"dev","category":"phone","service":"","subject":"Security alert","snippet":"If this was not you, call us at (415) 555-0870.","code":null}
+{"v":1,"id":"neg-10-1","split":"test","category":"phone","service":"","subject":"Your PIN was changed","snippet":"Your PIN was changed on 2026-10-21. If this was not you, call (415) 555-0457.","code":null}
+{"v":1,"id":"neg-10-2","split":"test","category":"phone","service":"","subject":"Your PIN was changed","snippet":"Your PIN was changed on 2026-10-21. If this was not you, call 415.555.0192.","code":null}
+{"v":1,"id":"neg-10-3","split":"test","category":"phone","service":"","subject":"Your PIN was changed","snippet":"Your PIN was changed on 21/10/2026. If this was not you, call 1-800-555-0847.","code":null}
+{"v":1,"id":"neg-11-1","split":"dev","category":"phone","service":"","subject":"Verify your phone number","snippet":"We will text a code to (415) 555-0820. Reply STOP to opt out.","code":null}
+{"v":1,"id":"neg-11-2","split":"dev","category":"phone","service":"","subject":"Verify your phone number","snippet":"We will text a code to +44 20 7946 0309. Reply STOP to opt out.","code":null}
+{"v":1,"id":"neg-11-3","split":"dev","category":"phone","service":"","subject":"Verify your phone number","snippet":"We will text a code to 415.555.0637. Reply STOP to opt out.","code":null}
+{"v":1,"id":"neg-12-1","split":"test","category":"phone","service":"","subject":"Account security","snippet":"Support line: 415.555.0286 ext. 7597","code":null}
+{"v":1,"id":"neg-12-2","split":"test","category":"phone","service":"","subject":"Account security","snippet":"Support line: (415) 555-0710 ext. 4080","code":null}
+{"v":1,"id":"neg-12-3","split":"test","category":"phone","service":"","subject":"Account security","snippet":"Support line: +44 20 7946 0526 ext. 4557","code":null}
+{"v":1,"id":"neg-13-1","split":"dev","category":"date","service":"","subject":"Sign-in from a new device","snippet":"We noticed a sign-in on 21.10.2026 at 3:45 PM.","code":null}
+{"v":1,"id":"neg-13-2","split":"dev","category":"date","service":"","subject":"Sign-in from a new device","snippet":"We noticed a sign-in on 10/21/2026 at 3:45 PM.","code":null}
+{"v":1,"id":"neg-13-3","split":"dev","category":"date","service":"","subject":"Sign-in from a new device","snippet":"We noticed a sign-in on Oct 21, 2026 at 09:05 UTC.","code":null}
+{"v":1,"id":"neg-14-1","split":"test","category":"date","service":"","subject":"New sign-in to your account","snippet":"A sign-in on March 21, 2026 at 14:30 from Chrome on Mac.","code":null}
+{"v":1,"id":"neg-14-2","split":"test","category":"date","service":"","subject":"New sign-in to your account","snippet":"A sign-in on December 21, 2026 at 14:30 from Chrome on Mac.","code":null}
+{"v":1,"id":"neg-14-3","split":"test","category":"date","service":"","subject":"New sign-in to your account","snippet":"A sign-in on June 21, 2026 at 11:59 pm from Chrome on Mac.","code":null}
+{"v":1,"id":"neg-15-1","split":"dev","category":"date","service":"","subject":"Security report 20261019","snippet":"Your weekly security summary is ready.","code":null}
+{"v":1,"id":"neg-15-2","split":"dev","category":"date","service":"","subject":"Security report 20261019","snippet":"Your weekly security summary is ready.","code":null}
+{"v":1,"id":"neg-15-3","split":"dev","category":"date","service":"","subject":"Security report 20260930","snippet":"Your weekly security summary is ready.","code":null}
+{"v":1,"id":"neg-16-1","split":"test","category":"time","service":"","subject":"Security notice","snippet":"A login at 1430 UTC from Springfield was blocked.","code":null}
+{"v":1,"id":"neg-16-2","split":"test","category":"time","service":"","subject":"Security notice","snippet":"A login at 0930 UTC from Springfield was blocked.","code":null}
+{"v":1,"id":"neg-16-3","split":"test","category":"time","service":"","subject":"Security notice","snippet":"A login at 2215 UTC from Springfield was blocked.","code":null}
+{"v":1,"id":"neg-17-1","split":"dev","category":"tracking","service":"","subject":"Your package is on the way","snippet":"Tracking number: 1ZP7AJ49G3KZKGC4ZP. Confirm your delivery preferences.","code":null}
+{"v":1,"id":"neg-17-2","split":"dev","category":"tracking","service":"","subject":"Your package is on the way","snippet":"Tracking number: 1Z7ALSZN6TDKC3T5X7. Confirm your delivery preferences.","code":null}
+{"v":1,"id":"neg-17-3","split":"dev","category":"tracking","service":"","subject":"Your package is on the way","snippet":"Tracking number: 1ZADMBQJ4VM76WA59L. Confirm your delivery preferences.","code":null}
+{"v":1,"id":"neg-18-1","split":"test","category":"tracking","service":"","subject":"Delivery confirmation","snippet":"USPS tracking 9400 3360 0507 1948 6083 17 was delivered.","code":null}
+{"v":1,"id":"neg-18-2","split":"test","category":"tracking","service":"","subject":"Delivery confirmation","snippet":"USPS tracking 9400 2984 8747 5341 8536 25 was delivered.","code":null}
+{"v":1,"id":"neg-18-3","split":"test","category":"tracking","service":"","subject":"Delivery confirmation","snippet":"USPS tracking 9400 0213 5553 4400 0391 16 was delivered.","code":null}
+{"v":1,"id":"neg-19-1","split":"dev","category":"tracking","service":"","subject":"Delivery confirmation","snippet":"Parcel ID 0177 2655 was delivered to your locker.","code":null}
+{"v":1,"id":"neg-19-2","split":"dev","category":"tracking","service":"","subject":"Delivery confirmation","snippet":"Parcel ID 5585 7415 was delivered to your locker.","code":null}
+{"v":1,"id":"neg-19-3","split":"dev","category":"tracking","service":"","subject":"Delivery confirmation","snippet":"Parcel ID 2475 6074 was delivered to your locker.","code":null}
+{"v":1,"id":"neg-20-1","split":"test","category":"version","service":"","subject":"Security update available","snippet":"Version 2.18 fixes 4 issues. Update to stay protected.","code":null}
+{"v":1,"id":"neg-20-2","split":"test","category":"version","service":"","subject":"Security update available","snippet":"Version 131.0.6778.85 fixes 11 issues. Update to stay protected.","code":null}
+{"v":1,"id":"neg-20-3","split":"test","category":"version","service":"","subject":"Security update available","snippet":"Version 131.0.6778.85 fixes 12 issues. Update to stay protected.","code":null}
+{"v":1,"id":"neg-21-1","split":"dev","category":"version","service":"","subject":"Security update ready","snippet":"Build 1703 is ready to install. Restart to finish.","code":null}
+{"v":1,"id":"neg-21-2","split":"dev","category":"version","service":"","subject":"Security update ready","snippet":"Build 9035 is ready to install. Restart to finish.","code":null}
+{"v":1,"id":"neg-21-3","split":"dev","category":"version","service":"","subject":"Security update ready","snippet":"Build 6625 is ready to install. Restart to finish.","code":null}
+{"v":1,"id":"neg-22-1","split":"test","category":"version","service":"","subject":"Security advisory","snippet":"CVE-2026-31705 affects version 4.2.1. Upgrade now.","code":null}
+{"v":1,"id":"neg-22-2","split":"test","category":"version","service":"","subject":"Security advisory","snippet":"CVE-2026-93980 affects version 10.4.2. Upgrade now.","code":null}
+{"v":1,"id":"neg-22-3","split":"test","category":"version","service":"","subject":"Security advisory","snippet":"CVE-2026-07768 affects version 4.2.1. Upgrade now.","code":null}
+{"v":1,"id":"neg-23-1","split":"dev","category":"card","service":"","subject":"Security alert for your card","snippet":"A purchase on your card ending in 0732 was declined.","code":null}
+{"v":1,"id":"neg-23-2","split":"dev","category":"card","service":"","subject":"Security alert for your card","snippet":"A purchase on your card ending in 2254 was declined.","code":null}
+{"v":1,"id":"neg-23-3","split":"dev","category":"card","service":"","subject":"Security alert for your card","snippet":"A purchase on your card ending in 2645 was declined.","code":null}
+{"v":1,"id":"neg-24-1","split":"test","category":"card","service":"","subject":"Confirm your direct deposit","snippet":"Account ending 5082 will receive deposits from 2026-10-21.","code":null}
+{"v":1,"id":"neg-24-2","split":"test","category":"card","service":"","subject":"Confirm your direct deposit","snippet":"Account ending 4814 will receive deposits from 10/21/2026.","code":null}
+{"v":1,"id":"neg-24-3","split":"test","category":"card","service":"","subject":"Confirm your direct deposit","snippet":"Account ending 8490 will receive deposits from 10/21/2026.","code":null}
+{"v":1,"id":"neg-25-1","split":"dev","category":"card","service":"","subject":"Security: new card added","snippet":"Card ****7572 was added to your wallet.","code":null}
+{"v":1,"id":"neg-25-2","split":"dev","category":"card","service":"","subject":"Security: new card added","snippet":"Card ****8378 was added to your wallet.","code":null}
+{"v":1,"id":"neg-25-3","split":"dev","category":"card","service":"","subject":"Security: new card added","snippet":"Card ****8167 was added to your wallet.","code":null}
+{"v":1,"id":"neg-26-1","split":"test","category":"meeting","service":"","subject":"Invitation: Weekly sync","snippet":"Join Zoom Meeting. Meeting ID: 607 5454 2073. Passcode: 526008","code":null}
+{"v":1,"id":"neg-26-2","split":"test","category":"meeting","service":"","subject":"Invitation: Weekly sync","snippet":"Join Zoom Meeting. Meeting ID: 901 2139 1187. Passcode: 443171","code":null}
+{"v":1,"id":"neg-26-3","split":"test","category":"meeting","service":"","subject":"Invitation: Weekly sync","snippet":"Join Zoom Meeting. Meeting ID: 587 7879 7517. Passcode: 053013","code":null}
+{"v":1,"id":"neg-27-1","split":"dev","category":"meeting","service":"","subject":"Updated invitation: Design review","snippet":"Join by phone: 415.555.0063, PIN: 328206#","code":null}
+{"v":1,"id":"neg-27-2","split":"dev","category":"meeting","service":"","subject":"Updated invitation: Design review","snippet":"Join by phone: +44 20 7946 0745, PIN: 934401#","code":null}
+{"v":1,"id":"neg-27-3","split":"dev","category":"meeting","service":"","subject":"Updated invitation: Design review","snippet":"Join by phone: 1-800-555-0370, PIN: 170770#","code":null}
+{"v":1,"id":"neg-28-1","split":"test","category":"booking","service":"","subject":"Your booking confirmation","snippet":"Confirmation number: 6682378. Check-in Oct 21, 2026.","code":null}
+{"v":1,"id":"neg-28-2","split":"test","category":"booking","service":"","subject":"Your booking confirmation","snippet":"Confirmation number: 2180255. Check-in 2026-10-21.","code":null}
+{"v":1,"id":"neg-28-3","split":"test","category":"booking","service":"","subject":"Your booking confirmation","snippet":"Confirmation number: 2102134. Check-in 2026-10-21.","code":null}
+{"v":1,"id":"neg-29-1","split":"dev","category":"booking","service":"","subject":"Your flight confirmation code","snippet":"Confirmation code JFPG69. Flight EX 0033 departs at 11:59 pm.","code":null}
+{"v":1,"id":"neg-29-2","split":"dev","category":"booking","service":"","subject":"Your flight confirmation code","snippet":"Confirmation code DHEYE3. Flight EX 3528 departs at 09:05 UTC.","code":null}
+{"v":1,"id":"neg-29-3","split":"dev","category":"booking","service":"","subject":"Your flight confirmation code","snippet":"Confirmation code FVSED4. Flight EX 3625 departs at 14:30.","code":null}
+{"v":1,"id":"neg-30-1","split":"test","category":"booking","service":"","subject":"Confirm your reservation","snippet":"Room 8565, check-in 3 PM on 2026-10-21.","code":null}
+{"v":1,"id":"neg-30-2","split":"test","category":"booking","service":"","subject":"Confirm your reservation","snippet":"Room 1802, check-in 3 PM on 21/10/2026.","code":null}
+{"v":1,"id":"neg-30-3","split":"test","category":"booking","service":"","subject":"Confirm your reservation","snippet":"Room 7132, check-in 3 PM on Oct 21, 2026.","code":null}
+{"v":1,"id":"neg-31-1","split":"dev","category":"booking","service":"","subject":"Check-in confirmation","snippet":"Flight UA 7202 departs at 08:15 from gate B12.","code":null}
+{"v":1,"id":"neg-31-2","split":"dev","category":"booking","service":"","subject":"Check-in confirmation","snippet":"Flight UA 2992 departs at 08:15 from gate B12.","code":null}
+{"v":1,"id":"neg-31-3","split":"dev","category":"booking","service":"","subject":"Check-in confirmation","snippet":"Flight UA 1235 departs at 08:15 from gate B12.","code":null}
+{"v":1,"id":"neg-32-1","split":"test","category":"ticket","service":"","subject":"Support case 25132620 confirmed","snippet":"We received your request and will reply soon.","code":null}
+{"v":1,"id":"neg-32-2","split":"test","category":"ticket","service":"","subject":"Support case 38291047 confirmed","snippet":"We received your request and will reply soon.","code":null}
+{"v":1,"id":"neg-32-3","split":"test","category":"ticket","service":"","subject":"Support case 98117865 confirmed","snippet":"We received your request and will reply soon.","code":null}
+{"v":1,"id":"neg-33-1","split":"dev","category":"ticket","service":"","subject":"Your verification is complete","snippet":"Thanks for verifying. Case 93513 is closed.","code":null}
+{"v":1,"id":"neg-33-2","split":"dev","category":"ticket","service":"","subject":"Your verification is complete","snippet":"Thanks for verifying. Case 08356 is closed.","code":null}
+{"v":1,"id":"neg-33-3","split":"dev","category":"ticket","service":"","subject":"Your verification is complete","snippet":"Thanks for verifying. Case 24292 is closed.","code":null}
+{"v":1,"id":"neg-34-1","split":"test","category":"ticket","service":"","subject":"Invoice INV-59719 confirmation","snippet":"Total due $28.38 by 21.10.2026.","code":null}
+{"v":1,"id":"neg-34-2","split":"test","category":"ticket","service":"","subject":"Invoice INV-39544 confirmation","snippet":"Total due $898.00 by 21.10.2026.","code":null}
+{"v":1,"id":"neg-34-3","split":"test","category":"ticket","service":"","subject":"Invoice INV-11465 confirmation","snippet":"Total due $957.00 by 2026-10-21.","code":null}
+{"v":1,"id":"neg-35-1","split":"dev","category":"promo","service":"","subject":"Your code inside: SAVE20","snippet":"Use code SAVE20 for 20% off this weekend.","code":null}
+{"v":1,"id":"neg-35-2","split":"dev","category":"promo","service":"","subject":"Your code inside: SAVE20","snippet":"Use code SAVE20 for 20% off this weekend.","code":null}
+{"v":1,"id":"neg-35-3","split":"dev","category":"promo","service":"","subject":"Your code inside: SAVE20","snippet":"Use code SAVE20 for 20% off this weekend.","code":null}
+{"v":1,"id":"neg-36-1","split":"test","category":"promo","service":"","subject":"A welcome code for you","snippet":"Use code FALL2026 at checkout.","code":null}
+{"v":1,"id":"neg-36-2","split":"test","category":"promo","service":"","subject":"A welcome code for you","snippet":"Use code FALL2026 at checkout.","code":null}
+{"v":1,"id":"neg-36-3","split":"test","category":"promo","service":"","subject":"A welcome code for you","snippet":"Use code FALL2026 at checkout.","code":null}
+{"v":1,"id":"neg-37-1","split":"dev","category":"promo","service":"","subject":"Confirm your rewards","snippet":"You earned 1576 points this month.","code":null}
+{"v":1,"id":"neg-37-2","split":"dev","category":"promo","service":"","subject":"Confirm your rewards","snippet":"You earned 9161 points this month.","code":null}
+{"v":1,"id":"neg-37-3","split":"dev","category":"promo","service":"","subject":"Confirm your rewards","snippet":"You earned 9156 points this month.","code":null}
+{"v":1,"id":"neg-38-1","split":"test","category":"link","service":"","subject":"Sign in to Acme","snippet":"Click the link below to sign in. This link expires in 24 hours.","code":null}
+{"v":1,"id":"neg-38-2","split":"test","category":"link","service":"","subject":"Sign in to Northwind","snippet":"Click the link below to sign in. This link expires in 24 hours.","code":null}
+{"v":1,"id":"neg-38-3","split":"test","category":"link","service":"","subject":"Sign in to Tailspin","snippet":"Click the link below to sign in. This link expires in 24 hours.","code":null}
+{"v":1,"id":"neg-39-1","split":"dev","category":"link","service":"","subject":"Reset your password","snippet":"We received a request to reset your password. The link expires in 60 minutes.","code":null}
+{"v":1,"id":"neg-39-2","split":"dev","category":"link","service":"","subject":"Reset your password","snippet":"We received a request to reset your password. The link expires in 60 minutes.","code":null}
+{"v":1,"id":"neg-39-3","split":"dev","category":"link","service":"","subject":"Reset your password","snippet":"We received a request to reset your password. The link expires in 60 minutes.","code":null}
+{"v":1,"id":"neg-40-1","split":"test","category":"link","service":"","subject":"Verify your email address","snippet":"Click the button to confirm your email address for Acme.","code":null}
+{"v":1,"id":"neg-40-2","split":"test","category":"link","service":"","subject":"Verify your email address","snippet":"Click the button to confirm your email address for Tailspin.","code":null}
+{"v":1,"id":"neg-40-3","split":"test","category":"link","service":"","subject":"Verify your email address","snippet":"Click the button to confirm your email address for Tailspin.","code":null}
+{"v":1,"id":"neg-41-1","split":"dev","category":"link","service":"","subject":"Your code has expired","snippet":"Request a new code from the sign-in page.","code":null}
+{"v":1,"id":"neg-41-2","split":"dev","category":"link","service":"","subject":"Your code has expired","snippet":"Request a new code from the sign-in page.","code":null}
+{"v":1,"id":"neg-41-3","split":"dev","category":"link","service":"","subject":"Your code has expired","snippet":"Request a new code from the sign-in page.","code":null}
+{"v":1,"id":"neg-42-1","split":"test","category":"address","service":"","subject":"Confirm your address","snippet":"820 Main St, Springfield, IL 96157","code":null}
+{"v":1,"id":"neg-42-2","split":"test","category":"address","service":"","subject":"Confirm your address","snippet":"529 Main St, Springfield, IL 95974","code":null}
+{"v":1,"id":"neg-42-3","split":"test","category":"address","service":"","subject":"Confirm your address","snippet":"572 Main St, Springfield, IL 43222","code":null}
+{"v":1,"id":"neg-43-1","split":"dev","category":"address","service":"","subject":"Security check: new login","snippet":"New login from IP 192.168.8.006 near Fairview.","code":null}
+{"v":1,"id":"neg-43-2","split":"dev","category":"address","service":"","subject":"Security check: new login","snippet":"New login from IP 192.168.1.184 near Fairview.","code":null}
+{"v":1,"id":"neg-43-3","split":"dev","category":"address","service":"","subject":"Security check: new login","snippet":"New login from IP 192.168.7.326 near Lakeside.","code":null}
+{"v":1,"id":"neg-44-1","split":"test","category":"count","service":"","subject":"Your security key backup","snippet":"You have 10 backup codes left.","code":null}
+{"v":1,"id":"neg-44-2","split":"test","category":"count","service":"","subject":"Your security key backup","snippet":"You have 10 backup codes left.","code":null}
+{"v":1,"id":"neg-44-3","split":"test","category":"count","service":"","subject":"Your security key backup","snippet":"You have 10 backup codes left.","code":null}
+{"v":1,"id":"neg-45-1","split":"dev","category":"count","service":"","subject":"Two-factor authentication enabled","snippet":"You turned on 2FA on 21/10/2026. Recovery codes were generated.","code":null}
+{"v":1,"id":"neg-45-2","split":"dev","category":"count","service":"","subject":"Two-factor authentication enabled","snippet":"You turned on 2FA on 2026-10-21. Recovery codes were generated.","code":null}
+{"v":1,"id":"neg-45-3","split":"dev","category":"count","service":"","subject":"Two-factor authentication enabled","snippet":"You turned on 2FA on 21/10/2026. Recovery codes were generated.","code":null}
+{"v":1,"id":"neg-46-1","split":"test","category":"count","service":"","subject":"Security summary","snippet":"3 sign-ins this week from 2 devices.","code":null}
+{"v":1,"id":"neg-46-2","split":"test","category":"count","service":"","subject":"Security summary","snippet":"3 sign-ins this week from 2 devices.","code":null}
+{"v":1,"id":"neg-46-3","split":"test","category":"count","service":"","subject":"Security summary","snippet":"3 sign-ins this week from 2 devices.","code":null}
+{"v":1,"id":"neg-47-1","split":"dev","category":"calendar","service":"","subject":"Confirmed: Dentist appointment","snippet":"Tue Oct 21, 2026 10:30am to 11:30am. Room 4207.","code":null}
+{"v":1,"id":"neg-47-2","split":"dev","category":"calendar","service":"","subject":"Confirmed: Dentist appointment","snippet":"Tue Oct 21, 2026 10:30am to 11:30am. Room 2840.","code":null}
+{"v":1,"id":"neg-47-3","split":"dev","category":"calendar","service":"","subject":"Confirmed: Dentist appointment","snippet":"Tue Oct 21, 2026 10:30am to 11:30am. Room 6417.","code":null}
+{"v":1,"id":"neg-48-1","split":"test","category":"plain","service":"","subject":"Lunch on Friday?","snippet":"Are you free at 1230 or 1300?","code":null}
+{"v":1,"id":"neg-48-2","split":"test","category":"plain","service":"","subject":"Lunch on Friday?","snippet":"Are you free at 1230 or 1300?","code":null}
+{"v":1,"id":"neg-48-3","split":"test","category":"plain","service":"","subject":"Lunch on Friday?","snippet":"Are you free at 1230 or 1300?","code":null}
+{"v":1,"id":"neg-49-1","split":"dev","category":"plain","service":"","subject":"Your 2026 security checklist","snippet":"Five steps to keep your account safe this year.","code":null}
+{"v":1,"id":"neg-49-2","split":"dev","category":"plain","service":"","subject":"Your 2026 security checklist","snippet":"Five steps to keep your account safe this year.","code":null}
+{"v":1,"id":"neg-49-3","split":"dev","category":"plain","service":"","subject":"Your 2026 security checklist","snippet":"Five steps to keep your account safe this year.","code":null}
+{"v":1,"id":"neg-50-1","split":"test","category":"plain","service":"","subject":"Quarterly report","snippet":"Revenue was 4853 units in Q3, up from 4751.","code":null}
+{"v":1,"id":"neg-50-2","split":"test","category":"plain","service":"","subject":"Quarterly report","snippet":"Revenue was 1948 units in Q3, up from 7529.","code":null}
+{"v":1,"id":"neg-50-3","split":"test","category":"plain","service":"","subject":"Quarterly report","snippet":"Revenue was 6925 units in Q3, up from 3266.","code":null}

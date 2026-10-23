@@ -14,6 +14,7 @@ export function inline(src: string): string {
   s = s.replace(/\*\*(?=\S)([^*]+?)\*\*/g, '<strong>$1</strong>').replace(/(^|\W)__(?=\S)([^_]+?)__(?=\W|$)/g, '$1<strong>$2</strong>');
   s = s.replace(/(^|[^*\w])\*(?=\S)([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>').replace(/(^|\W)_(?=\S)([^_\n]+?)_(?=\W|$)/g, '$1<em>$2</em>');
   s = s.replace(/~~(?=\S)([^~]+?)~~/g, '<del>$1</del>');
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: NUL marks the code spans set aside above.
   return s.replace(/\u0000(\d+)\u0000/g, (_, i: string) => `<code>${codes[Number(i)]}</code>`);
 }
 

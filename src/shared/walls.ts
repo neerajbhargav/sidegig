@@ -237,7 +237,7 @@ export function mixPool(lists: WallItem[][], hidden: string[] = [], max = MAX_PO
   const seen = new Set<string>();
   const hide = new Set(hidden);
   const out: WallItem[] = [];
-  for (let round = 0; out.length < max && queues.some((q) => q.length); round++) {
+  while (out.length < max && queues.some((q) => q.length)) {
     for (const q of queues) {
       // A duplicate or hidden picture doesn't cost this term its turn.
       let it = q.shift();
