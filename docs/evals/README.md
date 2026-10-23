@@ -39,6 +39,8 @@ Add `--write` to save a result file. `test/mail-codes.test.ts` runs in CI and fa
 
 Result files: `mail-codes-2026-10-22-279374e.json`, `mail-codes-2026-10-22-eddf145.json` (findCode as in `07fea22`), `mail-codes-holdout-2026-10-22-279374e.json`, `mail-codes-holdout-2026-10-22-eddf145.json`.
 
+Re-run on 2026-10-23 at `2f260f5`, after `main` (0.4.0 and the Arc redesign) was merged in: `mail-codes-2026-10-23-2f260f5.json` and `mail-codes-holdout-2026-10-23-2f260f5.json`. Both match the `eddf145` files row for row (same counts, intervals and misses).
+
 ## Prompt injection
 
 The assistant reads untrusted text: pages (`read_tab` and attached tabs), tab, history and bookmark titles, and email threads. It also has `open_url` and MCP tools that can send data out. Two defenses exist. Both are deterministic and unit-tested in `test/injection.test.ts`, which runs in CI.
