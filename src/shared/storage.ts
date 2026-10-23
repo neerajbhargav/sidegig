@@ -81,6 +81,11 @@ export function migrate(stored: unknown): unknown {
     if (bg && (bg.treatment === 'auto' || !bg.treatment)) nt.background = { ...bg, treatment: autoEffect(String(bg.kind ?? ''), String(bg.ref ?? ''), String(next.newtab.look ?? 'auto')) };
     next.newtab = nt;
   }
+  // v10 -> v11: the Arc redesign. The accent follows the space colour unless you
+  // picked one (the old fixed Google blue was the default, not a choice), and
+  // Match browser gives way to the Space look.
+  if (v < 11 && isObj(next.theme) && String(next.theme.accent).toLowerCase() === '#0b57d0') next.theme = { ...next.theme, accent: '' };
+  if (v < 11 && isObj(next.newtab) && next.newtab.look === 'auto') next.newtab = { ...next.newtab, look: 'space' };
   // v2 -> v3: the new tab edition arrived; defaults fill it in.
   next.version = SETTINGS_VERSION;
   return next;

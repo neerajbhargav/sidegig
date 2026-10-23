@@ -1,5 +1,6 @@
 import type { Layout } from './layout.ts';
 import type { EdKind } from './edition/types.ts';
+import type { Space } from './theme.ts';
 
 export type Side = 'left' | 'right';
 /** docked = always visible and the page makes room (like Opera); hover = slides over the page. */
@@ -9,7 +10,7 @@ export type OpenIn = 'panel' | 'window' | 'tab' | 'drawer';
 export type ThemeMode = 'system' | 'light' | 'dark' | 'page';
 export type BadgeKind = 'parens' | 'gmail' | 'none';
 /** New tab theme. "auto" matches the browser; the rest are sidegig's studio themes; "custom" is yours. */
-export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom' | 'picture';
+export type NtLook = 'space' | 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom' | 'picture';
 export type BgKind = 'none' | 'daily' | 'monuments' | 'photo' | 'gradient' | 'pattern' | 'upload' | 'url' | 'color' | 'collection';
 /** How a picture is shown: as is, or one of the studio treatments. */
 export type BgEffect = 'auto' | 'photo' | 'print' | 'film' | 'dream' | 'led' | 'mosaic' | 'ascii';
@@ -86,6 +87,8 @@ export interface Settings {
     /** Site icons: each site's own (fitted to one size), or logos drawn in the theme's ink. */
     icons: 'original' | 'themed';
     customCss: string;
+    /** Arc-style space colour: the sidebar, rail and Space new tab wear it. */
+    space: Space;
   };
   apps: AppEntry[];
   stacks: {
