@@ -46,7 +46,7 @@ export function buildPrompt({ template, text, title, url, maxChars }: PromptInpu
 //
 // First NFKC folds lookalikes (fullwidth ＜, small ﹤, fullwidth letters) to
 // ASCII, and format characters (zero-width space, word joiner, soft hyphen,
-// BOM, bidi marks) are dropped, so "<​/page>" cannot hide a tag.
+// BOM, bidi marks) are dropped, so "<", a zero-width space and "/page>" cannot hide a tag.
 const FORMAT = /\p{Cf}/gu;
 const OPEN = '[<‹〈⟨]';
 const TAGS = 'page|email|system|user|assistant|tool\\w*|instructions?|start_of_turn|end_of_turn|sys';
