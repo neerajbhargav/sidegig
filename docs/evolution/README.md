@@ -182,11 +182,11 @@ Commit `ed425f1` on branch `upgrade/oct-2026` (plus uncommitted work).
 <img src="2026-10-21-09-ask-before-sending-page-data-out-after-r.jpg" width="49%" alt="Ask before sending page data out: after reading a page, the chat stops before it opens a link that carries tab titles (fixture model)">
 <img src="2026-10-21-10-settings-ask-ai-the-new-ask-before-sendi.jpg" width="49%" alt="Settings, Ask AI: the new Ask before sending page data out switch, off by default">
 
-## 2026-10-22: The drawer's private port works again, found by the Playwright checks
+## 2026-10-22: The drawer's private port works, found by the Playwright checks
 
 Fix in commit `328ab58`, captured at `72ee294` on branch `upgrade/oct-2026`.
 
-<img src="2026-10-22-01-the-drawer-switches-to-search-over-its-p.jpg" width="49%" alt="The drawer switches to Search over its private port again (Playwright, Chromium 153, fresh profile)">
+<img src="2026-10-22-01-the-drawer-switches-to-search-over-its-p.jpg" width="49%" alt="The drawer switches to Search over its private port (Playwright, Chromium 153, fresh profile)">
 
 ## 2026-10-23: Redesign after Arc: space colour frame, content cards, lift, system type
 
@@ -202,3 +202,9 @@ Commit `b0a4e4d` on branch `design/arc` (plus uncommitted work).
 Commit `706beab` on branch `upgrade/oct-2026` (plus uncommitted work).
 
 <img src="2026-10-23-05-ask-before-sending-restyled-after-arc-fi.jpg" width="49%" alt="Ask before sending, restyled after Arc (fixture chat): before, a hairline box with frame wells; after, a content card in light and dark, no lift">
+
+## 2026-10-23: Ask before sending stays on this device
+
+Change in commit `ce44957`, captured at `58bbfdc` on branch `upgrade/oct-2026`.
+
+<img src="2026-10-23-06-settings-ask-ai-ask-before-sending-page.jpg" width="49%" alt="Settings, Ask AI: Ask before sending page data out is now kept on this device and never syncs (fixture preview)">
