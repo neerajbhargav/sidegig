@@ -3,6 +3,7 @@
 // through the official Codex app (Codex owns the sign-in), and lets agents like
 // Claude Code, Codex and Cursor use this browser over MCP.
 import type { Delta, Effort, ModelInfo, Msg, TurnRequest } from './types.ts';
+import { getLocal } from '../storage.ts';
 
 export const BRIDGE_PORT = 47617;
 export const BRIDGE_WS = `ws://127.0.0.1:${BRIDGE_PORT}/ext`;
@@ -14,8 +15,10 @@ export interface BridgeHello {
   agents: { url: string; token: string };
 }
 
-/** Open a connection to the bridge and wait for its hello. */
-export function openBridge(role: 'page' | 'host', timeout = 1500): Promise<{ ws: WebSocket; hello: BridgeHello }> {
+/** Open a connection to the bridge and wait for its hello. Every hello carries the
+ * pairing code the bridge printed (`setup`), kept on this device only. */
+export async function openBridge(role: 'page' | 'host', timeout = 1500): Promise<{ ws: WebSocket; hello: BridgeHello }> {
+  const code = await getLocal<string>('bridgeCode', '');
   return new Promise((resolve, reject) => {
     let ws: WebSocket;
     try {
@@ -24,9 +27,9 @@ export function openBridge(role: 'page' | 'host', timeout = 1500): Promise<{ ws:
       return reject(e);
     }
     const t = setTimeout(() => (ws.close(), reject(new Error('The sidegig bridge isn’t running.'))), timeout);
-    ws.addEventListener('open', () => ws.send(JSON.stringify({ type: 'hello', role, app: 'sidegig', version: 1 })));
+    ws.addEventListener('open', () => ws.send(JSON.stringify({ type: 'hello', role, app: 'sidegig', version: 1, code })));
     ws.addEventListener('message', function first(e) {
-      let m: { type?: string; message?: string };
+      let m: { type?: string; message?: string; reason?: string };
       try {
         m = JSON.parse(String(e.data));
       } catch {
@@ -39,7 +42,7 @@ export function openBridge(role: 'page' | 'host', timeout = 1500): Promise<{ ws:
       } else if (m.type === 'refused') {
         clearTimeout(t);
         ws.close();
-        reject(new Error(m.message ?? 'The bridge turned this browser down.'));
+        reject(new Error(m.reason === 'code' ? 'The bridge needs its pairing code. Run node bridge/sidegig-bridge.mjs setup and paste the code here.' : m.message ?? 'The bridge turned this browser down.'));
       }
     });
     ws.addEventListener('error', () => (clearTimeout(t), reject(new Error('The sidegig bridge isn’t running.'))));

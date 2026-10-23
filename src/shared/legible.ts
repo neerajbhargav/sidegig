@@ -21,6 +21,22 @@ export const luminance = (r: number, g: number, b: number) => 0.2126 * lin(r) + 
 /** WCAG contrast ratio of two luminances. */
 export const contrast = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 
+/**
+ * A button filled with the accent: the text colour that reads better on it, and the accent
+ * nudged darker (or lighter) just enough for that text to reach 4.5:1. Mid-tone accents
+ * such as #2f6bff otherwise land a hair under with either white or near-black.
+ */
+export function accentFill(rgb: [number, number, number]): { fill: [number, number, number]; on: '#ffffff' | '#111111' } {
+  const dark = luminance(17, 17, 17);
+  const L = luminance(...rgb);
+  const on = contrast(L, 1) >= contrast(L, dark) ? '#ffffff' : '#111111';
+  const toward = on === '#ffffff' ? 0 : 255;
+  const ink = on === '#ffffff' ? 1 : dark;
+  let fill = rgb;
+  for (let t = 0; t <= 1 && contrast(luminance(...fill), ink) < 4.5; t += 0.02) fill = rgb.map((v) => Math.round(v + (toward - v) * t)) as [number, number, number];
+  return { fill, on };
+}
+
 export interface Patch {
   /** Luminance percentiles of the patch: darkest tenth, middle, brightest tenth. */
   p10: number;
@@ -128,4 +144,27 @@ export function colorsIn(css: string): [number, number, number][] {
     out.push([parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]);
   }
   return out;
+}
+
+/** The tint a card needs behind `tone` text to reach `target` contrast over this patch (0–1). */
+function alphaFor(p: Patch, tone: 'light' | 'dark', target = 5): number {
+  if (tone === 'light') {
+    const maxL = (LIGHT_INK + 0.05) / target - 0.05;
+    const vHi = enc(p.p90);
+    return vHi <= enc(maxL) ? 0 : 1 - enc(maxL) / vHi;
+  }
+  const minL = target * (DARK_INK + 0.05) - 0.05;
+  const vLo = enc(p.p10);
+  return vLo >= enc(minL) ? 0 : (enc(minL) - vLo) / (1 - vLo);
+}
+
+/**
+ * One text tone for every card on the desk (mixed light and dark cards read as
+ * a fault): the tone that needs the least tint over the cards' total area.
+ * Each card keeps the usual 62% tint, or more where its patch needs it, up to 90%.
+ */
+export function deskTone(cards: { patch: Patch; area: number }[]): { tone: 'light' | 'dark'; alphas: number[] } {
+  const cost = (tone: 'light' | 'dark') => cards.reduce((n, c) => n + c.area * alphaFor(c.patch, tone), 0);
+  const tone = cards.length && cost('dark') < cost('light') ? 'dark' : 'light';
+  return { tone, alphas: cards.map((c) => Math.round(Math.min(0.9, Math.max(0.62, alphaFor(c.patch, tone, 4.5))) * 100) / 100) };
 }

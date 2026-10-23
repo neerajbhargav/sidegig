@@ -1,5 +1,6 @@
 import type { Layout } from './layout.ts';
 import type { EdKind } from './edition/types.ts';
+import type { Space } from './theme.ts';
 
 export type Side = 'left' | 'right';
 /** docked = always visible and the page makes room (like Opera); hover = slides over the page. */
@@ -9,7 +10,7 @@ export type OpenIn = 'panel' | 'window' | 'tab' | 'drawer';
 export type ThemeMode = 'system' | 'light' | 'dark' | 'page';
 export type BadgeKind = 'parens' | 'gmail' | 'none';
 /** New tab theme. "auto" matches the browser; the rest are sidegig's studio themes; "custom" is yours. */
-export type NtLook = 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom' | 'picture';
+export type NtLook = 'space' | 'auto' | 'paper' | 'night' | 'ultramarine' | 'indigo' | 'cobalt' | 'field' | 'phosphor' | 'sand' | 'mono' | 'custom' | 'picture';
 export type BgKind = 'none' | 'daily' | 'monuments' | 'photo' | 'gradient' | 'pattern' | 'upload' | 'url' | 'color' | 'collection';
 /** How a picture is shown: as is, or one of the studio treatments. */
 export type BgEffect = 'auto' | 'photo' | 'print' | 'film' | 'dream' | 'led' | 'mosaic' | 'ascii';
@@ -42,13 +43,18 @@ export interface AppEntry {
   badge: boolean;
   /** Catalog id when this came from the built-in catalog. */
   catalogId?: string;
+  /** Never unload its frame while hidden. Unset: messaging apps keep running. */
+  keepAlive?: boolean;
+  /** No desktop notifications from it while it runs inside sidegig. */
+  muted?: boolean;
 }
 
 export interface LinkRule {
   id: string;
   /** Hostname or glob, e.g. `notion.so` or `*.figma.com`. */
   pattern: string;
-  action: 'window' | 'reuse-tab';
+  /** `sidebar`: the matching app in the open sidebar, else a mini window. */
+  action: 'window' | 'reuse-tab' | 'sidebar';
   enabled: boolean;
 }
 
@@ -67,7 +73,8 @@ export interface Settings {
     floatOn: string[];
     hideInFullscreen: boolean;
   };
-  drawer: { width: number };
+  /** `apps`: the width you dragged each app's drawer to; others use `width`. */
+  drawer: { width: number; apps: Record<string, number> };
   theme: {
     mode: ThemeMode;
     base: string;
@@ -80,6 +87,8 @@ export interface Settings {
     /** Site icons: each site's own (fitted to one size), or logos drawn in the theme's ink. */
     icons: 'original' | 'themed';
     customCss: string;
+    /** Arc-style space colour: the sidebar, rail and Space new tab wear it. */
+    space: Space;
   };
   apps: AppEntry[];
   stacks: {
@@ -116,6 +125,8 @@ export interface Settings {
     /** A Home | AI switch: your browser's own AI and every assistant's chats, one tab away. */
     aiTab: boolean;
     clockStyle: 'digital' | 'analog';
+    /** A second clock, like a world-time watch: a time zone such as Asia/Kolkata, or '' for none. */
+    zone2: string;
     /** Your name for the greeting. */
     name: string;
     /** What the new tab calls itself in the top corner (empty = sidegig). */
@@ -138,7 +149,7 @@ export interface Settings {
     weather: { enabled: boolean; place: string; lat: number; lon: number; units: 'f' | 'c' };
     todo: boolean;
     /** Which parts of the page show (each one can be turned off). */
-    widgets: { greeting: boolean; brief: boolean; weather: boolean; calendar: boolean; pomodoro: boolean; notes: boolean; apps: boolean; bookmarks: boolean; reading: boolean; tabs: boolean; calculator: boolean; feed: boolean };
+    widgets: { greeting: boolean; brief: boolean; weather: boolean; calendar: boolean; pomodoro: boolean; notes: boolean; bookmarks: boolean; reading: boolean; tabs: boolean; calculator: boolean; feed: boolean };
     /** How widgets sit on the wallpaper: clear (bounded tint with an adaptive text tone), glass, or solid. */
     panels: 'frosted' | 'clear' | 'solid';
     /** Where each widget sits on the 12 × 8 grid (missing ones use their usual spot). */
@@ -176,7 +187,8 @@ export interface StatusCard {
   value: string;
   detail: string;
   url: string;
-  items: { title: string; meta: string; url: string; state?: 'ok' | 'warn' | 'error' | 'busy' }[];
+  /** Gmail rows also carry the sign-in code found in them, when they arrived, the message id and the sender's address. */
+  items: { title: string; meta: string; url: string; state?: 'ok' | 'warn' | 'error' | 'busy'; code?: string; at?: number; mid?: string; email?: string }[];
   /** Changes whenever there is something new to look at. */
   signature: string;
   error?: string;

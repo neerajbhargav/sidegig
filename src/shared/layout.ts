@@ -93,10 +93,49 @@ export function nearestFree(want: Box, taken: Box[]): Box | null {
 
 /**
  * Every shown widget with a valid place: stored spots where they fit, defaults
- * otherwise, collisions settled by priority. Widgets that can't fit anywhere
- * (too many large ones) are left out and listed in `hidden`.
+ * otherwise, collisions settled by priority. When a saved desk is too full for
+ * widgets switched on later, the largest boxes shrink one size step at a time,
+ * least important first and never search, keeping their spots, until every
+ * widget fits. Only widgets that still can't fit are listed in `hidden`.
  */
 export function resolve(layout: Layout, shown: WidgetId[]): { boxes: Partial<Record<WidgetId, Box>>; hidden: WidgetId[] } {
+  let r = settle(layout, shown);
+  if (!r.hidden.length) return r;
+  const wishes: Layout = { ...r.boxes };
+  const area = (b: Box) => b.w * b.h;
+  const smaller = (id: WidgetId, b: Box) => SIZES[id].filter(([w, h]) => w * h < area(b)).sort((a, b2) => b2[0] * b2[1] - a[0] * a[1])[0];
+  const leastFirst = [...PRIORITY].reverse().filter((id) => shown.includes(id) && id !== 'search');
+  for (let round = 0; round < 30 && r.hidden.length; round++) {
+    const next = leastFirst
+      .filter((id) => wishes[id] && smaller(id, wishes[id]!))
+      .sort((a, b) => area(wishes[b]!) - area(wishes[a]!))[0];
+    if (!next) break;
+    const [w, h] = smaller(next, wishes[next]!);
+    wishes[next] = { ...wishes[next]!, w, h };
+    r = settle(wishes, shown);
+    for (const id of Object.keys(r.boxes) as WidgetId[]) wishes[id] = r.boxes[id];
+  }
+  // Widgets switched on after the desk was arranged try each of their sizes, so
+  // the packed desk is as full as it can be instead of leaving a hole.
+  const fresh = shown.filter((id) => !layout[id]);
+  if (!r.hidden.length && fresh.length && fresh.length <= 4) {
+    const used = (x: typeof r) => Object.values(x.boxes).reduce((n, b) => n + area(b!), 0);
+    const fixed: Layout = { ...wishes };
+    for (const id of fresh) delete fixed[id];
+    let combos: [number, number][][] = [[]];
+    for (const id of fresh) combos = combos.flatMap((c) => SIZES[id].map((sz) => [...c, sz]));
+    for (const combo of combos) {
+      if (used(r) === COLS * ROWS) break;
+      const trial: Layout = { ...fixed };
+      fresh.forEach((id, i) => (trial[id] = { ...DEFAULT_LAYOUT[id], w: combo[i][0], h: combo[i][1] }));
+      const t = settle(trial, shown);
+      if (!t.hidden.length && used(t) > used(r)) r = t;
+    }
+  }
+  return r;
+}
+
+function settle(layout: Layout, shown: WidgetId[]): { boxes: Partial<Record<WidgetId, Box>>; hidden: WidgetId[] } {
   const boxes: Partial<Record<WidgetId, Box>> = {};
   const hidden: WidgetId[] = [];
   const taken: Box[] = [];

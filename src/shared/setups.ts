@@ -204,7 +204,7 @@ export function describe(bundle: SetupBundle): string {
   const s = mergeSettings(defaultSettings(), migrate(bundle.settings));
   const bits: string[] = [];
   if (bundle.parts.includes('apps') && Array.isArray(s.apps)) bits.push(`${s.apps.length} app${s.apps.length === 1 ? '' : 's'}`);
-  const look = s.newtab.look || 'auto';
+  const look = s.newtab.look || 'space';
   if (bundle.parts.includes('looks')) bits.push(`${look === 'auto' ? 'Match browser' : look[0].toUpperCase() + look.slice(1)} theme`);
   const interests = (bundle.local.edProfile as { interests?: unknown[] } | undefined)?.interests?.length;
   if (bundle.parts.includes('reading') && interests) bits.push(`${interests} interest${interests === 1 ? '' : 's'}`);

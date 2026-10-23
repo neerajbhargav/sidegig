@@ -2,7 +2,7 @@
 // We keep a small copy of the wallpaper as it's drawn on screen (fit, blur and
 // veil included), then for each widget read the patch behind it and set its
 // text tone for its bounded tint (see shared/legible.ts for the maths).
-import { colorsIn, legibilityFor, patchOf, patchOfColors, type Patch } from '../../shared/legible.ts';
+import { colorsIn, deskTone, legibilityFor, patchOf, patchOfColors, type Patch } from '../../shared/legible.ts';
 import { onArranged } from './ntgrid.ts';
 
 type Sample = { px: Uint8ClampedArray; W: number; H: number } | { flat: Patch };
@@ -103,12 +103,12 @@ async function sampleOf(wall: HTMLElement, root: HTMLElement): Promise<Sample | 
  * Clear surface on a wallpaper; otherwise it clears any tones it set.
  */
 export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: boolean, signal: AbortSignal) {
-  const widgets = () => [...root.querySelectorAll<HTMLElement>('.gw:not([data-w="search"]):not(.is-open)')];
+  const widgets = () => [...root.querySelectorAll<HTMLElement>('.gw:not(.is-open)')];
   if (!on || !wall) {
+    delete root.dataset.deskTone;
     for (const w of widgets()) {
       delete w.dataset.tone;
-      w.style.removeProperty('--lg-dim');
-      w.style.removeProperty('--lg-blur');
+      w.style.removeProperty('--lg-a');
     }
     return;
   }
@@ -126,15 +126,22 @@ export function keepReadable(root: HTMLElement, wall: HTMLElement | null, on: bo
       }
       return;
     }
+    // One tone for the whole desk: light and dark cards side by side read as a fault.
+    const cards: { w: HTMLElement; patch: Patch; area: number }[] = [];
     for (const w of widgets()) {
       const r = w.getBoundingClientRect();
       if (!r.width || !r.height) continue;
       const frac = { x: r.left / innerWidth, y: r.top / innerHeight, w: r.width / innerWidth, h: r.height / innerHeight };
-      const patch = 'flat' in sample ? sample.flat : patchOf(sample.px, sample.W, sample.H, frac);
-      const l = legibilityFor(patch);
-      w.dataset.tone = l.tone;
-      w.dataset.ratio = String(l.ratio);
+      cards.push({ w, patch: 'flat' in sample ? sample.flat : patchOf(sample.px, sample.W, sample.H, frac), area: r.width * r.height });
     }
+    const desk = deskTone(cards);
+    // The top bar (name, pages, tools) wears the same tone, so it reads over the picture too.
+    root.dataset.deskTone = desk.tone;
+    cards.forEach((c, i) => {
+      c.w.dataset.tone = desk.tone;
+      c.w.style.setProperty('--lg-a', String(desk.alphas[i]));
+      c.w.dataset.ratio = String(legibilityFor(c.patch).ratio);
+    });
     root.dataset.readable = 'true';
   };
   let pending: ReturnType<typeof setTimeout> | undefined;

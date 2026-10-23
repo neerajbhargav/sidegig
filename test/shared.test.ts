@@ -160,6 +160,19 @@ test('v8: everyone moves to Clear once; the auto effect becomes what it showed',
   assert.deepEqual(pic.newtab.layout, {});
 });
 
+test('v11, the Arc redesign: the default Google blue follows the space colour; Match browser becomes Space; picked choices stay', () => {
+  const old = mergeSettings(defaultSettings(), migrate({ version: 10, theme: { accent: '#0b57d0', mode: 'dark' }, newtab: { look: 'auto' } }));
+  assert.equal(old.theme.accent, '');
+  assert.equal(old.newtab.look, 'space');
+  assert.equal(old.theme.mode, 'dark');
+  assert.deepEqual(old.theme.space, defaultSettings().theme.space);
+  const mine = mergeSettings(defaultSettings(), migrate({ version: 10, theme: { accent: '#e5484d' }, newtab: { look: 'picture' } }));
+  assert.equal(mine.theme.accent, '#e5484d');
+  assert.equal(mine.newtab.look, 'picture');
+  const space = mergeSettings(defaultSettings(), migrate({ version: 11, theme: { space: { colors: ['#ff0000'], grain: 0, intensity: 80 } } }));
+  assert.deepEqual(space.theme.space, { colors: ['#ff0000'], grain: 0, intensity: 80 });
+});
+
 test('a saved layout, folder colours and active space survive loading', () => {
   const layout = { clock: { x: 0, y: 0, w: 3, h: 2 } };
   const s = mergeSettings(defaultSettings(), migrate({ version: SETTINGS_VERSION, newtab: { layout, folderTones: { f1: 'sage' } }, stacks: { activeSpace: 'space-1' } }));
@@ -189,4 +202,13 @@ test('null and primitive app entries do not crash old migrations', () => {
     assert.deepEqual(result.apps, [{ ...appFromCatalog('gmail'), mobile: false }]);
     assert.equal(stored.apps.length, 4, 'the source list stays untouched');
   }
+});
+
+test('messengers keep running while hidden unless you say otherwise', async () => {
+  const { keepsRunning, appFromCatalog } = await import('../src/shared/defaults.ts');
+  assert.equal(keepsRunning(appFromCatalog('whatsapp')), true);
+  assert.equal(keepsRunning(appFromCatalog('claude')), false);
+  assert.equal(keepsRunning({ ...appFromCatalog('whatsapp'), keepAlive: false }), false);
+  assert.equal(keepsRunning({ keepAlive: true }), true, 'a custom app you switched on');
+  assert.equal(keepsRunning({}), false);
 });

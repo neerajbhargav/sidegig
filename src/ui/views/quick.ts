@@ -4,8 +4,19 @@ import { hostExcluded } from '../../shared/rules.ts';
 import type { Settings } from '../../shared/types.ts';
 import { h, iconButton } from '../dom.ts';
 import { type Ctx, activeTab, openOptions } from '../ctx.ts';
+import { spacePicker } from '../spacepick.ts';
 
-export const ACCENTS = ['#0b57d0', '#3b6ef5', '#7c5cff', '#e5484d', '#f2994a', '#2fb36d', '#14b8a6', '#1f2328'];
+export const ACCENTS = ['#3b6ef5', '#7c5cff', '#e5484d', '#f2994a', '#2fb36d', '#14b8a6', '#1f2328'];
+
+/** Accent choices: the first follows the space colour (''), the rest are fixed. */
+export function accentSwatches(s: Settings, pick: (c: string) => void): HTMLElement {
+  return h(
+    'div',
+    { class: 'swatches' },
+    h('button', { class: 'swatch', type: 'button', title: 'Follow the space colour', 'aria-label': 'Follow the space colour', style: { background: 'var(--sp-frame)' }, 'aria-pressed': String(!s.theme.accent), onclick: () => pick('') }),
+    ACCENTS.map((c) => h('button', { class: 'swatch', type: 'button', title: c, style: { background: c }, 'aria-pressed': String(c.toLowerCase() === s.theme.accent.toLowerCase()), onclick: () => pick(c) })),
+  );
+}
 
 export function seg<T extends string>(value: T, options: [T, string][], onPick: (v: T) => void): HTMLElement {
   const el = h('div', { class: 'seg', role: 'group' });
@@ -73,22 +84,13 @@ export async function quickView(ctx: Ctx): Promise<HTMLElement> {
           )
         : null,
     ),
+    h('div', { class: 'label' }, 'Space colour'),
+    h('div', { class: 'group sp-group' }, spacePicker(s, { compact: true })),
     h('div', { class: 'label' }, 'Appearance'),
     h(
       'div',
       { class: 'group' },
-      opt('Theme', s.theme.mode === 'page' ? 'Follows each page’s colors' : null, seg(s.theme.mode, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['page', 'Page']], (v) => set((x) => void (x.theme.mode = v)))),
-      opt(
-        'Accent',
-        null,
-        h(
-          'div',
-          { class: 'swatches' },
-          ACCENTS.map((c) =>
-            h('button', { class: 'swatch', type: 'button', title: c, style: { background: c }, 'aria-pressed': String(c.toLowerCase() === s.theme.accent.toLowerCase()), onclick: () => set((x) => void (x.theme.accent = c)) }),
-          ),
-        ),
-      ),
+      opt('Accent', s.theme.accent ? null : 'Follows the space colour', accentSwatches(s, (c) => set((x) => void (x.theme.accent = c)))),
       opt(
         'Contrast',
         null,

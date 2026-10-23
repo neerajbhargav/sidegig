@@ -1,21 +1,26 @@
 import type { OpenIn, Side } from './types.ts';
 
-/** Messages sent to the background service worker. */
+/** Messages sent to the background service worker. Site messages name no host:
+ * the worker takes it from the sender (see background/trust.ts). */
 export type ToBackground =
   | { type: 'open-app'; appId: string; url: string; openIn: OpenIn; side: Side }
   | { type: 'clear-sw'; url: string }
-  | { type: 'frame-cookies'; url: string }
+  | { type: 'frame-cookies' }
   | { type: 'ask-ai'; appId: string; url: string; openIn: OpenIn; side: Side; prompt: string; autoSend: boolean }
-  | { type: 'badge'; host: string; count: number }
-  | { type: 'ai-claim'; host: string }
+  | { type: 'badge'; count: number }
+  | { type: 'ai-claim' }
   | { type: 'ask-page' }
   | { type: 'tab-info' }
+  | { type: 'drawer-frames' }
+  | { type: 'mail-thread'; mid: string }
+  | { type: 'agent-stop' }
+  | { type: 'backup-now' }
   | { type: 'save-workspace'; name: string }
   | { type: 'restore-workspace'; id: string }
   | { type: 'sleep-tabs' }
   | { type: 'refresh-status' }
   | { type: 'edition-build' }
-  | { type: 'profile-import'; text: string; host: string };
+  | { type: 'profile-import'; text: string };
 
 /** Messages sent from the background to a tab's rail. */
 export type ToContent =

@@ -8,11 +8,11 @@ import { h, ico, toast, favicon } from '../dom.ts';
 import { play } from '../sound.ts';
 import { openOptions, type Ctx } from '../ctx.ts';
 import { md } from '../../shared/ai/md.ts';
-import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter } from '../../shared/ai/providers.ts';
+import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter, streamTurn } from '../../shared/ai/providers.ts';
 import { runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
 import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
-import { bridgeStatus } from '../../shared/ai/bridge.ts';
+import { openBridge, type BridgeHello } from '../../shared/ai/bridge.ts';
 import { modelKey, type Effort, type ModelInfo, type Msg, type ProviderId } from '../../shared/ai/types.ts';
 
 // ------------------------------------------------------------ saved chats and picks
@@ -91,6 +91,23 @@ class Picks {
   effective(): Effort {
     return this.model && this.model.efforts.includes(this.effort) ? this.effort : 'auto';
   }
+}
+
+/**
+ * One answer from the model picked in chat, without tools or history (mail
+ * summaries and drafts). Streams the text so far to `on`. Resolves to '' when
+ * done, 'no-model' when nothing is connected, or an error message.
+ */
+export async function askPicked(prompt: string, on: (text: string) => void, signal: AbortSignal): Promise<string> {
+  const picks = new Picks();
+  await picks.load();
+  if (!picks.model) return 'no-model';
+  let text = '';
+  for await (const d of streamTurn(picks.model, { model: picks.model.id, system: systemPrompt(), messages: [{ role: 'user', content: prompt }], tools: [], effort: picks.effective() }, signal)) {
+    if (d.type === 'text') on((text += d.text));
+    else if (d.type === 'error') return d.message;
+  }
+  return signal.aborted ? 'Stopped.' : '';
 }
 
 // ------------------------------------------------------------ menus
@@ -285,20 +302,34 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
   });
 
   // Your ChatGPT plan, through Codex and the bridge.
+  const pairCode = h('input', { class: 'text-input', placeholder: 'Pairing code, like K7QM-2XRP', 'aria-label': 'Bridge pairing code', autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
+  void getLocal<string>('bridgeCode', '').then((c) => (pairCode.value = c));
   const bridgeHelp = h(
     'div',
     { class: 'ai-keyform', hidden: true },
     h('p', { class: 'ai-note' }, 'This uses the official Codex app, so OpenAI handles the sign-in. In a terminal:'),
-    h('ol', { class: 'ai-steps' }, h('li', {}, 'Install Codex and sign in with ChatGPT: ', h('code', {}, 'npm i -g @openai/codex && codex login')), h('li', {}, 'Start the sidegig bridge from the sidegig folder: ', h('code', {}, 'node bridge/sidegig-bridge.mjs'))),
+    h(
+      'ol',
+      { class: 'ai-steps' },
+      h('li', {}, 'Install Codex and sign in with ChatGPT: ', h('code', {}, 'npm i -g @openai/codex && codex login')),
+      h('li', {}, 'Start the sidegig bridge from the sidegig folder: ', h('code', {}, 'node bridge/sidegig-bridge.mjs')),
+      h('li', {}, 'Paste the pairing code it prints. Only this browser can then use it.'),
+    ),
+    h('div', { class: 'ai-row' }, pairCode),
     h(
       'button',
       {
         type: 'button',
         class: 'btn primary',
         onclick: async () => {
+          await setLocal('bridgeCode', pairCode.value.trim().toUpperCase());
           say('Looking for the bridge…');
-          const s = await bridgeStatus();
-          if (!s) return say('The bridge isn’t running yet.');
+          let s: BridgeHello;
+          try {
+            s = (await openBridge('page')).hello;
+          } catch (e) {
+            return say((e as Error).message === 'The sidegig bridge isn’t running.' ? 'The bridge isn’t running yet.' : (e as Error).message);
+          }
           if (!s.codex.installed) return say('The bridge is running, but Codex isn’t installed.');
           if (!s.codex.signedIn) return say('Codex is installed but not signed in. Run: codex login');
           await setKeys({ codex: '1' });
@@ -307,7 +338,7 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
           onDone();
         },
       },
-      'Check again',
+      'Connect',
     ),
   );
   const forms = [keyForm, localForm, bridgeHelp];
@@ -335,10 +366,10 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
           say((e as Error).message);
         }
       }, !!keys.openrouter),
-      choice(ico('key', 18), 'An API key', 'OpenAI, Anthropic, Google or OpenRouter', () => show(keyForm), !!(keys.openai || keys.anthropic || keys.google)),
-      choice(ico('window', 18), 'A model on this computer', 'Ollama, LM Studio', () => show(localForm), !!keys.local),
+      choice(ico('key', 20), 'An API key', 'OpenAI, Anthropic, Google or OpenRouter', () => show(keyForm), !!(keys.openai || keys.anthropic || keys.google)),
+      choice(ico('window', 20), 'A model on this computer', 'Ollama, LM Studio', () => show(localForm), !!keys.local),
       builtin !== 'unavailable'
-        ? choice(ico('globe', 18), 'This browser’s own model', builtin === 'available' ? 'Ready: private, free, on this device' : 'Downloads once, then works offline', async () => {
+        ? choice(ico('globe', 20), 'This browser’s own model', builtin === 'available' ? 'Ready: private, free, on this device' : 'Downloads once, then works offline', async () => {
             say(builtin === 'available' ? 'Ready.' : 'It will download the first time you ask something.');
             onDone();
           })
@@ -419,7 +450,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   const paintCtx = () => {
     ctxRow.replaceChildren(
       ...[...attached].map(([id, t]) =>
-        h('span', { class: 'cc-chip', title: t.url }, favicon(t.url, t.title, 'fav xs'), h('span', {}, t.title || t.url), h('button', { type: 'button', 'aria-label': `Remove ${t.title}`, onclick: () => (attached.delete(id), paintCtx()) }, ico('close', 14))),
+        h('span', { class: 'cc-chip', title: t.url }, favicon(t.url, t.title, 'fav xs'), h('span', {}, t.title || t.url), h('button', { type: 'button', 'aria-label': `Remove ${t.title}`, onclick: () => (attached.delete(id), paintCtx()) }, ico('close', 16))),
       ),
       h('button', { type: 'button', class: 'cc-addtab', title: 'Attach an open tab', onclick: (e: MouseEvent) => void tabMenu(e.currentTarget as HTMLElement) }, ico('attach', 16), attached.size ? null : h('span', {}, o.where === 'panel' ? 'Add a tab' : 'Attach tabs')),
     );
@@ -459,6 +490,19 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
   if (o.where === 'panel') {
     const t = await likelyTab(o.hostTabId);
     if (t?.id !== undefined) attached.set(t.id, { title: t.title ?? '', url: t.url ?? '' });
+    // Text you chose "Ask the sidegig Assistant" on: quoted, ready for your question.
+    const prefill = (v: unknown) => {
+      const p = v as { text?: string; ts?: number } | null;
+      if (!p?.text || !p.ts || Date.now() - p.ts > 30_000) return;
+      void setLocal('chatPrefill', null);
+      input.value = `${p.text.trim().split('\n').map((l) => `> ${l}`).join('\n')}\n\n`;
+      input.dispatchEvent(new Event('input'));
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    };
+    void getLocal('chatPrefill', null).then(prefill);
+    const stopPrefill = onLocalChanged('chatPrefill', prefill);
+    ctx.signal?.addEventListener('abort', stopPrefill, { once: true });
   }
   paintCtx();
 
@@ -797,7 +841,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
                 'div',
                 { class: 'cc-optrow' },
                 h('button', { type: 'button', role: 'option', class: 'cc-opt', 'aria-selected': String(c.id === chat.id), onclick: () => (loadChat(c), closePop()) }, h('span', { class: 'cc-opt-t' }, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString())),
-                h('button', { type: 'button', class: 'cc-del', title: 'Delete', 'aria-label': `Delete ${c.title}`, onclick: async () => (await deleteChat(c.id), paintList((await loadChats()).filter((x) => x.id !== c.id)), c.id === chat.id && newChat()) }, ico('close', 14)),
+                h('button', { type: 'button', class: 'cc-del', title: 'Delete', 'aria-label': `Delete ${c.title}`, onclick: async () => (await deleteChat(c.id), paintList((await loadChats()).filter((x) => x.id !== c.id)), c.id === chat.id && newChat()) }, ico('close', 16)),
               ),
             )
           : [h('p', { class: 'cc-none' }, 'No chats yet.')]),
@@ -834,10 +878,10 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
     { class: 'cv-head' },
     title,
     h('span', { class: 'ask-gap' }),
-    h('button', { type: 'button', class: 'nt-gear', title: 'Chats', 'aria-label': 'Chats', onclick: (e: MouseEvent) => void historyMenu(e.currentTarget as HTMLElement) }, ico('history', 18)),
-    h('button', { type: 'button', class: 'nt-gear', title: 'New chat', 'aria-label': 'New chat', onclick: newChat }, ico('plus', 18)),
-    h('button', { type: 'button', class: 'nt-gear', title: 'AI settings', 'aria-label': 'AI settings', onclick: () => openOptions('ai') }, ico('sliders', 18)),
-    o.where === 'newtab' ? h('button', { type: 'button', class: 'nt-gear', title: 'Close', 'aria-label': 'Close chat', onclick: close }, ico('close', 18)) : null,
+    h('button', { type: 'button', class: 'nt-gear', title: 'Chats', 'aria-label': 'Chats', onclick: (e: MouseEvent) => void historyMenu(e.currentTarget as HTMLElement) }, ico('history', 20)),
+    h('button', { type: 'button', class: 'nt-gear', title: 'New chat', 'aria-label': 'New chat', onclick: newChat }, ico('plus', 20)),
+    h('button', { type: 'button', class: 'nt-gear', title: 'AI settings', 'aria-label': 'AI settings', onclick: () => openOptions('ai') }, ico('sliders', 20)),
+    o.where === 'newtab' ? h('button', { type: 'button', class: 'nt-gear', title: 'Close', 'aria-label': 'Close chat', onclick: close }, ico('close', 20)) : null,
   );
   const composer = h('div', { class: 'cc' }, ctxRow, input, h('div', { class: 'cc-bar' }, pickerBar(picks, () => void showSetup()), toolsNote, h('span', { class: 'ask-gap' }), sendBtn));
   view.append(head, h('div', { class: 'cv-main' }, scroller, setupHost), h('div', { class: 'cv-foot' }, composer));

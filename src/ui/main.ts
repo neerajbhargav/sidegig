@@ -5,7 +5,7 @@ import { loadSettings, onSettingsChanged, getLocal, onLocalChanged } from '../sh
 import { themeCss } from '../shared/theme.ts';
 import type { Ctx, Kind, ViewName } from './ctx.ts';
 import { send } from './ctx.ts';
-import { panelRail } from './views/prail.ts';
+import { markRail, paintRailBadges, panelRail } from './views/prail.ts';
 import { updateSettings, setLocal } from '../shared/storage.ts';
 import { iconButton, setFavMissing, setIconStyle } from './dom.ts';
 import { applyScale } from '../shared/scale.ts';
@@ -22,6 +22,23 @@ import { chatUi } from './views/ntchat.ts';
 const params = new URLSearchParams((globalThis as any).__SIDEGIG_PARAMS__ ?? (location.hash.slice(1) || location.search.slice(1)));
 const kind = (document.body.dataset.ctx ?? params.get('ctx') ?? 'panel') as Kind;
 const nonce = params.get('n') ?? '';
+
+// Drawer <-> rail: a private MessageChannel. The rail hands over its port once,
+// tagged with the nonce from our URL (the page can't read it). Nothing is posted
+// to the hosting page itself, so the page never sees the nonce or the traffic.
+let railPort: MessagePort | null = null;
+const toRailQueue: Record<string, unknown>[] = [];
+let fromRail: (d: Record<string, unknown>) => void = () => undefined;
+const toRail = (msg: Record<string, unknown>) => (railPort ? railPort.postMessage(msg) : toRailQueue.push(msg));
+if (kind === 'drawer') {
+  window.addEventListener('message', (e) => {
+    const d = e.data;
+    if (railPort || e.source !== window.parent || d?.ns !== 'sidegig' || d.n !== nonce || d.type !== 'port' || !e.ports[0]) return;
+    railPort = e.ports[0];
+    railPort.onmessage = (m) => m.data && fromRail(m.data);
+    for (const m of toRailQueue.splice(0)) railPort.postMessage(m);
+  });
+}
 
 async function whereAmI(): Promise<{ tabId?: number; windowId?: number }> {
   if (kind === 'drawer') {
@@ -95,8 +112,8 @@ async function boot() {
     windowId: where.windowId,
     tabId: where.tabId,
     go: (name, opts) => void render(name, opts),
-    close: () => window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'close' }, '*'),
-    toRail: (msg) => window.parent.postMessage({ ns: 'sidegig', n: nonce, ...msg }, '*'),
+    close: () => toRail({ type: 'close' }),
+    toRail,
   };
   setIconStyle(settings.theme.icons);
 
@@ -110,7 +127,7 @@ async function boot() {
     if (kind !== 'newtab') document.documentElement.dataset.ui = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
   };
 
-  async function render(name: ViewName, opts: { app?: string; q?: string } = {}) {
+  async function render(name: ViewName, opts: { app?: string; q?: string; url?: string } = {}) {
     const my = ++token;
     renderLife?.abort();
     const life = new AbortController();
@@ -124,7 +141,7 @@ async function boot() {
     else if (name === 'settings') el = await quickView(viewCtx);
     else if (name === 'add') el = await addView(viewCtx);
     else if (name === 'chat') el = (await chatUi(viewCtx, { where: 'panel' })).view;
-    else if (name === 'app') el = await appBar(viewCtx, current.app);
+    else if (name === 'app') el = await appBar(viewCtx, current.app, opts.url);
     else el = await homeView(viewCtx);
     if (my !== token) return;
     view.replaceChildren(el);
@@ -132,10 +149,18 @@ async function boot() {
     view.style.flex = name === 'app' ? 'none' : '1 1 auto';
     showFrames(name === 'app');
     if (kind === 'panel') void renderRail();
-    if (kind === 'drawer') window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'view', view: name }, '*');
+    if (kind === 'drawer') toRail({ type: 'view', view: name, app: current.app });
   }
 
-  async function renderRail() {
+  // The panel rail is rebuilt only when what it lists changes; switching views
+  // and new unread counts update it in place, so icons don't reload or lose focus.
+  let railKey = '';
+  async function renderRail(force = false) {
+    const t = ctx.settings;
+    const key = JSON.stringify([t.apps.map((a) => [a.id, a.name, a.url, a.badge, a.catalogId]), t.theme.icons, t.ai.defaultApp]);
+    const nav = railHost.firstElementChild as HTMLElement | null;
+    if (nav && !force && key === railKey) return markRail(nav, current);
+    railKey = key;
     railHost.replaceChildren(await panelRail(ctx, current));
   }
 
@@ -207,26 +232,27 @@ async function boot() {
     setFavMissing((v as string[] | undefined) ?? []);
     if (current.name !== 'search') void render(current.name, { app: current.app });
   });
-  onLocalChanged('badges', () => (kind === 'panel' ? void renderRail() : current.name === 'app' && void render('app', { app: current.app })));
-  onLocalChanged('status', () => kind === 'panel' && void renderRail());
+  onLocalChanged('badges', (b) => {
+    const nav = railHost.firstElementChild as HTMLElement | null;
+    if (kind === 'panel' && nav) paintRailBadges(nav, ctx, (b as Record<string, number> | undefined) ?? {});
+  });
+  onLocalChanged('status', () => kind === 'panel' && void renderRail(true));
 
-  // Drawer: messages from the rail in the hosting page (checked by nonce).
-  window.addEventListener('message', (e) => {
-    const d = e.data;
-    if (e.source !== window.parent || !d || d.ns !== 'sidegig' || d.n !== nonce) return;
-    if (d.type === 'view') void render(d.view, { app: d.app });
+  // Drawer: messages from the rail in the hosting page, over the private port.
+  fromRail = (d) => {
+    if (d.type === 'view') void render(d.view as ViewName, { app: d.app as string | undefined });
     if (d.type === 'theme') {
       pageMode = d.mode === 'light' || d.mode === 'dark' ? d.mode : null;
       applyTheme();
     }
-  });
+  };
 
   // Panel: requests from the rail or background ("show Claude").
   if (kind === 'panel') {
     const handle = (r: unknown) => {
-      const req = r as { appId?: string; view?: ViewName; ts?: number } | null;
+      const req = r as { appId?: string; view?: ViewName; url?: string; ts?: number } | null;
       if (!req || !req.ts || Date.now() - req.ts > 15_000) return false;
-      if (req.appId) void render('app', { app: req.appId });
+      if (req.appId) void render('app', { app: req.appId, url: req.url });
       else if (req.view) void render(req.view);
       return true;
     };
@@ -243,7 +269,7 @@ async function boot() {
     }
     if (e.key === 'Escape' && kind === 'drawer' && current.name !== 'search') ctx.close();
   });
-  if (kind === 'drawer') window.parent.postMessage({ ns: 'sidegig', n: nonce, type: 'ready' }, '*');
+  if (kind === 'drawer') toRail({ type: 'ready' });
 }
 
 void boot();

@@ -60,3 +60,37 @@ export const clockText = (ms: number) => {
   const t = Math.ceil(ms / 1000);
   return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 };
+
+// ---------------------------------------------------------------- focus history
+
+/** One finished focus session: when it ended and how long it was. */
+export interface FocusDone { end: number; min: number }
+export interface FocusDay { date: Date; min: number; level: 0 | 1 | 2 | 3 | 4; today: boolean; future: boolean }
+
+/** Add a finished session, once (several open tabs may each see it finish). */
+export function logFocus(log: FocusDone[], end: number, min: number): FocusDone[] {
+  if (log.some((d) => d.end === end)) return log;
+  return [...log, { end, min }].slice(-500);
+}
+
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
+/** The last `weeks` weeks, Sunday to Saturday, ending with this week. */
+export function focusGrid(log: FocusDone[], now: Date, weeks: number): { days: FocusDay[]; thisWeek: number; lastWeek: number } {
+  const totals = new Map<string, number>();
+  for (const d of log) {
+    const k = dayKey(new Date(d.end));
+    totals.set(k, (totals.get(k) ?? 0) + d.min);
+  }
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - (weeks - 1) * 7);
+  const days: FocusDay[] = [];
+  for (let i = 0; i < weeks * 7; i++) {
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const today = dayKey(date) === dayKey(now);
+    days.push({ date, min: totals.get(dayKey(date)) ?? 0, level: 0, today, future: date > now && !today });
+  }
+  const max = Math.max(1, ...days.map((d) => d.min));
+  for (const d of days) d.level = d.min ? (Math.max(1, Math.ceil((d.min / max) * 4)) as FocusDay['level']) : 0;
+  const week = (w: number) => days.slice(days.length - 7 * (w + 1), days.length - 7 * w).reduce((n, d) => n + d.min, 0);
+  return { days, thisWeek: week(0), lastWeek: week(1) };
+}

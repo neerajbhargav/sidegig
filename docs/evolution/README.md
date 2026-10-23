@@ -156,3 +156,30 @@ Commit `387d99b` on branch `product/complete-core-flows` (plus uncommitted work)
 Commit `945a9d1` on branch `bugfix/panel-close-restore` (plus uncommitted work).
 
 <img src="2026-10-17-10-native-panel-closure-restores-the-page-d.jpg" width="49%" alt="Native panel closure restores the page dock; clean fixture view">
+
+## 2026-10-21: Opt-in weekly backup to Downloads that survives removing the extension
+
+Commit `ce7f527` on branch `product/premium-1.0` (plus uncommitted work).
+
+<img src="2026-10-21-01-desk-with-twelve-weeks-of-focus-history.jpg" width="49%" alt="Desk with twelve weeks of focus history, a second time zone and the day summary as a two-tone greeting">
+<img src="2026-10-21-02-gmail-rows-with-a-sign-in-code-ticket-su.jpg" width="49%" alt="Gmail rows with a sign-in code ticket, Summarize and Draft reply in the sidebar">
+<img src="2026-10-21-03-sidebar-home-with-the-sign-in-code-ticke.jpg" width="49%" alt="Sidebar home with the sign-in code ticket, new stack or space button and outline counts">
+<img src="2026-10-21-04-first-run-setup-as-a-numbered-step-rail.jpg" width="49%" alt="First-run setup as a numbered step rail">
+<img src="2026-10-21-05-agents-on-this-computer-off-read-only-or.jpg" width="49%" alt="Agents on this computer: off, read only or full, with the bridge pairing code">
+<img src="2026-10-21-06-opt-in-weekly-backup-to-downloads-that-s.jpg" width="49%" alt="Opt-in weekly backup to Downloads that survives removing the extension">
+
+## 2026-10-21: One design system for every surface, enforced by a test
+
+Commit `77ce138` on branch `product/premium-1.0` (plus uncommitted work).
+
+<img src="2026-10-21-07-layout-fix-32fe690-fixture-desk-saved-fu.jpg" width="49%" alt="Layout fix (32fe690), fixture desk saved full before three widgets were added. Before: one hidden widget forced the scrolling layout, with light and dark cards mixed. After: the re-pack fits all 11 widgets on one screen in one tone.">
+<img src="2026-10-21-08-design-system-77ce138-before-white-on-wh.jpg" width="49%" alt="Design system (77ce138). Before: white-on-white Find and note text, a light search card, expand buttons on every card edge, four button shapes, titles at five heights. After: one header row, one button, one corner control, every card in the desk tone.">
+
+## 2026-10-23: Redesign after Arc: space colour frame, content cards, lift, system type
+
+Commit `b0a4e4d` on branch `design/arc` (plus uncommitted work).
+
+<img src="2026-10-23-01-sidebar-after-arc-b0a4e4d-fixtures-befor.jpg" width="49%" alt="Sidebar after Arc (b0a4e4d, fixtures): before; the space colour frame with an address pill, favorites tiles, a lifted open tab and space dots; an app on an inset page card; dark">
+<img src="2026-10-23-02-new-tab-space-look-b0a4e4d-fixtures-befo.jpg" width="49%" alt="New tab, Space look (b0a4e4d, fixtures): before (Match browser); after, the space colour with white widget cards and a lifted command bar">
+<img src="2026-10-23-03-settings-after-arc-b0a4e4d-fixtures-befo.jpg" width="49%" alt="Settings after Arc (b0a4e4d, fixtures): before; navigation on the space colour, the page on a card, the space colour picker">
+<img src="2026-10-23-04-space-look-in-dark-mode-and-the-page-rai.jpg" width="49%" alt="Space look in dark mode, and the page rail as a strip of the space colour (b0a4e4d, fixtures)">

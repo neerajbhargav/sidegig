@@ -1,9 +1,12 @@
-// Home: apps, bookmark stacks (Dia/Arc style), tabs in this window, workspaces.
+// Home, laid out like Arc's sidebar: the address pill, saved sites as tiles,
+// folders, this window's tabs as rows, workspaces, and spaces at the foot.
 import { ext, features } from '../../shared/api.ts';
 import { getLocal, setLocal, updateSettings } from '../../shared/storage.ts';
+import { seg } from './quick.ts';
 import type { Workspace } from '../../shared/types.ts';
 import { h, ico, iconButton, favicon, faviconOnly, hostOf, toast, ago, keys } from '../dom.ts';
 import { type Ctx, openUrl, switchTo, activeTab, send } from '../ctx.ts';
+import { codePill } from './status.ts';
 
 type Node = chrome.bookmarks.BookmarkTreeNode;
 
@@ -82,7 +85,7 @@ export function stackEl(ctx: Ctx, folder: Node): HTMLElement {
   return wrap;
 }
 
-async function spaceSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement> {
+async function spaceSection(ctx: Ctx, rerender: () => void, foot: HTMLElement): Promise<HTMLElement> {
   const sec = h('section');
   const spaces = await spacesFor(ctx);
   if (!spaces.length) return sec;
@@ -94,30 +97,67 @@ async function spaceSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement
     toast(`Added to ${active.title || 'stacks'}`);
     rerender();
   };
+  // A new stack (a folder in this space) or a new space (a folder of its own), as real bookmarks.
+  const name = h('input', { class: 'text-input', placeholder: 'Name', 'aria-label': 'Folder name', maxlength: 60 }) as HTMLInputElement;
+  let kind: 'stack' | 'space' = 'stack';
+  const form = h(
+    'form',
+    { class: 'new-folder', hidden: true },
+    seg<'stack' | 'space'>(kind, [['stack', 'Stack'], ['space', 'Space']], (v) => (kind = v)),
+    name,
+    h('button', { class: 'btn primary', type: 'submit' }, 'Create'),
+  ) as HTMLFormElement;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = name.value.trim();
+    if (!title) return name.focus();
+    if (kind === 'stack') {
+      await ext.bookmarks.create({ parentId: active.id, title });
+      toast(`Stack ${title} added`);
+      rerender();
+      return;
+    }
+    const [tree] = await ext.bookmarks.getTree();
+    const parentId = tree.children?.[1]?.id ?? tree.children?.[0]?.id ?? '1';
+    const folder = await ext.bookmarks.create({ parentId, title });
+    await updateSettings((st) => {
+      st.stacks.spaces = [...new Set([...(st.stacks.spaces.length ? st.stacks.spaces : spaces.map((x) => x.id)), folder.id])];
+      st.stacks.activeSpace = folder.id;
+    });
+    toast(`Space ${title} added`);
+  });
   sec.append(
     h(
       'div',
       { class: 'label' },
-      h('span', {}, spaces.length > 1 ? 'Spaces' : active.title || 'Bookmarks'),
+      h('span', {}, active.title || 'Bookmarks'),
       h('span', { class: 'grow' }),
       h('button', { class: 'link', type: 'button', onclick: addPage }, '+ Add page'),
+      iconButton('folder', 'New stack or space', () => {
+        form.hidden = !form.hidden;
+        if (!form.hidden) name.focus();
+      }),
     ),
+    form,
   );
+  foot.hidden = spaces.length < 2;
   if (spaces.length > 1) {
-    sec.append(
+    foot.replaceChildren(
       h(
         'div',
-        { class: 'chips' },
+        { class: 'space-dots', role: 'group', 'aria-label': 'Spaces' },
         spaces.map((s) =>
           h(
             'button',
             {
-              class: 'chip',
+              class: 'space-dot',
               type: 'button',
+              title: s.title || 'Untitled',
+              'aria-label': `Space: ${s.title || 'Untitled'}`,
               'aria-pressed': String(s.id === active.id),
               onclick: () => void updateSettings((st) => void (st.stacks.activeSpace = s.id)),
             },
-            s.title || 'Untitled',
+            h('i'),
           ),
         ),
       ),
@@ -127,7 +167,7 @@ async function spaceSection(ctx: Ctx, rerender: () => void): Promise<HTMLElement
   const links = children.filter((c) => c.url);
   const folders = children.filter((c) => !c.url);
   if (links.length) {
-    // Saved sites as an icon grid, like Opera's speed dial in the sidebar.
+    // Saved sites as tiles, like Arc's favorites.
     const pins = h('div', { class: 'tiles icons', style: { marginTop: '6px' } });
     for (const l of links.slice(0, 40)) {
       pins.append(
@@ -152,7 +192,7 @@ async function tabsSection(ctx: Ctx): Promise<HTMLElement> {
   const here = await activeTab(ctx);
   const windowId = here?.windowId ?? ctx.windowId;
   const tabs = windowId !== undefined ? await ext.tabs.query({ windowId }) : [];
-  const list = h('div');
+  const list = h('div', { class: 'tablist' });
   const GROUP_COLORS: Record<string, string> = {
     grey: '#8a8d91', blue: '#1a73e8', red: '#d93025', yellow: '#f9ab00', green: '#188038', pink: '#d01884', purple: '#a142f4', cyan: '#007b83', orange: '#fa903e',
   };
@@ -292,10 +332,11 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
   await loadOpenStacks();
   const root = h('div', { class: 'app' });
   const body = h('div', { class: 'scroll' });
+  const foot = h('div', { class: 'home-foot', hidden: true });
   const rerender = async () => {
     const pad = h('div', { class: 'pad' });
     // The rail (or the panel's own buttons list) already shows your apps right next to this.
-    pad.append(await spaceSection(ctx, rerender), await tabsSection(ctx), await workspacesSection(ctx, rerender));
+    pad.append(await spaceSection(ctx, rerender, foot), await tabsSection(ctx), await workspacesSection(ctx, rerender));
     body.replaceChildren(pad);
   };
   const search = h('div', { class: 'field' }, ico('search', 16), h('input', {
@@ -312,7 +353,7 @@ export async function homeView(ctx: Ctx): Promise<HTMLElement> {
     iconButton('sliders', 'Settings', () => ctx.go('settings')),
     ctx.kind === 'drawer' ? iconButton('close', 'Close (Esc)', () => ctx.close()) : null,
   );
-  root.append(bar, search, body);
+  root.append(bar, search, codePill(ctx), body, foot);
   await rerender();
   // Keep tabs and bookmarks fresh while the view is on screen.
   refreshHome = () => root.isConnected && void rerender();

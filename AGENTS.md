@@ -36,13 +36,14 @@ The session is done only when all four hold:
 
 - `src/background/`: service worker. `dnr.ts` (header and user-agent rules), `framecookies.ts` (cookie rules for app frames), `open.ts` (side window, tabs), `favicons.ts`, `index.ts` (message router).
 - `src/content/`: scripts injected into pages. `rail.ts`/`rail.css` (the docked rail), `dock.ts` (moves page content aside), `framefit.ts` and `framefit-main.ts` (make frame-hostile apps run inside sidegig frames).
-- `src/shared/`: logic with tests. `catalog.ts` (built-in apps, `NO_FRAME`, `PHONE_FIT`), `defaults.ts` and `storage.ts` (settings and migrations, `SETTINGS_VERSION`), `layout.ts` (new-tab grid), `legible.ts` (wallpaper contrast), `ai/` (chat providers, wire formats, MCP client, bridge client, tools).
-- `src/ui/`: drawer, panel and new tab. `views/newtab.ts`, `views/ntgrid.ts` (grid and arrange mode), `views/ntdash.ts` (widgets), `views/ntchat.ts` (chat UI), `views/ntcustom.ts` (Customize panel), `views/appview.ts` (app frames). Styles in `ui.css`.
+- `src/shared/`: logic with tests. `catalog.ts` (built-in apps, `NO_FRAME`, `PHONE_FIT`), `defaults.ts` and `storage.ts` (settings and migrations, `SETTINGS_VERSION`), `layout.ts` (new-tab grid), `legible.ts` (wallpaper contrast), `theme.ts` (colour tokens and the space colour), `ai/` (chat providers, wire formats, MCP client, bridge client, tools).
+- `src/ui/`: drawer, panel and new tab. `spacepick.ts` (the space colour picker), `views/newtab.ts`, `views/ntgrid.ts` (grid and arrange mode), `views/ntdash.ts` (widgets), `views/ntchat.ts` (chat UI), `views/ntcustom.ts` (Customize panel), `views/appview.ts` (app frames). Styles in `ui.css`.
 - `src/options/`: the settings page. `bridge/sidegig-bridge.mjs`: local helper for Codex and outside agents (not yet tested end to end).
 
 ## Rules
 
 - Product and design decisions are listed in `docs/STATUS.md` under "Key decisions". Follow them; ask the owner before changing one.
+- UI work uses the design system in `docs/DESIGN.md`: tokens, components and widget anatomy. `test/design.test.ts` fails on a raw value.
 - Mark temporary debugging code with the comment `DIAGNOSTIC (temporary)` and remove it before merging to `main`.
 - Third-party code needs a licence entry in `THIRD_PARTY_NOTICES.md`. Write AI and site integrations clean-room from public docs.
 - To understand a third-party site's shipped scripts (for example why Gmail fails in a frame), use the REA skill (`reverse-engineer-anything`, CLI `rea`): save the page's scripts to a folder, then run `rea analyze-javascript-application <folder>` or search the saved files.
