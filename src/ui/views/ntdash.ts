@@ -4,9 +4,9 @@
 import { ext } from '../../shared/api.ts';
 import { getLocal, setLocal, onLocalChanged, updateSettings } from '../../shared/storage.ts';
 import { CAL_APPS, eventIcs, feedUrl, monthGrid, occurrences, parseIcs, sameDay, weekStartFor, type CalEvent } from '../../shared/ntcal.ts';
-import { clockText, freshPomo, msLeft, next, pause, phaseMs, settle, start, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
-import { greetingFor, navigationUrl, parseWeather, weatherLabel, weatherUrl, type WeatherNow } from '../../shared/ntdata.ts';
-import { h, ico, favicon, faviconOnly, toast } from '../dom.ts';
+import { clockText, focusGrid, freshPomo, logFocus, msLeft, next, pause, phaseMs, settle, start, type FocusDone, type PomoConfig, type PomoState } from '../../shared/ntpomo.ts';
+import { greetingFor, navigationUrl, parseWeather, weatherLabel, weatherUrl, zoneText, type WeatherNow } from '../../shared/ntdata.ts';
+import { h, ico, favicon, faviconOnly, iconButton, toast } from '../dom.ts';
 import { type Ctx, openUrl } from '../ctx.ts';
 import { spacesFor } from './home.ts';
 import { analogClockEl, findPlace } from './ntwidgets.ts';
@@ -54,7 +54,6 @@ export function card(cls: string, title: string | null, actions: (Node | null)[]
     ...body.filter(Boolean),
   );
 }
-const iconBtn = (name: string, label: string, onClick: (e: MouseEvent) => void, size = 18) => h('button', { type: 'button', class: 'nt-ib', title: label, 'aria-label': label, onclick: onClick }, ico(name, size));
 
 /** Characters that change roll in (from above, through a blur); the rest stay still. */
 export function rollText(el: HTMLElement, text: string) {
@@ -86,20 +85,32 @@ const skel = (...widths: string[]) => h('div', { class: 'skel-stack', 'aria-hidd
 // ---------------------------------------------------------------- time
 
 /** The line over the search: your own message, or a greeting with your name. */
-export function greetingLine(ctx: Ctx): HTMLElement | null {
+export function greetingLine(ctx: Ctx, brief: HTMLElement | null = null): HTMLElement | null {
   const n = ctx.settings.newtab;
   if (!n.widgets.greeting) return null;
   const name = n.name.trim();
-  return h('h1', { class: 'nt-greet' }, n.message.trim() || `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}`);
+  const text = n.message.trim() || `${greetingFor(new Date().getHours())}${name ? `, ${name}` : ''}`;
+  if (!brief) return h('h1', { class: 'nt-greet' }, text);
+  return h('h1', { class: 'nt-greet two-tone' }, /[.!?]$/.test(text) ? text : `${text}.`, ' ', brief);
 }
 
 export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLElement {
   const n = ctx.settings.newtab;
   const date = h('div', { class: 'nt-date' });
-  const paintDate = () => (date.textContent = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' }));
+  const zone = h('div', { class: 'nt-zone2', hidden: !n.zone2 });
+  const paintDate = () => {
+    date.textContent = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+    const z = n.zone2 ? zoneText(n.zone2, new Date(), locale) : null;
+    zone.hidden = !z;
+    if (z) zone.replaceChildren(h('span', { class: 'z-city' }, z.city), ' ', h('span', { class: 'z-time' }, z.time));
+  };
   paintDate();
-  if (!n.clock) return h('section', { class: 'nt-timeblock nt-card' }, date);
-  if (n.clockStyle === 'analog') return h('section', { class: 'nt-timeblock nt-card analog' }, analogClockEl(), date);
+  if (!n.clock) return h('section', { class: 'nt-timeblock nt-card' }, date, zone);
+  if (n.clockStyle === 'analog') {
+    const tickA = () => setTimeout(() => (date.isConnected ? (paintDate(), tickA()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
+    tickA();
+    return h('section', { class: 'nt-timeblock nt-card analog' }, analogClockEl(), date, zone);
+  }
   const digits = h('span', { class: 'nt-hm' });
   const ampmEl = h('span', { class: 'nt-ampm' });
   const time = h('div', { class: 'nt-time' }, digits, ampmEl);
@@ -127,7 +138,7 @@ export function timeBlock(ctx: Ctx, brief: HTMLElement | null = null): HTMLEleme
   paint();
   const tick = () => setTimeout(() => (time.isConnected ? (paint(), tick()) : undefined), 60_000 - (Date.now() % 60_000) + 50);
   tick();
-  return h('section', { class: 'nt-timeblock nt-card has-fig', 'aria-label': 'Clock' }, watch, h('div', { class: 'nt-timetext' }, time, date, brief));
+  return h('section', { class: 'nt-timeblock nt-card has-fig', 'aria-label': 'Clock' }, watch, h('div', { class: 'nt-timetext' }, time, date, zone, brief));
 }
 
 // ---------------------------------------------------------------- weather
@@ -178,7 +189,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
       } catch { list.textContent = 'Could not reach weather search. Try again.'; }
       finally { searching = false; findButton.disabled = false; }
     };
-    return card('nt-wx', 'Weather', [], h('p', { class: 'wx-setup-hint' }, 'Choose a city for your local forecast.'), h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, findButton), list);
+    return card('nt-wx', 'Weather', [], h('p', { class: 'wx-setup-hint nt-empty' }, 'Choose a city for your local forecast.'), h('form', { class: 'wx-setup', onsubmit: (e: Event) => (e.preventDefault(), void find()) }, input, findButton), list);
   }
   const body = h('div', { class: 'wx-body', 'aria-live': 'polite' }, skel('60%', '90%', '75%'));
   // A small weather station: the cups spin with the wind, the vane points into it,
@@ -251,7 +262,7 @@ export function weatherCard(ctx: Ctx): HTMLElement {
       h(
         'div',
         { class: 'wx-now' },
-        h('span', { class: 'wx-icon' }, ico(icon, 34)),
+        h('span', { class: 'wx-icon' }, ico(icon, 32)),
         h('span', { class: 'wx-temp', 'aria-label': `${now.temp} degrees` }, String(now.temp), h('span', { class: 'wx-deg', 'aria-hidden': 'true' }, '°')),
         h('span', { class: 'wx-desc' }, h('b', {}, label), h('span', {}, `H ${now.hi}°  L ${now.lo}°`)),
       ),
@@ -318,7 +329,7 @@ export function calendarCard(ctx: Ctx): HTMLElement {
     upNext.replaceChildren(
       ...(evs.length
         ? evs.map((e) => h('button', { type: 'button', class: 'cal-ev', style: { '--c': `var(--feed-${e.feed % 4})` }, title: e.location ?? e.title, onclick: () => (e.url ? void openUrl(ctx, e.url) : openDay(new Date(e.start))) }, h('span', { class: 'cal-ev-t' }, when(e)), h('span', { class: 'cal-ev-n' }, e.title)))
-        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing this week' : 'Your calendar, one click away'), ...(!cal.feeds.length ? [h('button', { class: 'nt-chip', type: 'button', onclick: () => openDay(today) }, 'Open calendar')] : [])]),
+        : [h('div', { class: 'cal-empty nt-empty' }, cal.feeds.length ? 'Nothing this week' : 'Your calendar, one click away'), ...(!cal.feeds.length ? [h('button', { class: 'btn', type: 'button', onclick: () => openDay(today) }, 'Open calendar')] : [])]),
     );
   };
 
@@ -351,7 +362,7 @@ export function calendarCard(ctx: Ctx): HTMLElement {
               h('span', { class: 'cal-ev-n' }, e.title),
             ),
           )
-        : [h('div', { class: 'cal-empty' }, cal.feeds.length ? 'Nothing planned' : 'No events yet')]),
+        : [h('div', { class: 'cal-empty nt-empty' }, cal.feeds.length ? 'Nothing planned' : 'No events yet')]),
       h(
         'div',
         { class: 'cal-day-a' },
@@ -414,9 +425,9 @@ export function calendarCard(ctx: Ctx): HTMLElement {
     h(
       'div',
       { class: 'nt-card-a' },
-      iconBtn('back', 'Previous month', () => step(-1)),
-      iconBtn('forward', 'Next month', () => step(1)),
-      iconBtn('plus', `New event in ${app.name}`, () => newEvent(picked !== null ? new Date(picked) : new Date())),
+      iconButton('back', 'Previous month', () => step(-1)),
+      iconButton('forward', 'Next month', () => step(1)),
+      iconButton('plus', `New event in ${app.name}`, () => newEvent(picked !== null ? new Date(picked) : new Date())),
     ),
   );
   // A two-cube desk calendar shows today; click it to come back to this month.
@@ -498,6 +509,10 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     const now = Date.now();
     const done = settle(st, cfg, now);
     if (done.finished) {
+      if (done.finished === 'focus') {
+        const end = st.endsAt;
+        void getLocal<FocusDone[]>('ntFocusLog', []).then((log) => setLocal('ntFocusLog', logFocus(log, end, cfg.focus)));
+      }
       void save(done.state);
       play('arrive');
       // The bell rings: it shakes for a moment.
@@ -527,15 +542,29 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
   };
   go.addEventListener('click', toggle);
   fig.addEventListener('click', toggle);
+  // Your focus over twelve weeks, a dot a day: the darker, the more focus.
+  const history = h('div', { class: 'pomo-history' });
+  const paintHistory = async () => {
+    const g = focusGrid(await getLocal<FocusDone[]>('ntFocusLog', []), new Date(), 12);
+    history.replaceChildren(
+      h('div', { class: 'pomo-hist-head' }, h('span', {}, `This week ${g.thisWeek} min`), h('span', {}, `Last week ${g.lastWeek} min`)),
+      h(
+        'div',
+        { class: 'pomo-grid', role: 'img', 'aria-label': `Focus over the last twelve weeks: ${g.thisWeek} minutes this week, ${g.lastWeek} last week` },
+        ...g.days.map((d) => h('i', { dataset: { l: String(d.level), ...(d.today ? { today: '' } : {}), ...(d.future ? { future: '' } : {}) }, title: d.future ? undefined : `${d.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${d.min} min` })),
+      ),
+    );
+  };
+  void paintHistory();
   const root = card(
     'nt-pomo',
     'Pomodoro',
     [
-      iconBtn('refresh', 'Reset', () => void save({ ...freshPomo(cfg), rounds: st.rounds }).then(paint)),
-      iconBtn('next', 'Skip to next', () => void save(next(st, cfg)).then(paint)),
+      iconButton('refresh', 'Reset', () => void save({ ...freshPomo(cfg), rounds: st.rounds }).then(paint)),
+      iconButton('next', 'Skip to next', () => void save(next(st, cfg)).then(paint)),
     ],
     h('div', { class: 'pomo-fig iso' }, fig),
-    h('div', { class: 'pomo-row' }, h('div', { class: 'pomo-read' }, time, phase), dots, go),
+    h('div', { class: 'pomo-side' }, h('div', { class: 'pomo-row' }, h('div', { class: 'pomo-read' }, time, phase), dots, go), history),
   );
   paint();
   const timer = setInterval(() => (root.isConnected ? paint() : clearInterval(timer)), 1000);
@@ -544,7 +573,8 @@ export async function pomodoroCard(ctx: Ctx): Promise<HTMLElement> {
     st = v as PomoState;
     paint();
   });
-  const dispose = () => { clearInterval(timer); stop(); };
+  const stopHistory = onLocalChanged('ntFocusLog', () => root.isConnected && void paintHistory());
+  const dispose = () => { clearInterval(timer); stop(); stopHistory(); };
   if (ctx.signal?.aborted) dispose();
   else ctx.signal?.addEventListener('abort', dispose, { once: true });
   return root;
@@ -606,7 +636,7 @@ export async function notesCard(ctx: Ctx): Promise<HTMLElement> {
                   paint();
                 },
               },
-              ico('close', 14),
+              ico('close', 16),
             ),
           ),
         );
@@ -628,7 +658,7 @@ export async function notesCard(ctx: Ctx): Promise<HTMLElement> {
   paintPad();
   const repaint = paint;
   paint = () => (repaint(), paintPad());
-  const root = card('nt-notes has-fig', 'Notes', [iconBtn('plus', 'New note', add)], pad, grid);
+  const root = card('nt-notes has-fig', 'Notes', [iconButton('plus', 'New note', add)], pad, grid);
   root.append(empty);
   const stop = onLocalChanged('ntNotes', (value) => {
     // Earlier keystrokes can arrive after a newer one. Their echoes must not
@@ -666,6 +696,10 @@ export const FOLDER_TONES: [string, string][] = [
   ['rose', 'Rose'],
   ['ink', 'Ink'],
   ['graphite', 'Graphite'],
+  // Soft pastels, for folders you want to find at a glance.
+  ['mint', 'Mint'],
+  ['lavender', 'Lavender'],
+  ['butter', 'Butter'],
 ];
 /** A folder's colour: the one you picked, or a steady one from its id. */
 export function folderTone(ctx: Ctx, id: string): string {
@@ -782,7 +816,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     head.replaceChildren(
       ...(trail.length
         ? [
-            iconBtn('back', 'Back', () => (trail.pop(), play('key'), void paint())),
+            iconButton('back', 'Back', () => (trail.pop(), play('key'), void paint())),
             h(
               'nav',
               { class: 'shelf-trail', 'aria-label': 'Folder' },
@@ -827,7 +861,7 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
     });
     // Add, as the last tile (like the first builds): a site or a folder, right where you are.
     tiles.push(
-      tile('Add', h('span', { class: 'nt-cap nt-cap-add' }, ico('plus', 22)), {
+      tile('Add', h('span', { class: 'nt-cap nt-cap-add' }, ico('plus', 24)), {
         class: 'nt-key shelf-addkey',
         title: 'Add a site or a folder here',
         'aria-expanded': String(!form.hidden),
@@ -839,8 +873,42 @@ export async function bookmarkShelf(ctx: Ctx): Promise<HTMLElement | null> {
       }),
     );
     reveal(grid, ...tiles);
-    if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
+    if (!kids.length && !trail.length) grid.prepend(h('p', { class: 'shelf-empty nt-empty' }, 'Your bookmarks bar shows here. Add a site to start.'));
+    fitShelf();
   };
+
+  // On the desk the shelf shows what fits, and a "+N" tile for the rest that opens
+  // the full shelf; nothing is cut off or scrolled out of reach.
+  const more = h('div', { role: 'listitem', class: 'shelf-item shelf-more-item' });
+  const fitShelf = () => {
+    more.remove();
+    const items = [...grid.querySelectorAll<HTMLElement>(':scope > .shelf-item')];
+    for (const it of items) it.hidden = false;
+    if (!grid.clientHeight || grid.scrollHeight <= grid.clientHeight + 1) return;
+    const bottom = grid.clientHeight;
+    const out = (el: HTMLElement) => el.offsetTop + el.offsetHeight > bottom + 1;
+    let first = items.findIndex(out);
+    if (first < 0) return;
+    const place = () => {
+      items.forEach((it, i) => (it.hidden = i >= first));
+      const rest = items.slice(first).filter((it) => !it.querySelector('.shelf-addkey')).length;
+      more.replaceChildren(
+        h('button', { type: 'button', class: 'nt-key shelf-more', title: 'Show all bookmarks', 'aria-label': `Show all bookmarks, ${rest} more`, onclick: () => (play('key'), root.dispatchEvent(new CustomEvent('nt-widget-open', { bubbles: true, detail: 'bookmarks' }))) },
+          h('span', { class: 'nt-cap nt-cap-more' }, `+${rest}`),
+          h('span', { class: 'nt-label' }, 'More'),
+        ),
+      );
+      items[first].before(more);
+    };
+    place();
+    while (first > 0 && out(more)) {
+      first--;
+      place();
+    }
+  };
+  const ro = new ResizeObserver(() => fitShelf());
+  ro.observe(grid);
+  ctx.signal?.addEventListener('abort', () => ro.disconnect(), { once: true });
 
   // Add a site (name and address) or a folder (name only), right where you are.
   const nameIn = h('input', { class: 'text-input', type: 'text', placeholder: 'Name', 'aria-label': 'Name', maxlength: 80 });

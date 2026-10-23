@@ -1,6 +1,6 @@
 {
   "name": "sidegig",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "A free, open-source sidebar that lives in the margin of every browser: hover the edge for your apps, AI, bookmark stacks and search.",
   "license": "GPL-3.0-or-later",

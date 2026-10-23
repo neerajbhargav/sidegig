@@ -4,11 +4,17 @@
   inset: 0;
   z-index: 2147483646;
   pointer-events: none;
-  font: calc(13px * var(--ui-s, 1))/1.4 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Google Sans Flex", system-ui, sans-serif;
+  font: calc(13px * var(--ui-s, 1))/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   --rail-w: calc(56px * var(--ui-s, 1));
   --gap: calc(8px * var(--ui-s, 1));
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* The design tokens of src/ui/ui.css, in px: rem here follows the page the rail sits on. */
+  --t-1: calc(10.5px * var(--ui-s, 1)); --t-2: calc(11.5px * var(--ui-s, 1)); --t-3: calc(13px * var(--ui-s, 1)); --t-4: calc(15.5px * var(--ui-s, 1));
+  --r-1: calc(6px * var(--ui-s, 1)); --r-2: calc(8px * var(--ui-s, 1)); --r-3: calc(10px * var(--ui-s, 1)); --r-4: calc(14px * var(--ui-s, 1)); --r-full: 999px;
+  --ease: linear(0, 0.168 3%, 0.312 6%, 0.471 10%, 0.597 14%, 0.716 19%, 0.816 25%, 0.89 32%, 0.94 40%, 0.972 50%, 0.989 62%, 0.996 76%, 1);
+  --dur-press: 120ms; --dur-change: 200ms; --dur-open: 320ms; --dur-scene: 480ms;
+  --lift-1: 0 1px 2px rgb(0 0 0 / 0.1), 0 0 0 0.5px rgb(0 0 0 / 0.07);
+  --lift-2: 0 14px 36px -8px rgb(0 0 0 / 0.24), 0 2px 8px rgb(0 0 0 / 0.06), 0 0 0 0.5px rgb(0 0 0 / 0.1);
 }
 :host([data-size="compact"]) { --rail-w: calc(48px * var(--ui-s, 1)); }
 * { box-sizing: border-box; }
@@ -20,7 +26,7 @@
   display: flex;
   gap: calc(6px * var(--ui-s, 1));
   pointer-events: none;
-  transition: transform 220ms var(--ease), opacity 160ms ease;
+  transition: transform var(--dur-change) var(--ease), opacity var(--dur-press) var(--ease);
 }
 :host([data-side="left"]) .shell { left: var(--gap); flex-direction: row; transform: translateX(calc(-100% - 2 * var(--gap))); }
 :host([data-side="right"]) .shell { right: calc(var(--gap) + var(--sbw, 0px)); flex-direction: row-reverse; transform: translateX(calc(100% + 2 * var(--gap))); }
@@ -43,11 +49,11 @@
   padding: calc(8px * var(--ui-s, 1)) 0;
   gap: calc(2px * var(--ui-s, 1));
   align-self: center; max-height: 100%;
-  border-radius: calc(20px * var(--ui-s, 1));
+  border-radius: var(--r-4);
   overflow-x: hidden; overflow-y: auto; scrollbar-width: none;
 }
 .rail::-webkit-scrollbar { display: none; }
-.scroll { align-self: stretch; padding: calc(7px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)); display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--ui-s, 1)); overflow-y: auto; scrollbar-width: none; min-height: min(calc(60px * var(--ui-s, 1)), 25vh); flex: 0 1 auto; }
+.scroll { align-self: stretch; padding: calc(8px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)); display: flex; flex-direction: column; align-items: center; gap: calc(6px * var(--ui-s, 1)); overflow-y: auto; scrollbar-width: none; min-height: min(calc(60px * var(--ui-s, 1)), 25vh); flex: 0 1 auto; }
 .scroll::-webkit-scrollbar { display: none; }
 .spacer { flex: 1 1 auto; }
 .sep { width: calc(20px * var(--ui-s, 1)); height: 1px; background: var(--m-border); margin: calc(6px * var(--ui-s, 1)) 0; flex: none; }
@@ -63,16 +69,16 @@ button.item {
   border-radius: var(--m-radius);
   color: var(--m-fg-muted);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, transform 120ms var(--ease);
+  transition: background var(--dur-press) var(--ease), color var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
 }
 button.item:hover { background: var(--m-hover); color: var(--m-fg); }
 button.item:active { transform: scale(0.94); }
 button.item:focus-visible { outline: calc(2px * var(--ui-s, 1)) solid var(--m-accent); outline-offset: 1px; }
 button.item[aria-pressed="true"] { background: var(--m-accent-soft); color: var(--m-accent); }
-button.item img { width: calc(20px * var(--ui-s, 1)); height: calc(20px * var(--ui-s, 1)); border-radius: calc(5px * var(--ui-s, 1)); display: block; }
+button.item img { width: calc(20px * var(--ui-s, 1)); height: calc(20px * var(--ui-s, 1)); border-radius: var(--r-1); display: block; }
 :host([data-size="compact"]) button.item img { width: calc(18px * var(--ui-s, 1)); height: calc(18px * var(--ui-s, 1)); }
 .mono {
-  width: calc(22px * var(--ui-s, 1)); height: calc(22px * var(--ui-s, 1)); border-radius: calc(6px * var(--ui-s, 1)); display: grid; place-items: center; font-weight: 600; font-size: calc(11px * var(--ui-s, 1));
+  width: calc(22px * var(--ui-s, 1)); height: calc(22px * var(--ui-s, 1)); border-radius: var(--r-1); display: grid; place-items: center; font-weight: 600; font-size: var(--t-2);
   background: color-mix(in oklch, oklch(0.66 0.13 var(--h, 250)) 24%, var(--m-surface));
   color: color-mix(in oklch, oklch(0.6 0.16 var(--h, 250)) 48%, var(--m-fg));
 }
@@ -83,8 +89,8 @@ button.item.add:hover { color: var(--m-fg); }
 .badge {
   position: absolute; top: calc(3px * var(--ui-s, 1)); right: calc(2px * var(--ui-s, 1));
   min-width: calc(16px * var(--ui-s, 1)); height: calc(16px * var(--ui-s, 1)); padding: 0 calc(4px * var(--ui-s, 1));
-  border-radius: calc(8px * var(--ui-s, 1)); background: var(--m-badge); color: var(--m-badge-fg);
-  font-family: inherit; font-weight: 600; font-size: calc(10px * var(--ui-s, 1)); line-height: calc(16px * var(--ui-s, 1)); white-space: nowrap; text-align: center;
+  border-radius: var(--r-2); background: var(--m-badge); color: var(--m-badge-fg);
+  font-family: inherit; font-weight: 600; font-size: var(--t-1); line-height: calc(16px * var(--ui-s, 1)); white-space: nowrap; text-align: center;
   box-shadow: 0 0 0 calc(2px * var(--ui-s, 1)) var(--m-bg);
 }
 .badge.dot { min-width: calc(8px * var(--ui-s, 1)); width: calc(8px * var(--ui-s, 1)); height: calc(8px * var(--ui-s, 1)); padding: 0; top: calc(6px * var(--ui-s, 1)); right: calc(6px * var(--ui-s, 1)); }
@@ -95,17 +101,17 @@ button.item.add:hover { color: var(--m-fg); }
 
 .tip {
   position: fixed;
-  padding: calc(5px * var(--ui-s, 1)) calc(9px * var(--ui-s, 1));
-  border-radius: calc(7px * var(--ui-s, 1));
+  padding: calc(6px * var(--ui-s, 1)) calc(10px * var(--ui-s, 1));
+  border-radius: var(--r-1);
   background: var(--m-fg);
   color: var(--m-bg);
-  font-size: calc(12px * var(--ui-s, 1));
+  font-size: var(--t-2);
   font-weight: 500;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   transform: translateY(-50%) scale(0.96);
-  transition: opacity 100ms ease, transform 100ms ease;
+  transition: opacity var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
 }
 .tip.show { opacity: 1; transform: translateY(-50%) scale(1); }
 
@@ -128,8 +134,8 @@ button.item.add:hover { color: var(--m-fg); }
 .resizing .cover { display: block; }
 
 .hint {
-  position: fixed; top: 50%; width: calc(3px * var(--ui-s, 1)); height: calc(44px * var(--ui-s, 1)); margin-top: calc(-22px * var(--ui-s, 1)); border-radius: calc(3px * var(--ui-s, 1));
-  background: var(--m-fg-subtle); opacity: 0; transition: opacity 160ms ease; pointer-events: none;
+  position: fixed; top: 50%; width: calc(3px * var(--ui-s, 1)); height: calc(44px * var(--ui-s, 1)); margin-top: calc(-22px * var(--ui-s, 1)); border-radius: var(--r-1);
+  background: var(--m-fg-subtle); opacity: 0; transition: opacity var(--dur-press) var(--ease); pointer-events: none;
 }
 :host([data-side="left"]) .hint { left: calc(3px * var(--ui-s, 1)); }
 :host([data-side="right"]) .hint { right: calc(calc(3px * var(--ui-s, 1)) + var(--sbw, 0px)); }
@@ -143,10 +149,10 @@ button.item.add:hover { color: var(--m-fg); }
   position: fixed; transform: translateY(-50%) scale(0.97); opacity: 0; pointer-events: none;
   background: var(--m-bg); color: var(--m-fg); border: 1px solid var(--m-border); border-radius: calc(var(--m-radius) + calc(4px * var(--ui-s, 1)));
   box-shadow: none;
-  padding: calc(8px * var(--ui-s, 1)); transition: opacity 120ms ease, transform 120ms var(--ease);
+  padding: calc(8px * var(--ui-s, 1)); transition: opacity var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
 }
 .flyout.show { opacity: 1; transform: translateY(-50%) scale(1); pointer-events: auto; }
-.fly-label { font-size: calc(11.5px * var(--ui-s, 1)); font-weight: 600; color: var(--m-fg-muted); padding: 0 calc(4px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)); }
+.fly-label { font-size: var(--t-2); font-weight: 600; color: var(--m-fg-muted); padding: 0 calc(4px * var(--ui-s, 1)) calc(6px * var(--ui-s, 1)); }
 .fly-row { display: flex; gap: calc(2px * var(--ui-s, 1)); }
 .flyout button.item { width: calc(42px * var(--ui-s, 1)); height: calc(42px * var(--ui-s, 1)); }
 
@@ -174,11 +180,11 @@ button.item img[data-sq] { border-radius: 24%; }
 button.item.app {
   width: calc(36px * var(--ui-s, 1)); height: calc(36px * var(--ui-s, 1));
   margin: calc(1px * var(--ui-s, 1)) auto;
-  border-radius: calc(11px * var(--ui-s, 1));
+  border-radius: var(--r-2);
   background: var(--m-surface);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--m-border) 70%, transparent);
 }
-:host([data-size="compact"]) button.item.app { width: calc(32px * var(--ui-s, 1)); height: calc(32px * var(--ui-s, 1)); border-radius: calc(10px * var(--ui-s, 1)); }
+:host([data-size="compact"]) button.item.app { width: calc(32px * var(--ui-s, 1)); height: calc(32px * var(--ui-s, 1)); border-radius: var(--r-2); }
 button.item.app:hover { background: var(--m-hover); }
 button.item.app[aria-pressed="true"] { background: var(--m-surface); box-shadow: inset 0 0 0 1.5px var(--m-accent); }
 button.item.app img, button.item.app .glyph, button.item.app .mono { width: calc(20px * var(--ui-s, 1)); height: calc(20px * var(--ui-s, 1)); }
@@ -187,11 +193,35 @@ button.item.app img[data-sq] { border-radius: 26%; }
 /* Themed: plates take the accent's tint and logos the ink, the same as the new tab. */
 :host([data-icons="themed"]) button.item.app { background: color-mix(in oklab, var(--m-accent) 9%, var(--m-surface)); }
 /* Counts hang off the plate's top corner and never cover the logo. */
-button.item.app .badge { top: calc(-3px * var(--ui-s, 1)); right: calc(-3px * var(--ui-s, 1)); left: auto; min-width: calc(16px * var(--ui-s, 1)); height: calc(16px * var(--ui-s, 1)); padding: 0 calc(4px * var(--ui-s, 1)); font-size: calc(10px * var(--ui-s, 1)); line-height: calc(16px * var(--ui-s, 1)); border-radius: 999px; box-shadow: 0 0 0 calc(2px * var(--ui-s, 1)) var(--m-bg); }
+button.item.app .badge { top: calc(-3px * var(--ui-s, 1)); right: calc(-3px * var(--ui-s, 1)); left: auto; min-width: calc(16px * var(--ui-s, 1)); height: calc(16px * var(--ui-s, 1)); padding: 0 calc(4px * var(--ui-s, 1)); font-size: var(--t-1); line-height: calc(16px * var(--ui-s, 1)); border-radius: var(--r-full); box-shadow: 0 0 0 calc(2px * var(--ui-s, 1)) var(--m-bg); }
 button.item.app .badge.dot { top: calc(-2px * var(--ui-s, 1)); right: calc(-2px * var(--ui-s, 1)); min-width: 0; width: calc(9px * var(--ui-s, 1)); height: calc(9px * var(--ui-s, 1)); padding: 0; }
 button.item.app { overflow: visible; }
 
 /* Taskbar-style selection stays distinct from unread badges. */
-button.item.app[aria-pressed="true"]::before { content: ""; position: absolute; top: 50%; transform: translateY(-50%); width: calc(3px * var(--ui-s, 1)); height: calc(16px * var(--ui-s, 1)); border-radius: 999px; background: var(--m-accent); }
+button.item.app[aria-pressed="true"]::before { content: ""; position: absolute; top: 50%; transform: translateY(-50%); width: calc(3px * var(--ui-s, 1)); height: calc(16px * var(--ui-s, 1)); border-radius: var(--r-full); background: var(--m-accent); }
 :host([data-side="left"]) button.item.app[aria-pressed="true"]::before { left: calc(-7px * var(--ui-s, 1)); }
 :host([data-side="right"]) button.item.app[aria-pressed="true"]::before { right: calc(-7px * var(--ui-s, 1)); }
+
+/* Arc (owner, 2026-10-23): the rail is a strip of the space colour, with grain. Plates are soft white;
+   the open app is white and lifts. Tips and flyouts float. */
+.rail { position: relative; isolation: isolate; background: var(--sp-frame); color: var(--sp-ink); border: 0; box-shadow: 0 0 0 1px var(--sp-line); }
+.rail::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: var(--sp-grain); mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.5 -.25'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.drawer { background: var(--sp-frame); border: 0; box-shadow: 0 0 0 1px var(--sp-line); }
+.sep { background: var(--sp-line); }
+.logo { color: var(--sp-ink); }
+button.item { color: var(--sp-mute); border-radius: var(--r-2); }
+button.item:hover { background: var(--sp-hover); color: var(--sp-ink); }
+button.item[aria-pressed="true"] { background: var(--sp-sel); color: var(--sp-ink); box-shadow: var(--lift-1); }
+button.item.app { background: var(--sp-card); box-shadow: none; border-radius: var(--r-2); }
+button.item.app:hover { background: var(--sp-hover); }
+button.item.app[aria-pressed="true"] { background: var(--sp-sel); box-shadow: var(--lift-1); }
+button.item.app[aria-pressed="true"]::before { background: var(--sp-ink); }
+.badge, button.item.app .badge { box-shadow: 0 0 0 calc(2px * var(--ui-s, 1)) var(--sp-1); }
+.glow::after { background: var(--sp-accent); box-shadow: 0 0 0 calc(2px * var(--ui-s, 1)) var(--sp-1); }
+.tip { border-radius: var(--r-2); box-shadow: var(--lift-2); }
+.flyout { border: 0; border-radius: var(--r-3); box-shadow: var(--lift-2); }
+.flyout button.item.app { background: var(--m-surface); }
+.hint { background: var(--sp-mute); }

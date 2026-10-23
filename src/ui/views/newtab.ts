@@ -4,6 +4,7 @@ import { calculatorCard, readingCard, tabsCard } from './ntextra.ts';
 import { widgetGrid, type GridItem } from './ntgrid.ts';
 import type { Settings } from '../../shared/types.ts';
 import { keepReadable } from './ntlegible.ts';
+import { accentFill } from '../../shared/legible.ts';
 import { ext } from '../../shared/api.ts';
 import { getLocal, updateSettings, setLocal } from '../../shared/storage.ts';
 import type { NtLook } from '../../shared/types.ts';
@@ -21,6 +22,7 @@ import { hideWall } from '../../shared/collect.ts';
 import { customize } from './ntcustom.ts';
 import { configureSound, play } from '../sound.ts';
 import { detectBrowser, type DetectedBrowser } from '../browser.ts';
+import { codePill } from './status.ts';
 
 type Mode = 'home' | 'ai';
 const getMode = (): Mode => {
@@ -40,10 +42,11 @@ const saveMode = (m: Mode) => {
 
 
 /** "auto" = match the browser (native); the others are sidegig's own studio looks. */
-/** Text on the accent colour: whichever of near-black or white reads better on it. */
+/** Text on the accent colour, and the accent fill that text reaches 4.5:1 on (see accentFill). */
 export function fitOnSignal() {
   const root = document.documentElement;
   root.style.removeProperty('--c-on-signal');
+  root.style.removeProperty('--c-signal-fill');
   if (!document.body) return;
   const probe = document.createElement('i');
   probe.style.cssText = 'position:absolute;width:0;height:0;color:var(--c-signal)';
@@ -51,19 +54,19 @@ export function fitOnSignal() {
   const m = getComputedStyle(probe).color.match(/[\d.]+/g);
   probe.remove();
   if (!m) return;
-  const lin = (v: number) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const L = 0.2126 * lin(+m[0]) + 0.7152 * lin(+m[1]) + 0.0722 * lin(+m[2]);
-  const onDark = (L + 0.05) / (0.0056 + 0.05); // against #111
-  const onWhite = 1.05 / (L + 0.05);
-  root.style.setProperty('--c-on-signal', onWhite >= onDark ? '#ffffff' : '#111111');
+  const { fill, on } = accentFill([+m[0], +m[1], +m[2]]);
+  root.style.setProperty('--c-on-signal', on);
+  root.style.setProperty('--c-signal-fill', `rgb(${fill.join(' ')})`);
 }
 
-export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }) {
+/** The calm looks: Space (Arc's space colour) and Match browser. The rest are studio looks. */
+export const calmLook = () => ['space', 'native'].includes(document.documentElement.dataset.look ?? '');
+
+export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', custom?: { bg: string; ink: string; accent: string }, themeMode = 'system') {
   const root = document.documentElement;
   root.dataset.look = look === 'auto' ? 'native' : look;
+  // Space wears the theme's space colour; first paint used the last one saved (nt-boot.js).
+  for (const v of ['--sp-frame', '--sp-1', '--sp-ink']) root.style.removeProperty(v);
   // Your own theme: three colours, the rest is mixed from them in CSS.
   for (const v of ['--c-bg', '--c-ink', '--c-signal']) root.style.removeProperty(v);
   if (look === 'custom' && custom) {
@@ -99,7 +102,16 @@ export function applyLook(look: NtLook, browser?: DetectedBrowser, accent = '', 
   if (accent) root.dataset.accent = 'user';
   else delete root.dataset.accent;
   fitOnSignal();
-  root.dataset.scheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const osDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.scheme = look === 'space' && (themeMode === 'light' || themeMode === 'dark') ? themeMode : osDark ? 'dark' : 'light';
+  if (look === 'space') {
+    const cs = getComputedStyle(root);
+    try {
+      localStorage.setItem('sidegig.ntSpace', JSON.stringify({ frame: cs.getPropertyValue('--sp-frame').trim(), bg: cs.getPropertyValue('--sp-1').trim(), ink: cs.getPropertyValue('--sp-ink').trim(), scheme: root.dataset.scheme }));
+    } catch {
+      /* fine */
+    }
+  }
   if (browser) {
     root.dataset.browser = browser.id;
     // Arc shares the current space's colours: wear them.
@@ -126,12 +138,12 @@ function soundToggle(ctx: Ctx): HTMLElement {
       'aria-label': 'Interface sounds',
       'aria-pressed': String(on),
       onclick: () => {
-        configureSound(!on, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
+        configureSound(!on, calmLook() ? 'velvet' : 'crisp');
         play(!on ? 'on' : 'off');
         void updateSettings((s) => void (s.newtab.sounds = !on));
       },
     },
-    ico(on ? 'soundOn' : 'soundOff', 17),
+    ico(on ? 'soundOn' : 'soundOff', 20),
   );
 }
 
@@ -151,11 +163,13 @@ async function briefEl(ctx: Ctx): Promise<HTMLElement | null> {
   const open = ctx.settings.newtab.todo ? todos.filter((t) => !t.done).length : 0;
   if (open) add(`${open} ${open === 1 ? 'task' : 'tasks'}`, ' to do');
   const unread = ctx.settings.apps.reduce((n, a) => n + (a.badge && (badges[a.id] ?? 0) > 0 ? badges[a.id] : 0), 0);
-  if (unread) add(`${unread} unread`, ' across your apps');
+  // Inboxes count in the tens of thousands: "28K", not "28056".
+  if (unread) add(`${new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(unread)} unread`, ' across your apps');
   if (!parts.length) return null;
   const last = parts.lastIndexOf(', ');
   if (last > 0) parts[last] = ' and ';
-  return h('p', { class: 'nt-brief' }, ...parts);
+  parts.push('.');
+  return h('span', { class: 'nt-brief' }, ...parts);
 }
 
 export const brandName = (ctx: Ctx) => ctx.settings.newtab.title.trim() || 'sidegig';
@@ -235,7 +249,7 @@ function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
               ctx.go('home');
             },
           },
-          ico('next', 18),
+          ico('next', 20),
         )
       : null,
     col && pic
@@ -252,7 +266,7 @@ function wallCredit(ctx: Ctx, wall: HTMLElement): HTMLElement | null {
               ctx.go('home');
             },
           },
-          ico('notFor', 18),
+          ico('notFor', 20),
         )
       : null,
   );
@@ -272,7 +286,7 @@ function topBar(ctx: Ctx, czButton: HTMLElement, wall: HTMLElement | null, arran
       arrange,
       soundToggle(ctx),
       launcherEl(ctx.signal),
-      h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 18)),
+      h('button', { class: 'nt-gear', type: 'button', title: 'Settings', 'aria-label': 'Settings', onclick: () => openOptions('newtab') }, ico('sliders', 20)),
     ),
   );
 }
@@ -321,7 +335,7 @@ async function choiceCard(ctx: Ctx, browser: DetectedBrowser): Promise<HTMLEleme
 /** A two-way switch with a pill that slides to the chosen side. */
 function segmented<T extends string>(label: string, options: [T, string, string][], value: T, onPick: (v: T) => void): { el: HTMLElement; set: (v: T) => void } {
   const el = h('div', { class: 'nt-seg', role: 'tablist', 'aria-label': label, style: { '--n': String(options.length) } });
-  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, icon ? ico(icon, 18) : null, h('span', {}, text)));
+  const btns = options.map(([v, text, icon]) => h('button', { type: 'button', role: 'tab', dataset: { v }, onclick: () => onPick(v) }, icon ? ico(icon, 20) : null, h('span', {}, text)));
   el.append(...btns);
   const set = (v: T) => {
     const i = Math.max(0, options.findIndex(([o]) => o === v));
@@ -338,8 +352,8 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   if (signal.aborted) return h('div');
   const n = ctx.settings.newtab;
   const w = n.widgets;
-  applyLook(n.look, browser, n.accent, n.custom);
-  configureSound(n.sounds, document.documentElement.dataset.look === 'native' ? 'velvet' : 'crisp');
+  applyLook(n.look, browser, n.accent, n.custom, ctx.settings.theme.mode);
+  configureSound(n.sounds, calmLook() ? 'velvet' : 'crisp');
   document.body.toggleAttribute('data-calm', n.calmImages);
   const root = h('div', { class: 'nt2', dataset: { panels: n.panels } });
 
@@ -365,7 +379,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
       title: 'Open For you',
       onclick: () => setPage('edition'),
     },
-    ico('feed', 18),
+    ico('feed', 20),
     h('span', {}, 'For you'),
   );
   const seg = aiOn
@@ -373,14 +387,17 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
     : null;
   const searchVoice = voiceButton(input);
   // Which controls belong to which side of the switch.
-  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai'], [ai?.pickers, 'ai']] as const) if (el) el.dataset.for = side;
-  const greet = greetingLine(ctx);
+  for (const [el, side] of [[input, 'home'], [searchVoice, 'home'], [searchGo, 'home'], [feedToggle, 'home'], [ai?.box, 'ai'], [ai?.voice, 'ai'], [ai?.send, 'ai'], [ai?.pickers, 'ai'], [ai?.elsewhere, 'ai']] as const) if (el) el.dataset.for = side;
+  // With a greeting, the day summary is its second, quieter sentence (two-tone); otherwise it sits under the clock.
+  const brief = w.brief ? await briefEl(ctx) : null;
+  const greet = greetingLine(ctx, w.greeting ? brief : null);
   const box = h(
     'div',
     { class: 'nt-ask nt-card' },
     greet ? h('div', { class: 'ask-head' }, greet) : null,
     h('div', { class: 'ask-row' }, input, ai?.box ?? null, searchVoice, ai?.voice ?? null),
-    h('div', { class: 'ask-bar' }, seg?.el ?? null, ai?.pickers ?? null, h('span', { class: 'ask-gap' }), feedToggle, searchGo, ai?.send ?? null),
+    h('div', { class: 'ask-bar' }, seg?.el ?? null, ai?.pickers ?? null, h('span', { class: 'ask-gap' }), ai?.elsewhere ?? null, feedToggle, searchGo, ai?.send ?? null),
+    codePill(ctx),
   );
 
   // ------------------------------------------------ the grid
@@ -407,7 +424,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   const off = (put: (s: Settings) => void) => () => void updateSettings(put);
   const items: GridItem[] = [];
   const push = (id: GridItem['id'], label: string, el: HTMLElement | null, more: Partial<GridItem> = {}) => el && items.push({ id, label, el, ...more });
-  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.brief ? await briefEl(ctx) : null) : null, { expandable: true, remove: off((s) => void (s.newtab.clock = false)) });
+  push('clock', 'Clock', n.clock ? timeBlock(ctx, w.greeting ? null : brief) : null, { expandable: true, remove: off((s) => void (s.newtab.clock = false)) });
   push('weather', 'Weather', w.weather ? weatherCard(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.weather = false)) });
   push('search', 'Search', h('div', { class: 'gw-search' }, box, results, ai ? h('div', { class: 'nt-ai-host' }, ai.below) : null));
   push('bookmarks', 'Bookmarks', w.bookmarks ? await bookmarkShelf(ctx) : null, { expandable: true, remove: off((s) => void (s.newtab.widgets.bookmarks = false)) });
@@ -438,7 +455,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   if (wall) root.dataset.wall = n.background.kind;
   const cz = customize(ctx);
   if (wall) root.append(wall);
-  const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 18));
+  const arrange = h('button', { type: 'button', class: 'nt-gear', title: 'Arrange widgets', 'aria-label': 'Arrange widgets', onclick: () => grid.edit(!grid.editing()) }, ico('arrange', 20));
   root.dataset.page = page;
   root.append(h('div', { class: 'nt-grain', 'aria-hidden': 'true' }), h('div', { class: 'nt-page' }, topBar(ctx, cz.button, wall, arrange, pages.el), dash, feedHost), cz.panel);
   if (ai) root.append(ai.chat.view);
@@ -507,7 +524,7 @@ export async function newtabView(ctx: Ctx): Promise<HTMLElement> {
   };
   addEventListener('keydown', onKey, { signal });
   addEventListener('keyup', () => root.querySelectorAll('.nt-key.pressed').forEach((k) => k.classList.remove('pressed')), { signal });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(n.look, browser, n.accent, n.custom), { signal });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyLook(n.look, browser, n.accent, n.custom, ctx.settings.theme.mode), { signal });
 
   // Drop any picture (or an image link) on the page to make it the background.
   const dropHint = h('div', { class: 'nt-drop', hidden: true }, h('span', {}, 'Drop to make this your background'));

@@ -69,6 +69,8 @@ export interface AiParts {
   voice: HTMLElement | null;
   /** The model and effort menus, for the box's bar. */
   pickers: HTMLElement;
+  /** Ask the same question on another assistant's site: small icons in the search bar. */
+  elsewhere: HTMLElement;
   /** Under the box: recent chats, and asking elsewhere. */
   below: HTMLElement;
   /** The conversation, shown over the page once you ask. */
@@ -111,32 +113,33 @@ export async function aiParts(ctx: Ctx, onHome: () => void): Promise<AiParts> {
   const native = await detectBrowser();
   const providers = providerOrder(native.provider, ctx.settings.ai.defaultApp).slice(0, 6);
   const recent = (await loadChats()).slice(0, 4);
-  const below = h(
-    'section',
-    { class: 'nt-ai nt-card' },
-    recent.length
-      ? h(
+  // Recent chats drop down under the box while it has focus, like a search menu;
+  // nothing floats over the desk the rest of the time.
+  const below = recent.length
+    ? h(
+        'section',
+        { class: 'nt-ai nt-card' },
+        h(
           'div',
           { class: 'ai-sec ai-recent' },
           h('div', { class: 'cc-group' }, 'Recent chats'),
           recent.map((c) => h('button', { type: 'button', class: 'cv-recent', onclick: () => (chat.open(), void loadInto(chat, c.id)) }, h('span', {}, c.title), h('span', { class: 'cc-opt-n' }, new Date(c.updated).toLocaleDateString()))),
-        )
-      : null,
-    h(
-      'div',
-      { class: 'ai-sec ai-elsewhere' },
-      h('span', { class: 'ai-to-label' }, 'Or ask on'),
-      providers.map((p) =>
-        h(
-          'button',
-          { type: 'button', class: 'ai-key', title: p.native ? `${p.name}, built into ${native.browser}` : `Open ${p.name} with your question`, onclick: (e: MouseEvent) => (play('send'), void ask(ctx, p, box.value, e.metaKey || e.ctrlKey)) },
-          appFavicon({ id: p.id, catalogId: p.id, url: p.home.startsWith('http') ? p.home : 'https://aside.com', name: p.name }, 'fav xs'),
-          p.name,
         ),
+      )
+    : h('span', { hidden: true });
+  const elsewhere = h(
+    'div',
+    { class: 'ai-elsewhere-bar', role: 'group', 'aria-label': 'Ask on another assistant' },
+    h('span', { class: 'ai-to-label' }, 'Ask on'),
+    providers.map((p) =>
+      h(
+        'button',
+        { type: 'button', class: 'ai-key', title: p.native ? `${p.name}, built into ${native.browser}` : `Ask on ${p.name}`, 'aria-label': `Ask on ${p.name}`, onclick: (e: MouseEvent) => (play('send'), void ask(ctx, p, box.value, e.metaKey || e.ctrlKey)) },
+        appFavicon({ id: p.id, catalogId: p.id, url: p.home.startsWith('http') ? p.home : 'https://aside.com', name: p.name }, 'fav xs'),
       ),
     ),
   );
-  return { box, send, voice: voiceButton(box, grow), pickers: chat.pickerBar(), below, chat };
+  return { box, send, voice: voiceButton(box, grow), pickers: chat.pickerBar(), elsewhere, below, chat };
 }
 
 /** Open a saved chat in the chat view. */

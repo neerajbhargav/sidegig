@@ -1,17 +1,45 @@
 // App viewer for the browser sidebar (and the drawer for "drawer" apps).
 // Frames live in one container that is never moved in the DOM (moving an
 // iframe reloads it), so chats stay alive while you switch apps. Frames you
-// haven't looked at for 30 minutes are unloaded to free memory.
+// haven't looked at for 30 minutes are unloaded to free memory, unless the app
+// keeps running (messengers by default; a switch per app in settings).
 import { ext } from '../../shared/api.ts';
 import { updateSettings } from '../../shared/storage.ts';
 import type { AppEntry } from '../../shared/types.ts';
 import { h, iconButton, appFavicon } from '../dom.ts';
 import { type Ctx, send } from '../ctx.ts';
 import { NO_FRAME } from '../../shared/catalog.ts';
+import { keepsRunning } from '../../shared/defaults.ts';
 
 const SLEEP_MS = 30 * 60_000;
-const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number }>();
+const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number; ready: boolean }>();
+let alive = new Set<string>();
 export const framesHost = h('div', { class: 'frames', hidden: true });
+
+// While an app's page loads, a quiet splash in sidegig's own colours (its icon,
+// its name, a thin moving line) instead of a blank white frame.
+const splash = h('div', { class: 'frame-splash', hidden: true, role: 'status' });
+framesHost.append(splash);
+let splashFor = '';
+function showSplash(app: AppEntry) {
+  const f = frames.get(app.id);
+  splashFor = app.id;
+  if (!f || f.ready) {
+    splash.hidden = true;
+    return;
+  }
+  splash.replaceChildren(appFavicon(app, 'fav splash-icon'), h('span', { class: 'splash-name' }, `Opening ${app.name}`), h('span', { class: 'splash-bar', 'aria-hidden': 'true' }));
+  splash.classList.remove('out');
+  splash.hidden = false;
+}
+function frameReady(id: string) {
+  const f = frames.get(id);
+  if (!f || f.ready) return;
+  f.ready = true;
+  if (splashFor !== id || splash.hidden) return;
+  splash.classList.add('out');
+  setTimeout(() => splash.classList.contains('out') && (splash.hidden = true), 180);
+}
 
 /** Frames that have said hello (the frame helper runs inside them), by app id. */
 const greeted = new Set<string>();
@@ -21,9 +49,11 @@ addEventListener('message', (e) => {
   for (const [id, f] of frames) if (f.el.contentWindow === e.source) greeted.add(id);
 });
 
-function frameFor(app: AppEntry): HTMLIFrameElement {
+function frameFor(ctx: Ctx, app: AppEntry): HTMLIFrameElement {
   let f = frames.get(app.id);
   if (!f) {
+    // The worker lets sign-in redirects frame only in the sidebar and in tabs whose drawer asked.
+    if (ctx.kind === 'drawer') void send({ type: 'drawer-frames' }).catch(() => undefined);
     const el = h('iframe', {
       // The frame helper (content/framefit.ts) only acts in frames with this name.
       name: `sidegig-app-${app.id}`,
@@ -31,9 +61,12 @@ function frameFor(app: AppEntry): HTMLIFrameElement {
       allow: 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; storage-access',
       referrerpolicy: 'strict-origin-when-cross-origin',
     });
-    f = { el, lastShown: Date.now() };
+    f = { el, lastShown: Date.now(), ready: false };
     frames.set(app.id, f);
     framesHost.append(el);
+    el.addEventListener('load', () => frameReady(app.id));
+    // Some apps never finish loading every resource: don't keep the splash up forever.
+    setTimeout(() => frameReady(app.id), 12_000);
     // Sites with service workers (Gmail, X) answer from them with "don't frame me";
     // clear the worker first, then load. Others load straight away.
     if (NO_FRAME.has(app.catalogId ?? '')) void send({ type: 'clear-sw', url: app.url }).catch(() => undefined).finally(() => (el.src = app.url));
@@ -64,12 +97,16 @@ function watchFrame(ctx: Ctx, app: AppEntry, host: HTMLElement) {
 
 function reload(app: AppEntry) {
   const f = frames.get(app.id);
-  if (f) f.el.src = app.url;
+  if (!f) return;
+  f.ready = false;
+  f.el.src = app.url;
+  showSplash(app);
+  setTimeout(() => frameReady(app.id), 12_000);
 }
 
 setInterval(() => {
   for (const [id, f] of frames) {
-    if (!f.el.hidden || Date.now() - f.lastShown < SLEEP_MS) continue;
+    if (!f.el.hidden || alive.has(id) || Date.now() - f.lastShown < SLEEP_MS) continue;
     f.el.remove();
     frames.delete(id);
   }
@@ -80,7 +117,8 @@ export function showFrames(show: boolean) {
 }
 
 /** Returns the app bar and brings the app's frame to the front. */
-export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
+/** `url`: a page of this app to show (a link rule sent it here). */
+export async function appBar(ctx: Ctx, appId?: string, url?: string): Promise<HTMLElement> {
   const apps = ctx.settings.apps;
   const app = apps.find((a) => a.id === appId) ?? apps.find((a) => a.openIn === 'panel') ?? apps[0];
   if (!app) return h('div', { class: 'empty' }, 'No apps yet. Add some in settings.');
@@ -149,15 +187,25 @@ export async function appBar(ctx: Ctx, appId?: string): Promise<HTMLElement> {
       ),
     );
     const wrap = h('div', { class: 'appbar-wrap' }, bar, note);
-    attach(app);
+    attach(ctx, app, url);
     return wrap;
   }
-  attach(app);
+  attach(ctx, app, url);
   if (ctx.kind === 'panel') watchFrame(ctx, app, bar);
   return bar;
 }
 
 let lastWindowed = '';
+
+const sameSite = (url: string, appUrl: string) => {
+  try {
+    const u = new URL(url);
+    const host = new URL(appUrl).hostname.replace(/^www\./, '');
+    return /^https?:$/.test(u.protocol) && (u.hostname === host || u.hostname.endsWith(`.${host}`));
+  } catch {
+    return false;
+  }
+};
 
 
 function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
@@ -178,13 +226,16 @@ function sideWindowCard(ctx: Ctx, app: AppEntry): HTMLElement {
   );
 }
 
-function attach(app: AppEntry) {
-  frameFor(app);
+function attach(ctx: Ctx, app: AppEntry, url?: string) {
+  alive = new Set(ctx.settings.apps.filter(keepsRunning).map((a) => a.id));
+  const el = frameFor(ctx, app);
+  if (url && sameSite(url, app.url)) el.src = url;
   for (const [id, f] of frames) {
     const show = id === app.id;
     if (show) f.lastShown = Date.now();
     f.el.hidden = !show;
   }
+  showSplash(app);
 }
 
 /** Built-in apps you sign in to (all but Translate). Custom sites usually work in a page. */

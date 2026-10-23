@@ -1,13 +1,14 @@
 // Full settings page.
 import { ext, features, uid, TARGET } from '../shared/api.ts';
-import { loadSettings, saveSettings, onSettingsChanged, loadSecrets, saveSecrets } from '../shared/storage.ts';
-import { defaultSettings, appFromCatalog } from '../shared/defaults.ts';
+import { loadSettings, saveSettings, updateSettings, onSettingsChanged, loadSecrets, saveSecrets } from '../shared/storage.ts';
+import { defaultSettings, appFromCatalog, keepsRunning } from '../shared/defaults.ts';
 import { CATALOG } from '../shared/catalog.ts';
 import { themeCss } from '../shared/theme.ts';
 import { applyScale, clampScale, SCALE_MIN, SCALE_MAX } from '../shared/scale.ts';
-import type { AppEntry, OpenIn, Settings, StatusCard } from '../shared/types.ts';
+import type { AppEntry, LinkRule, OpenIn, Settings, StatusCard } from '../shared/types.ts';
 import { h, iconButton, favicon, toast, keys } from '../ui/dom.ts';
-import { seg, toggle, opt, ACCENTS } from '../ui/views/quick.ts';
+import { seg, toggle, opt, accentSwatches } from '../ui/views/quick.ts';
+import { spacePicker } from '../ui/spacepick.ts';
 import { send } from '../ui/ctx.ts';
 import { ENGINES } from '../shared/ntdata.ts';
 import { findPlace } from '../ui/views/ntwidgets.ts';
@@ -17,7 +18,7 @@ import { PACKS } from '../shared/walls.ts';
 import { PARTS, allLocalKeys, isPrefixKey, applySetup, describe, fileName, makeSetup, parseSetup, setupFile, toCode, type SavedSetup, type SetupBundle, type SetupPart } from '../shared/setups.ts';
 import { aiSetup } from '../ui/views/ntchat.ts';
 import { getKeys, setKeys, PROVIDERS } from '../shared/ai/providers.ts';
-import { getLocal, setLocal } from '../shared/storage.ts';
+import { getLocal, setLocal, onLocalChanged } from '../shared/storage.ts';
 import { mcpSignIn, mcpSignOut, mcpSignedIn, setMcpToken, type McpServer } from '../shared/ai/mcp.ts';
 import { welcomeView } from './welcome.ts';
 
@@ -42,8 +43,10 @@ const NAV: [string, string][] = [
 const saved = h('span', { class: 'opts-saved', role: 'status', 'aria-live': 'polite' });
 let savedTimer: ReturnType<typeof setTimeout> | undefined;
 const commit = async (fn: (x: Settings) => void) => {
+  // Show the change now, then apply it to the latest stored settings (another page,
+  // such as a new tab, may have saved since this one loaded) and keep that result.
   fn(s);
-  await saveSettings(s);
+  s = await updateSettings(fn);
   saved.textContent = 'Saved';
   saved.classList.add('on');
   clearTimeout(savedTimer);
@@ -119,6 +122,10 @@ function appRow(app: AppEntry, i: number): HTMLElement {
     toggle(app.mobile, (v) => commit((x) => void (x.apps[i].mobile = v)), `Mobile layout for ${app.name}`),
     h('span', { class: 'subtle' }, 'Badge'),
     toggle(app.badge, (v) => commit((x) => void (x.apps[i].badge = v)), `Unread badge for ${app.name}`),
+    h('span', { class: 'subtle' }, 'Keep running'),
+    toggle(keepsRunning(app), (v) => commit((x) => void (x.apps[i].keepAlive = v)), `Keep ${app.name} running while hidden`),
+    h('span', { class: 'subtle' }, 'Mute'),
+    toggle(!!app.muted, (v) => commit((x) => void (x.apps[i].muted = v)), `No notifications from ${app.name}`),
     iconButton('up', 'Move up', () => void move(-1)),
     iconButton('down', 'Move down', () => void move(1)),
     iconButton('trash', 'Remove', () => void commit((x) => void x.apps.splice(i, 1))),
@@ -216,6 +223,7 @@ async function aiSection(): Promise<HTMLElement> {
     h('label', { class: 'label', for: 'ai-instructions' }, 'Custom instructions for the built-in chat'),
     h('textarea', { class: 'text-input', id: 'ai-instructions', rows: 4, style: { width: '100%' }, placeholder: 'How would you like the assistant to respond?', onchange: (e: Event) => commit((x) => void (x.ai.instructions = (e.target as HTMLTextAreaElement).value)) }, s.ai.instructions),
     await mcpSettings(),
+    await agentSettings(),
     h('div', { class: 'label' }, 'AI sites'),
     h(
       'div',
@@ -236,6 +244,38 @@ async function aiSection(): Promise<HTMLElement> {
     area(s.ai.selectionTemplate, (v) => commit((x) => void (x.ai.selectionTemplate = v))),
     h('div', { class: 'label' }, 'Prompt for a whole page'),
     area(s.ai.pageTemplate, (v) => commit((x) => void (x.ai.pageTemplate = v))),
+  );
+}
+
+/** Agents on this computer (Claude Code, Codex, Cursor) using this browser through the bridge. */
+async function agentSettings(): Promise<HTMLElement> {
+  const status = h('p', { class: 'muted', role: 'status' });
+  const paintStatus = async () => {
+    const link = await getLocal<{ state?: string; error?: string } | null>('agentLink', null);
+    status.textContent =
+      link?.state === 'connected' ? 'Connected to the sidegig bridge. Agents can use this browser as allowed above.'
+      : link?.state === 'waiting' ? `Waiting for the bridge. Start it with node bridge/sidegig-bridge.mjs and paste its pairing code below.${link.error ? ` (${link.error})` : ''}`
+      : '';
+  };
+  onLocalChanged('agentLink', () => void paintStatus());
+  await paintStatus();
+  const code = h('input', { class: 'text-input', placeholder: 'Pairing code, like K7QM-2XRP', 'aria-label': 'Bridge pairing code', autocomplete: 'off', spellcheck: 'false', value: await getLocal<string>('bridgeCode', '') }) as HTMLInputElement;
+  const codeForm = h('form', { class: 'ai-row' }, code, h('button', { class: 'btn', type: 'submit' }, 'Save code'));
+  codeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await setLocal('bridgeCode', code.value.trim().toUpperCase());
+    toast('Pairing code saved on this device');
+  });
+  const access = await getLocal<'off' | 'read' | 'full'>('agentAccess', 'off');
+  return h(
+    'section',
+    { class: 'ai-tools-settings', 'aria-label': 'Agents' },
+    h('div', { class: 'label' }, 'Agents on this computer'),
+    h('p', { class: 'muted' }, 'Claude Code, Codex, Cursor and other MCP agents can use this browser through the sidegig bridge. Read only lets them list and read tabs, search history and take screenshots. Full also lets them open, click, type in and close tabs. Every tab an agent uses shows a banner with Stop.'),
+    opt('Agent access', 'Kept on this device; it never syncs', seg(access, [['off', 'Off'], ['read', 'Read only'], ['full', 'Full']], (v) => void setLocal('agentAccess', v))),
+    codeForm,
+    h('p', { class: 'muted' }, 'To connect an agent, run node bridge/sidegig-bridge.mjs setup and use the command it prints.'),
+    status,
   );
 }
 
@@ -346,7 +386,7 @@ async function statusSection(): Promise<HTMLElement> {
       opt('Vercel', 'Latest deployments and failures', toggle(s.status.vercel, (v) => commit((x) => void (x.status.vercel = v)), 'Vercel card')),
       s.status.vercel ? opt('Vercel token', null, secretInput('vercelToken', 'Vercel access token')) : null,
       s.status.vercel ? opt('Vercel team id', 'Optional', secretInput('vercelTeamId', 'team_…', false)) : null,
-      opt('Gmail', 'Unread count, using the Google account signed in to this browser', toggle(s.status.gmail, (v) => commit((x) => void (x.status.gmail = v)), 'Gmail card')),
+      opt('Gmail', 'Unread mail, sign-in codes you copy in one click, and thread summaries and reply drafts from your chat model. Uses the Google account signed in to this browser; mail goes only to the model you picked.', toggle(s.status.gmail, (v) => commit((x) => void (x.status.gmail = v)), 'Gmail card')),
       opt(
         'Check every',
         null,
@@ -384,7 +424,8 @@ function rulesSection(): HTMLElement {
         textInput(r.pattern, (v) => commit((x) => void (x.rules[i].pattern = v.trim())), { style: { flex: '1' }, placeholder: 'notion.so' }),
         h(
           'select',
-          { class: 'text-input', onchange: (e: Event) => commit((x) => void (x.rules[i].action = (e.target as HTMLSelectElement).value as 'window' | 'reuse-tab')) },
+          { class: 'text-input', onchange: (e: Event) => commit((x) => void (x.rules[i].action = (e.target as HTMLSelectElement).value as LinkRule['action'])) },
+          h('option', { value: 'sidebar', selected: r.action === 'sidebar' }, 'Open in the sidebar'),
           h('option', { value: 'window', selected: r.action === 'window' }, 'Open in mini window'),
           h('option', { value: 'reuse-tab', selected: r.action === 'reuse-tab' }, 'Reuse an open tab'),
         ),
@@ -406,7 +447,7 @@ function rulesSection(): HTMLElement {
       });
     },
   }, '+ Add rule');
-  return section('rules', 'Link rules', 'Decide where links to certain sites open, like Arc’s Air Traffic Control. Applies to links that would open a new tab.', list, h('div', { style: { marginTop: '10px' } }, add));
+  return section('rules', 'Link rules', 'Decide where links to certain sites open, like Arc’s Air Traffic Control. Applies to links that would open a new tab. Open in the sidebar uses the app for that site while the sidebar is open, and a mini window otherwise.', list, h('div', { style: { marginTop: '10px' } }, add));
 }
 
 /** Size of everything: a slider with presets, previewed live on this page as you drag. */
@@ -430,15 +471,15 @@ function appearanceSection(): HTMLElement {
   return section(
     'appearance',
     'Appearance',
-    'Three inputs make the whole palette: a base tint, an accent and a contrast level. Every combination stays readable.',
+    'Like Arc, one space colour paints the sidebar, the rail and the Space new tab. Pick up to three colours, then how much colour and grain. Text always stays readable.',
+    h('div', { class: 'group sp-group' }, spacePicker(s, { modes: false })),
     h(
       'div',
-      { class: 'group' },
+      { class: 'group', style: { marginTop: '12px' } },
       sizeControl(),
       opt('Theme', 'Page = match each website’s light or dark look', seg(s.theme.mode, [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['page', 'Page']], (v) => commit((x) => void (x.theme.mode = v)))),
-      opt('Accent', null, h('div', { class: 'swatches', style: { alignItems: 'center' } }, ACCENTS.map((c) => h('button', { class: 'swatch', type: 'button', title: c, style: { background: c }, 'aria-pressed': String(c === s.theme.accent), onclick: () => commit((x) => void (x.theme.accent = c)) })), color(s.theme.accent, (v) => commit((x) => void (x.theme.accent = v))))),
+      opt('Accent', s.theme.accent ? null : 'Follows the space colour', h('div', { class: 'swatches', style: { alignItems: 'center' } }, accentSwatches(s, (c) => void commit((x) => void (x.theme.accent = c))), color(s.theme.accent || '#3b6ef5', (v) => commit((x) => void (x.theme.accent = v))))),
       opt('Icons', 'Themed draws known logos in your theme’s ink and greys the rest', seg(s.theme.icons, [['original', 'Original'], ['themed', 'Themed']], (v) => commit((x) => void (x.theme.icons = v)))),
-      opt('Base tint', 'A whisper of color in the surfaces', color(s.theme.base, (v) => commit((x) => void (x.theme.base = v)))),
       rangeOpt('Contrast', (v) => `${v} out of 100`, s.theme.contrast, { min: 0, max: 100, step: 5 }, (v) => void commit((x) => void (x.theme.contrast = v))),
       rangeOpt('Corner radius', (v) => `${v}px corners`, s.theme.radius, { min: 4, max: 16 }, (v) => void commit((x) => void (x.theme.radius = v))),
     ),
@@ -578,7 +619,7 @@ function weatherControl(): HTMLElement {
     h(
       'div',
       { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
-      toggle(w.enabled && !!w.place, (v) => commit((x) => void (x.newtab.weather.enabled = v)), 'Weather'),
+      toggle(s.newtab.widgets.weather, (v) => commit((x) => void (x.newtab.widgets.weather = v)), 'Weather'),
       q,
       h('button', { type: 'button', class: 'btn', onclick: () => void find() }, 'Find'),
       seg(w.units, [['f', '°F'], ['c', '°C']], (v) => commit((x) => void (x.newtab.weather.units = v))),
@@ -633,6 +674,16 @@ function newtabSection(): HTMLElement {
       opt('Home | AI switch', 'Your browser’s own AI and your chats with every assistant, one tab away (press Tab in the empty search box).', toggle(n.aiTab, (v) => commit((x) => void (x.newtab.aiTab = v)), 'Home and AI switch')),
       opt('Clock', null, toggle(n.clock, (v) => commit((x) => void (x.newtab.clock = v)), 'Clock')),
       opt('Clock style', null, seg(n.clockStyle, [['digital', 'Digital'], ['analog', 'Analog']], (v) => commit((x) => void (x.newtab.clockStyle = v)))),
+      opt(
+        'Second time zone',
+        'A second clock under the date, like a world-time watch',
+        h(
+          'select',
+          { class: 'text-input', 'aria-label': 'Second time zone', onchange: (e: Event) => commit((x) => void (x.newtab.zone2 = (e.target as HTMLSelectElement).value)) },
+          h('option', { value: '', selected: !n.zone2 }, 'None'),
+          ((Intl as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? []).map((z) => h('option', { value: z, selected: z === n.zone2 }, z.replace(/_/g, ' '))),
+        ),
+      ),
       opt(
         'Name on the page',
         'What the new tab calls itself in the corner, instead of “sidegig”. You can also click the name on the new tab to change it.',
@@ -806,6 +857,39 @@ async function getSaved(): Promise<SavedSetup[]> {
   return Array.isArray(r[SETUPS_KEY]) ? (r[SETUPS_KEY] as SavedSetup[]) : [];
 }
 
+/** Weekly backup file in Downloads: survives removing the extension (the browser deletes its storage then). */
+async function autoBackupBlock(): Promise<HTMLElement> {
+  const last = h('p', { class: 'muted', role: 'status' });
+  const paintLast = async () => {
+    const at = await getLocal<number>('backupAt', 0);
+    last.textContent = at ? `Last backup ${new Date(at).toLocaleString()}. File: Downloads/sidegig/sidegig-backup.json` : 'No backup yet.';
+  };
+  onLocalChanged('backupAt', () => void paintLast());
+  await paintLast();
+  const ask = (): Promise<boolean> => Promise.resolve((ext as any).permissions?.request?.({ permissions: ['downloads'] }) ?? true);
+  const save = async () => toast((await send({ type: 'backup-now' }).catch(() => false)) ? 'Backup saved in Downloads' : 'The backup could not be saved');
+  const now = async () => {
+    if (!(await ask())) return toast('Backups need permission to save a file in Downloads');
+    await save();
+  };
+  return h(
+    'div',
+    { class: 'setup-block' },
+    h('div', { class: 'setup-h' }, 'Automatic backup'),
+    h('p', { class: 'muted' }, 'Your browser deletes sidegig’s notes, to-dos and chats if the extension is removed. A weekly backup file in your Downloads folder keeps them; import it here to restore. Keys and passwords are never in it.'),
+    opt('Back up every week', 'Replaces one file in Downloads/sidegig', toggle(await getLocal<boolean>('autoBackup', false), (on) => {
+      // Ask inside the click; turn on only once the browser agrees.
+      void (on ? ask() : Promise.resolve(true)).then(async (ok) => {
+        if (!ok) return toast('Backups need permission to save a file in Downloads');
+        await setLocal('autoBackup', on);
+        if (on) await save();
+      });
+    }, 'Back up every week')),
+    h('div', { class: 'setup-actions' }, h('button', { class: 'btn', type: 'button', onclick: () => void now() }, 'Back up now')),
+    last,
+  );
+}
+
 async function setupsSection(): Promise<HTMLElement> {
   const saved = await getSaved();
   const stage = h('div', { class: 'setup-stage' });
@@ -921,6 +1005,7 @@ async function setupsSection(): Promise<HTMLElement> {
       stage,
     ),
     h('div', { class: 'setup-block' }, h('div', { class: 'setup-h' }, 'Your setups'), list),
+    await autoBackupBlock(),
     h(
       'div',
       { class: 'setup-block' },

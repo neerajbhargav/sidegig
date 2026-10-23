@@ -4,15 +4,41 @@
 // extension page. Normal pages and other sites' frames are untouched.
 import { rewriteFrameChecks, rewriteTopRefs, TOP_REWRITE_HOSTS } from '../shared/framecheck.ts';
 
+/** Muted apps (a switch per app in settings) show no desktop notifications from inside
+ * sidegig, in the sidebar and in a page's drawer. The other half says whether this app is muted. */
+function quietNotifications() {
+  let muted = false;
+  document.addEventListener('sidegig-mute', (e) => {
+    muted = !!(e as CustomEvent).detail;
+  });
+  const Real = window.Notification;
+  if (!Real) return;
+  const Quiet = function (title: string, options?: NotificationOptions) {
+    if (!muted) return new Real(title, options);
+    const quiet = Object.assign(new EventTarget(), { title, ...options, onclick: null, onclose: null, onerror: null, onshow: null });
+    return Object.assign(quiet, { close() {} });
+  } as unknown as typeof Notification;
+  Quiet.prototype = Real.prototype;
+  Object.defineProperty(Quiet, 'permission', { get: () => Real.permission });
+  Object.defineProperty(Quiet, 'requestPermission', { value: (...a: Parameters<typeof Real.requestPermission>) => Real.requestPermission(...a) });
+  Object.defineProperty(window, 'Notification', { configurable: true, writable: true, value: Quiet });
+}
+
 (() => {
   let anc = '';
+  let parent = '';
   try {
     const a = location.ancestorOrigins;
     anc = a && a.length ? a[a.length - 1] : '';
+    parent = a && a.length ? a[0] : '';
   } catch {
     return;
   }
-  if (window.top === window || !window.name.startsWith('sidegig-app') || !/^(chrome|moz|safari-web)-extension:\/\//.test(anc)) return;
+  const extension = (o: string) => /^(chrome|moz|safari-web)-extension:\/\//.test(o);
+  if (window.top === window || !window.name.startsWith('sidegig-app')) return;
+  // An app in a page's drawer (web page > sidegig drawer > app) gets only the mute.
+  if (!extension(anc)) return void (extension(parent) && quietNotifications());
+  quietNotifications();
 
   // Inside the sidebar the site is "embedded", where browsers only accept cookies
   // that say they may be (SameSite=None; Secure). Sites write theirs without it

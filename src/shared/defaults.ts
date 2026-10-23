@@ -1,13 +1,17 @@
 import type { AppEntry, Settings } from './types.ts';
 import { CATALOG, DEFAULT_PINNED, catalogById, PHONE_FIT } from './catalog.ts';
+import { DEFAULT_SPACE } from './theme.ts';
 
-export const SETTINGS_VERSION = 10;
+export const SETTINGS_VERSION = 11;
 
 export function appFromCatalog(id: string): AppEntry {
   const c = catalogById(id);
   if (!c) throw new Error(`Unknown catalog app: ${id}`);
   return { id: c.id, name: c.name, url: c.url, openIn: 'panel', mobile: PHONE_FIT.has(c.id), badge: c.badge !== 'none', catalogId: c.id };
 }
+
+/** Messengers keep running while hidden so their messages and badges stay current. */
+export const keepsRunning = (a: Pick<AppEntry, 'keepAlive' | 'catalogId'>): boolean => a.keepAlive ?? catalogById(a.catalogId ?? '')?.category === 'Messaging';
 
 export function defaultSettings(): Settings {
   return {
@@ -22,16 +26,17 @@ export function defaultSettings(): Settings {
       floatOn: [],
       hideInFullscreen: true,
     },
-    drawer: { width: 400 },
+    drawer: { width: 400, apps: {} },
     theme: {
       mode: 'page',
       base: '#808080',
-      accent: '#0b57d0',
+      accent: '',
       contrast: 50,
       radius: 10,
       scale: 100,
       icons: 'original',
       customCss: '',
+      space: { ...DEFAULT_SPACE, colors: [...DEFAULT_SPACE.colors] },
     },
     apps: DEFAULT_PINNED.filter((id) => CATALOG.some((c) => c.id === id)).map(appFromCatalog),
     stacks: { spaces: [], activeSpace: '' },
@@ -48,11 +53,12 @@ export function defaultSettings(): Settings {
     sleep: { enabled: false, afterMin: 60 },
     newtab: {
       enabled: true,
-      look: 'auto',
+      look: 'space',
       calmImages: true,
       clock: true,
       aiTab: true,
       clockStyle: 'digital',
+      zone2: '',
       name: '',
       title: '',
       tag: '',
@@ -65,7 +71,7 @@ export function defaultSettings(): Settings {
       sounds: false,
       weather: { enabled: false, place: '', lat: 0, lon: 0, units: 'f' },
       todo: true,
-      widgets: { greeting: true, brief: false, weather: true, calendar: true, pomodoro: true, notes: true, apps: true, bookmarks: true, reading: false, tabs: false, calculator: false, feed: true },
+      widgets: { greeting: true, brief: false, weather: true, calendar: true, pomodoro: true, notes: true, bookmarks: true, reading: false, tabs: false, calculator: false, feed: true },
       panels: 'clear',
       layout: {},
       folderTones: {},

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  hexToRgb, rgbToHex, rgbToOklch, oklchToRgb, contrastRatio, generateTokens, themeCss, modeForBackground, parseCssRgb,
+  hexToRgb, rgbToHex, rgbToOklch, oklchToRgb, contrastRatio, generateTokens, themeCss, modeForBackground, parseCssRgb, spaceTokens, DEFAULT_SPACE, type Space,
 } from '../src/shared/theme.ts';
 
 test('hex <-> oklch round trip stays within 1/255', () => {
@@ -36,6 +36,7 @@ for (const mode of ['light', 'dark'] as const) {
         assert.ok(contrastRatio(t.fgSubtle, surface) >= 3, `subtle on ${surface} (${JSON.stringify(input)})`);
       }
       assert.ok(contrastRatio(t.accentFg, t.accent) >= 4.5, `accent button text (${JSON.stringify(input)})`);
+      assert.ok(contrastRatio(t.badgeFg, t.badge) >= 4.5, `unread badge text (${JSON.stringify(input)})`);
     }
   });
 }
@@ -63,4 +64,50 @@ test('page background decides light or dark', () => {
   assert.equal(modeForBackground('rgb(18, 18, 18)'), 'dark');
   assert.equal(modeForBackground('rgba(0, 0, 0, 0)'), null);
   assert.deepEqual(parseCssRgb('rgb(255 0 0 / 0.5)'), [1, 0, 0, 0.5]);
+});
+
+// Arc-style space colour (owner, 2026-10-23): the sidebar, rail and new tab wear it.
+const SPACES: Space[] = [
+  DEFAULT_SPACE,
+  { colors: ['#ff3b30'], grain: 40, intensity: 100 },
+  { colors: ['#ffd60a', '#34c759', '#007aff'], grain: 0, intensity: 0 },
+  { colors: ['#000000'], grain: 100, intensity: 50 },
+  { colors: ['#ffffff'], grain: 20, intensity: 100 },
+  { colors: ['#808080', '#5e5ce6'], grain: 30, intensity: 70 },
+  { colors: [], grain: 30, intensity: 50 },
+  { colors: ['not a colour', '#0a84ff'], grain: 30, intensity: 50 },
+];
+
+for (const mode of ['light', 'dark'] as const) {
+  test(`${mode}: text on the space colour reads on every stop and on its fills`, () => {
+    for (const s of SPACES) {
+      const t = spaceTokens(mode, s);
+      assert.ok(t.stops.length >= 1 && t.stops.length <= 3, JSON.stringify(s));
+      for (const stop of t.stops) {
+        assert.ok(contrastRatio(t.ink, stop) >= 7, `ink on ${stop} (${JSON.stringify(s)})`);
+        assert.ok(contrastRatio(t.mute, stop) >= 4.5, `muted on ${stop} (${JSON.stringify(s)})`);
+        assert.ok(contrastRatio(t.accent, stop) >= 4.5, `accent text on ${stop} (${JSON.stringify(s)})`);
+      }
+      assert.ok(contrastRatio(t.ink, t.selected) >= 7, `ink on the selected fill (${JSON.stringify(s)})`);
+      // Muted text also sits in the wells sunk into the frame.
+      for (const well of t.wells) assert.ok(contrastRatio(t.mute, well) >= 4.5, `muted in a well ${well} (${JSON.stringify(s)})`);
+    }
+  });
+}
+
+test('the space gradient keeps one to three colours, and grain maps 0–100 to an opacity', () => {
+  assert.equal(spaceTokens('light', { colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00'], grain: 0, intensity: 50 }).stops.length, 3);
+  assert.match(spaceTokens('light', DEFAULT_SPACE).frame, /^linear-gradient\(/);
+  assert.equal(spaceTokens('dark', { ...DEFAULT_SPACE, grain: 0 }).grain, 0);
+  assert.ok(spaceTokens('dark', { ...DEFAULT_SPACE, grain: 100 }).grain <= 0.5);
+});
+
+test('the accent follows the most colourful space colour unless one is set', () => {
+  const css = themeCss(':root', 'light', { base: '#808080', accent: '', contrast: 50, space: { colors: ['#9a9a9a', '#e11d48'], grain: 0, intensity: 50 } });
+  const hue = (hex: string) => rgbToOklch(hexToRgb(hex)).h;
+  const accent = /--m-accent:(#[0-9a-f]{6})/.exec(css)![1];
+  assert.ok(Math.abs(hue(accent) - hue('#e11d48')) < 12, accent);
+  assert.match(css, /--sp-frame:linear-gradient/);
+  const fixed = themeCss(':root', 'light', { base: '#808080', accent: '#10b981', contrast: 50, space: DEFAULT_SPACE });
+  assert.ok(Math.abs(hue(/--m-accent:(#[0-9a-f]{6})/.exec(fixed)![1]) - hue('#10b981')) < 12);
 });

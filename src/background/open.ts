@@ -65,6 +65,17 @@ interface Dock {
  * size back when the side window closes. One side window per browser window;
  * opening another app reuses it.
  */
+/** A side window you resized opens at that width next time (per app). */
+export async function rememberSideWidth(win: chrome.windows.Window): Promise<void> {
+  const [popups, docks] = await Promise.all([getLocal<Record<string, number>>('popups', {}), getLocal<Record<string, Dock>>('docks', {})]);
+  // A docked side window may have switched apps since it opened: its dock knows which.
+  const key = docks[String(win.id)]?.key ?? Object.keys(popups).find((k) => popups[k] === win.id);
+  if (!key || !win.width) return;
+  const widths = await getLocal<Record<string, number>>('sideWidths', {});
+  if (widths[key] === win.width) return;
+  await setLocal('sideWidths', { ...widths, [key]: win.width });
+}
+
 export async function openMiniWindow(req: OpenRequest, windowId?: number): Promise<void> {
   const key = req.appId ?? hostOf(req.url);
   const docks = await getLocal<Record<string, Dock>>('docks', {});
@@ -109,7 +120,8 @@ export async function openMiniWindow(req: OpenRequest, windowId?: number): Promi
     }
   }
   const bounds = { left: main.left ?? 0, top: main.top ?? 0, width: main.width ?? 1280, height: main.height ?? 800 };
-  const width = Math.round(Math.min(480, Math.max(380, bounds.width * 0.28)));
+  const saved = Number((await getLocal<Record<string, number>>('sideWidths', {}))[key]);
+  const width = saved >= 320 && saved <= 900 ? saved : Math.round(Math.min(480, Math.max(380, bounds.width * 0.28)));
   const left = req.side === 'left' ? bounds.left : bounds.left + bounds.width - width;
   let dock: Dock | null = null;
   // Make room beside it (full screen was handled above).

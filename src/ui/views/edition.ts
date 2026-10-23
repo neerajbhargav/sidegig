@@ -279,7 +279,7 @@ function setupCard(ctx: Ctx, rerender: () => void): HTMLElement {
   return h(
     'div',
     { class: 'ed-setup' },
-    h('div', { class: 'ed-setup-title' }, ico('edition', 22), 'Your own front page'),
+    h('div', { class: 'ed-setup-title' }, ico('edition', 24), 'Your own front page'),
     h(
       'p',
       {},
@@ -367,7 +367,7 @@ function savedView(saved: SavedItem[], rerender: () => void, filter: { kind: EdK
       h(
         'div',
         { class: 'ed-row' },
-        s.image ? h('img', { class: `ed-thumb ${s.kind}`, src: s.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span', { class: 'ed-thumb icon' }, ico(KIND_ICON[s.kind], 18)),
+        s.image ? h('img', { class: `ed-thumb ${s.kind}`, src: s.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span', { class: 'ed-thumb icon' }, ico(KIND_ICON[s.kind], 20)),
         h(
           'div',
           { class: 'ed-row-body' },

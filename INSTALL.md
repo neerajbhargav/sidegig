@@ -27,6 +27,17 @@ The Chromium build requires Chrome 130 or a compatible browser version.
 - Open **Assistant** in the sidebar for built-in chat. Connect a browser model, local model or API provider in **Settings → Ask AI**.
 - Use **Settings → New tab** to return to your browser’s own new tab. All settings remain available through the toolbar button.
 
+## Agents and your ChatGPT plan (optional)
+
+The sidegig bridge is a small helper in the `bridge` folder. It needs Node 18 or newer.
+
+1. Run `node bridge/sidegig-bridge.mjs setup`. It prints a pairing code and the commands that connect Claude Code, Codex or Cursor.
+2. Start it with `node bridge/sidegig-bridge.mjs`.
+3. In **Settings → Ask AI → Agents on this computer**, paste the pairing code and choose **Read only** or **Full**.
+4. For your ChatGPT plan in the Assistant, install the official Codex app and sign in (`npm i -g @openai/codex && codex login`), then choose **Your ChatGPT plan** when you connect a model.
+
+`node bridge/sidegig-bridge.mjs unpair` makes a new code; the old one stops working.
+
 Some websites restrict embedding. Use the app bar’s **Open in a tab** or **Open as mini window** if a site cannot load in the sidebar.
 
 ## Updates and removal

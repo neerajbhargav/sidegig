@@ -21,6 +21,7 @@ import { hueOf } from '../ui/dom.ts';
 import { Dock } from './dock.ts';
 import type { AppEntry, Settings, StatusCard } from '../shared/types.ts';
 import type { ToBackground, ToContent, View } from '../shared/messages.ts';
+import { arrowNav } from '../shared/arrownav.ts';
 
 type DrawerView = View | 'app' | 'add';
 
@@ -53,6 +54,7 @@ class Rail {
   private flyout = document.createElement('div');
   private flyTimer = 0;
   private ready = false;
+  private port?: MessagePort;
   private pending: Record<string, unknown> | null = null;
   private hint = document.createElement('div');
   private iframe: HTMLIFrameElement | null = null;
@@ -86,6 +88,7 @@ class Rail {
     this.shell.className = 'shell';
     this.rail.className = 'rail';
     this.rail.setAttribute('aria-label', 'sidegig');
+    arrowNav(this.rail);
     this.drawer.className = 'drawer';
     this.tip.className = 'tip';
     this.flyout.className = 'flyout';
@@ -165,7 +168,13 @@ class Rail {
   }
 
   private drawerWidth(): number {
-    return parseInt(this.drawer.style.width, 10) || this.s.drawer.width;
+    return parseInt(this.drawer.style.width, 10) || this.widthFor();
+  }
+
+  /** Each app remembers the width you gave it; everything else shares one. */
+  private widthFor(): number {
+    const w = this.view === 'app' && this.drawerApp ? Number(this.s.drawer.apps?.[this.drawerApp]) : 0;
+    return w >= 280 && w <= 720 ? w : this.s.drawer.width;
   }
 
   /** Tell the page how much room to make: the rail, plus the drawer when it's open. */
@@ -187,7 +196,7 @@ class Rail {
     }
     this.applyTheme();
     if (this.built) this.renderRail();
-    if (this.drawer.classList.contains('show')) this.drawer.style.width = `${s.drawer.width}px`;
+    if (this.drawer.classList.contains('show')) this.drawer.style.width = `${this.widthFor()}px`;
     if (this.docked) this.show(false);
     else if (this.open && !this.sticky && !this.view) this.hide();
     this.updateDock();
@@ -292,7 +301,7 @@ class Rail {
   private renderRail() {
     const s = this.s;
     this.rail.textContent = '';
-    this.rail.append(this.tool('home', 'Home', iconNode('logo', 22), 'logo'));
+    this.rail.append(this.tool('home', 'Home', iconNode('logo', 24), 'logo'));
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
 
     const apps = document.createElement('div');
@@ -309,6 +318,7 @@ class Rail {
     this.rail.append(apps);
     this.rail.append(Object.assign(document.createElement('div'), { className: 'sep' }));
     this.rail.append(this.tool('search', `Search  ${keys('K')}`, iconNode('search')));
+    this.rail.append(this.tool('chat', 'Assistant', iconNode('forum')));
     this.rail.append(this.tool('status', 'Status', iconNode('pulse'), this.statusNews ? 'glow status' : 'status'));
     const ai = this.button(`Ask ${this.aiApp()?.name ?? 'AI'}  ${keys('A')}`, iconNode('ask'), () => this.askAi(), 'ai');
     ai.addEventListener('pointerenter', () => this.showFlyout(ai, 450));
@@ -477,16 +487,49 @@ class Rail {
     cover.className = 'cover';
     this.drawer.append(f, cover, resize);
     this.iframe = f;
+    f.addEventListener('load', () => this.connect(f));
     this.wireResize(resize);
   }
 
+  /** Hand the drawer a private port (see ui/main.ts); nothing else crosses the page. */
+  private connect(f: HTMLIFrameElement) {
+    const ch = new MessageChannel();
+    this.port?.close();
+    this.port = ch.port1;
+    this.ready = false;
+    ch.port1.onmessage = (e) => e.data && this.fromDrawer(e.data);
+    // The drawer's own origin (it may be a per-session random host), never '*'.
+    const origin = TARGET === 'preview' ? '*' : new URL(f.src).origin;
+    f.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, type: 'port' }, origin, [ch.port2]);
+  }
+
   private post(msg: Record<string, unknown>) {
-    if (!this.iframe) return;
-    if (!this.ready && msg.type === 'view') {
-      this.pending = msg;
+    if (!this.ready || !this.port) {
+      if (msg.type === 'view') this.pending = msg;
       return;
     }
-    this.iframe.contentWindow?.postMessage({ ns: 'sidegig', n: this.nonce, ...msg }, '*');
+    this.port.postMessage(msg);
+  }
+
+  private fromDrawer(d: Record<string, unknown>) {
+    if (d.type === 'close') this.hide();
+    if (d.type === 'view' && this.view) {
+      this.view = d.view as DrawerView;
+      if (typeof d.app === 'string') this.drawerApp = d.app;
+      this.drawer.style.width = `${this.widthFor()}px`;
+      this.markActive();
+      this.updateDock();
+    }
+    if (d.type === 'ask-ai') this.askAi();
+    if (d.type === 'ready') {
+      this.ready = true;
+      this.post({ type: 'theme', mode: this.mode });
+      if (this.pending) {
+        const p = this.pending;
+        this.pending = null;
+        this.post(p);
+      }
+    }
   }
 
   /** Load the drawer quietly after the rail first appears, so opening it is instant. */
@@ -502,7 +545,8 @@ class Rail {
     this.ensureIframe(view, appId);
     if (!fresh) this.post({ type: 'view', view, app: appId });
     this.view = view;
-    this.drawer.style.width = `${this.s.drawer.width}px`;
+    if (appId) this.drawerApp = appId;
+    this.drawer.style.width = `${this.widthFor()}px`;
     this.drawer.classList.add('show');
     this.markActive();
     this.updateDock();
@@ -541,8 +585,9 @@ class Rail {
         handle.classList.remove('drag');
         this.drawer.classList.remove('resizing');
         const width = parseInt(this.drawer.style.width, 10);
+        const app = this.view === 'app' ? this.drawerApp : null;
         this.updateDock();
-        void updateSettings((s) => void (s.drawer.width = width));
+        void updateSettings((s) => void (app ? (s.drawer.apps[app] = width) : (s.drawer.width = width)));
       };
       handle.addEventListener('pointermove', move);
       handle.addEventListener('pointerup', up, { once: true });
@@ -668,26 +713,6 @@ class Rail {
       this.dock.suspend(full);
       if (this.s.rail.hideInFullscreen) this.host.style.visibility = full ? 'hidden' : '';
       if (!full) this.updateDock();
-    });
-    window.addEventListener('message', (e) => {
-      if (!this.iframe || e.source !== this.iframe.contentWindow) return;
-      const d = e.data;
-      if (!d || d.ns !== 'sidegig' || d.n !== this.nonce) return;
-      if (d.type === 'close') this.hide();
-      if (d.type === 'view' && this.view) {
-        this.view = d.view;
-        this.markActive();
-      }
-      if (d.type === 'ask-ai') this.askAi();
-      if (d.type === 'ready') {
-        this.ready = true;
-        this.post({ type: 'theme', mode: this.mode });
-        if (this.pending) {
-          const p = this.pending;
-          this.pending = null;
-          this.post(p);
-        }
-      }
     });
     ext.runtime.onMessage.addListener((msg: ToContent | { type: 'extract' }, _sender, reply) => {
       if (msg.type === 'extract') {

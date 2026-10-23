@@ -1,7 +1,7 @@
 // sidegig background worker: routes messages, opens apps, keeps network rules,
 // menus, alarms and badges in sync with settings.
 import { ext, features, TARGET, uid } from '../shared/api.ts';
-import { loadSettings, saveSettings, getLocal, setLocal, onSettingsChanged } from '../shared/storage.ts';
+import { loadSettings, saveSettings, getLocal, setLocal, onSettingsChanged, onLocalChanged } from '../shared/storage.ts';
 import { appFromCatalog, defaultSettings } from '../shared/defaults.ts';
 import { catalogById } from '../shared/catalog.ts';
 import { buildPrompt } from '../shared/prompt.ts';
@@ -9,13 +9,16 @@ import { findRule, matchPattern, isRestricted } from '../shared/rules.ts';
 import { badgeLabel } from '../shared/badge.ts';
 import type { AppEntry, PendingPrompt, Settings } from '../shared/types.ts';
 import type { ToBackground, ToContent } from '../shared/messages.ts';
-import { applyRules, setSideTabs } from './dnr.ts';
+import { applyRules, setDrawerTabs, setSideTabs } from './dnr.ts';
 import { pageCookies } from './framecookies.ts';
-import { openApp, openPanel, openMiniWindow, forgetPopup } from './open.ts';
-import { refreshStatus } from './status.ts';
+import { openApp, openPanel, openMiniWindow, forgetPopup, rememberSideWidth } from './open.ts';
+import { mailThread, refreshStatus } from './status.ts';
+import { agentLink, stopAgents } from './agent.ts';
+import { backupNow, scheduleBackup } from './backup.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 import { trackPanels } from './panels.ts';
+import { trustSender } from './trust.ts';
 import { checkFavicons } from './favicons.ts';
 import { findCollection, readPool, refreshPool, REFRESH_MS } from '../shared/collect.ts';
 
@@ -42,8 +45,11 @@ async function sync(): Promise<void> {
   cache = await loadSettings();
   void checkFavicons(cache.apps);
   await setSideTabs(await getLocal<number[]>('sideTabs', [])).catch(() => undefined);
+  await setDrawerTabs(await getLocal<number[]>('drawerTabs', [])).catch(() => undefined);
   await Promise.allSettled([applyRules(cache.apps), setupMenus(cache), registerBridge(cache), setupAlarms(cache), scheduleEdition(cache)]);
   void buildIfStale(cache);
+  void agentLink();
+  void scheduleBackup();
   setupActionBehavior();
   setupLinkRules();
 }
@@ -60,6 +66,7 @@ async function setupMenus(s: Settings) {
   const ai = aiApp(s)?.name ?? 'AI';
   menus.create({ id: 'ask-selection', title: `Ask ${ai} about "%s"`, contexts: ['selection'] });
   menus.create({ id: 'ask-page', title: `Ask ${ai} about this page`, contexts: ['page'] });
+  menus.create({ id: 'ask-assistant', title: 'Ask the sidegig Assistant about "%s"', contexts: ['selection'] });
   menus.create({ id: 'add-stack', title: 'Add to sidegig stacks', contexts: ['page', 'link'] });
   menus.create({ id: 'link-window', title: 'Open link in a sidegig mini window', contexts: ['link'] });
   if (s.edition.enabled) menus.create({ id: 'save-edition', title: 'Save to your reading list', contexts: ['page', 'link'] });
@@ -167,6 +174,8 @@ async function onBadge(host: string, count: number) {
   const action = (ext as any).action;
   action?.setBadgeText?.({ text: total ? badgeLabel(total) : '' });
   action?.setBadgeBackgroundColor?.({ color: '#e5484d' });
+  // Opera shows sidegig in its own sidebar, with a badge of its own.
+  (globalThis as { opr?: any }).opr?.sidebarAction?.setBadgeText?.({ text: total ? badgeLabel(total) : '' });
 }
 
 // ---------------------------------------------------------------- link rules
@@ -180,7 +189,19 @@ function setupLinkRules() {
     const s = now();
     const rule = findRule(s.rules, d.url);
     if (!rule) return;
-    if (rule.action === 'window') {
+    if (rule.action === 'sidebar') {
+      // The browser opens its sidebar only on a click, so this uses one that is already open.
+      const app = s.apps.find((a) => matchPattern(hostOf(a.url).replace(/^www\./, ''), d.url));
+      const tab = await ext.tabs.get(d.tabId).catch(() => undefined);
+      const panels = await getLocal<Record<string, { ts: number }>>('panelOpen', {});
+      const open = tab?.windowId !== undefined && Date.now() - (panels[String(tab.windowId)]?.ts ?? 0) < 40_000;
+      if (app && open) {
+        await setLocal('panelRequest', { appId: app.id, url: d.url, ts: Date.now() });
+        await ext.tabs.remove(d.tabId).catch(() => undefined);
+        return;
+      }
+    }
+    if (rule.action === 'window' || rule.action === 'sidebar') {
       await openMiniWindow({ url: d.url, openIn: 'window', side: s.rail.side });
       await ext.tabs.remove(d.tabId).catch(() => undefined);
       return;
@@ -225,15 +246,30 @@ ext.runtime.onInstalled.addListener(async (details) => {
   await sync();
 });
 
+// Tabs whose in-page drawer shows apps (see dnr.ts); tab ids restart with the browser.
+async function drawerTab(id: number, open: boolean) {
+  const ids = (await getLocal<number[]>('drawerTabs', [])).filter((t) => t !== id);
+  if (open) ids.push(id);
+  await setLocal('drawerTabs', ids);
+  await setDrawerTabs(ids);
+}
+ext.tabs.onRemoved.addListener((id) => void drawerTab(id, false));
+
 ext.runtime.onStartup?.addListener(() => {
   void setLocal('panelOpen', {});
+  void setLocal('drawerTabs', []);
   void sync();
 });
 onSettingsChanged(() => void sync());
+onLocalChanged('agentAccess', () => void agentLink());
+onLocalChanged('autoBackup', () => void scheduleBackup());
 (ext as any).permissions?.onAdded?.addListener(() => setupLinkRules());
 ext.windows.onRemoved.addListener((id) => void forgetPopup(id));
+(ext.windows as any).onBoundsChanged?.addListener((w: chrome.windows.Window) => void rememberSideWidth(w));
 
 ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
+  const { ok, host } = trustSender(msg?.type, sender, ext.runtime.id);
+  if (!ok) return false;
   const windowId = sender.tab?.windowId;
   switch (msg.type) {
     case 'open-app':
@@ -246,17 +282,17 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       return false;
     }
     case 'badge':
-      void onBadge(msg.host, msg.count);
+      void onBadge(host, msg.count);
       return false;
     case 'ai-claim':
-      claim(msg.host).then(sendResponse);
+      claim(host).then(sendResponse);
       return true;
     case 'ask-page':
       // The caller (panel / new tab) opens the AI app itself; we just prepare the prompt.
       void ext.tabs.query({ active: true, lastFocusedWindow: true }).then(([t]) => t && askFromBackground(t, undefined, false));
       return false;
     case 'frame-cookies':
-      void pageCookies(msg.url).then(sendResponse, () => sendResponse(''));
+      void pageCookies(`https://${host}/`).then(sendResponse, () => sendResponse(''));
       return true;
     case 'clear-sw': {
       // A site's service worker answers with "don't frame me" headers that network
@@ -280,6 +316,9 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       );
       return true;
     }
+    case 'drawer-frames':
+      if (sender.tab?.id !== undefined) void drawerTab(sender.tab.id, true);
+      return false;
     case 'tab-info': {
       const wid = sender.tab?.windowId;
       if (wid === undefined) {
@@ -305,11 +344,21 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
     case 'refresh-status':
       refreshStatus().then(sendResponse, () => sendResponse([]));
       return true;
+    case 'backup-now':
+      backupNow().then(sendResponse, () => sendResponse(false));
+      return true;
+    case 'agent-stop':
+      // The banner's Stop in a tab an agent works in: always allowed, it only turns access off.
+      void stopAgents();
+      return false;
+    case 'mail-thread':
+      mailThread(msg.mid).then(sendResponse, () => sendResponse(null));
+      return true;
     case 'edition-build':
       buildEdition().then(sendResponse, () => sendResponse(null));
       return true;
     case 'profile-import':
-      importFromAi(msg.text, msg.host).then(sendResponse, () => sendResponse({ ok: false, count: 0 }));
+      importFromAi(msg.text, host).then(sendResponse, () => sendResponse({ ok: false, count: 0 }));
       return true;
   }
   return false;
@@ -320,8 +369,12 @@ ext.commands?.onCommand.addListener((command: string, tab?: chrome.tabs.Tab) => 
   if (command === 'ask-ai') return askFromBackground(tab);
   const view = command === 'open-search' ? 'search' : 'home';
   if (isRestricted(tab.url)) {
-    // No rail on this page: use the browser sidebar (must stay synchronous).
-    if (!openPanel(tab.windowId, { view })) void ext.runtime.openOptionsPage();
+    // No rail on this page: use the browser sidebar (must stay synchronous); where
+    // there is none (Opera, Safari), sidegig's panel in a side window.
+    if (!openPanel(tab.windowId, { view })) {
+      void setLocal('panelRequest', { view, ts: Date.now() });
+      void openMiniWindow({ url: ext.runtime.getURL('panel.html'), openIn: 'window', side: now().rail.side }, tab.windowId);
+    }
     return;
   }
   const msg: ToContent = command === 'toggle-rail' ? { type: 'toggle-rail' } : { type: 'open-view', view: 'search' };
@@ -332,6 +385,12 @@ ext.commands?.onCommand.addListener((command: string, tab?: chrome.tabs.Tab) => 
   if (!tab) return;
   if (info.menuItemId === 'ask-selection') return askFromBackground(tab, info.selectionText);
   if (info.menuItemId === 'ask-page') return askFromBackground(tab);
+  if (info.menuItemId === 'ask-assistant') {
+    // The sidebar first (needs this click, so before any await); else the page's drawer.
+    if (!openPanel(tab.windowId, { view: 'chat' }) && tab.id !== undefined) void ext.tabs.sendMessage(tab.id, { type: 'open-view', view: 'chat' } satisfies ToContent).catch(() => undefined);
+    void setLocal('chatPrefill', { text: String(info.selectionText ?? ''), ts: Date.now() });
+    return;
+  }
   if (info.menuItemId === 'add-stack') void addToStacks(info.linkUrl ?? info.pageUrl ?? tab.url ?? '', info.linkUrl ? info.selectionText ?? '' : tab.title ?? '');
   if (info.menuItemId === 'save-edition') void saveLink(info.linkUrl ?? info.pageUrl ?? tab.url ?? '', info.linkUrl ? info.linkText ?? info.selectionText ?? '' : tab.title ?? '');
   if (info.menuItemId === 'link-window' && info.linkUrl) void openMiniWindow({ url: info.linkUrl, openIn: 'window', side: now().rail.side }, tab.windowId);
@@ -343,6 +402,8 @@ ext.alarms.onAlarm.addListener((a) => {
   if (a.name === 'edition') void buildEdition();
   if (a.name === 'walls') void refreshWalls();
   if (a.name === 'favicons') void checkFavicons(now().apps);
+  if (a.name === 'agent') void agentLink();
+  if (a.name === 'backup') void backupNow();
 });
 
 // Toolbar button where the browser has no side panel behavior.

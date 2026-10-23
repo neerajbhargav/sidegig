@@ -19,7 +19,7 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 - **Always there, like Opera's sidebar.** Docked by default: the rail sits flush on the side you choose and every page makes room for it, so nothing is ever covered. Prefer more space? Switch to hover.
 - **Customizable.** Any site as an app, any bookmark folder as a space, theme from three inputs, custom CSS, per-site hiding, link rules.
 - **Adaptive.** By default it matches each website's light or dark look. Text contrast is checked by tests at every setting.
-- **Minimal and good looking.** Chrome's own design language: Google Sans Flex, Material Symbols, tonal surfaces, nothing loud until it has something to say.
+- **Minimal and good looking.** A design language after Arc's: your space colour as the frame, content on calm cards, the system font, Material Symbols, nothing loud until it has something to say.
 - **Free for everyone.** GPL-3.0. No paid tier, ever.
 
 ## Features
@@ -28,16 +28,18 @@ Opera's sidebar proved how good it is to keep messengers and tools one click awa
 |---|---|
 | **Docked rail** | Always visible on the left or right, and the page makes room for it like Opera's sidebar: fixed headers, side navs and overlays are moved clear of it automatically (tested on YouTube, X, Gmail, LinkedIn, GitHub, Wikipedia). Opening the drawer makes room too. Or switch to hover, where it slides over the page from the edge. |
 | **Opera-style panel** | Apps open in the browser's sidebar laid out like Opera: buttons list on the outer edge, the app right beside it. When the panel opens on the rail's side, the page rail steps aside so it reads as one sidebar. If the browser puts its sidebar on the other side, sidegig offers a one-click fix. |
-| **Apps** | Claude, ChatGPT, Gemini, Perplexity, Grok, WhatsApp, Telegram, Slack, Discord, Gmail, Calendar, YouTube Music, Spotify, Notion, Linear, GitHub and more, or any site. Opens in the browser's own sidebar (where your sign-ins work), a slim mini window, a tab, or an in-page drawer. Unread badges from page titles. |
+| **Apps** | Claude, ChatGPT, Gemini, Perplexity, Grok, WhatsApp, Telegram, Slack, Discord, Gmail, Calendar, YouTube Music, Spotify, Notion, Linear, GitHub and more, or any site. Opens in the browser's own sidebar (where your sign-ins work), a slim mini window, a tab, or an in-page drawer. Unread badges from page titles. Messengers keep running while hidden (a switch per app), any app can be muted, and each app remembers the width you give it. |
 | **Add this site** | The **+** on the rail turns the page you're on into a rail app or a bookmark in one tap, with suggested apps below. |
 | **One-tap AI** | The Ask button sends the page, or your selection, to your default AI. Hover it to pick Claude, ChatGPT, Gemini, Perplexity or Grok instead. Uses the account you're already signed in to: no API keys, no extra cost. sidegig types the prompt; you press send (or turn on auto-send). Also in the right-click menu. |
-| **Sidebar assistant** | Built-in chat with the browser’s model, a local model or your own API provider. Attach tabs, use browser tools and connect MCP tool servers. Provider keys and tool tokens stay on the device. |
+| **Sidebar assistant** | Built-in chat with the browser’s model, a local model, your own API provider, or your ChatGPT plan through the official Codex app. Open it from either rail, or right-click selected text and choose Ask the sidegig Assistant. Attach tabs, use browser tools and connect MCP tool servers. Provider keys and tool tokens stay on the device. |
+| **Mail** | With the Gmail card on, sign-in codes in new mail show as a ticket you copy in one click, on the new tab and the sidebar home. Each unread email can be summarized or answered with a draft reply by the model you picked; the draft opens in Gmail for you to send. Uses the Gmail account signed in to your browser, with no extra sign-in. |
+| **Agents** | Claude Code, Codex, Cursor and other MCP agents can use this browser through the local sidegig bridge, only as far as you allow: off (default), read only, or full. Every tab an agent uses shows a banner with Stop. The bridge listens on your computer only and pairs with a code. |
 | **Bookmark stacks** | Your real browser bookmarks: folders become Dia/Arc-style stacks with overlapping site icons, loose bookmarks become an Opera-style icon grid. Pick folders as spaces. Syncs through the browser; stays yours if you uninstall. |
 | **Tabs, Dia style** | This window's tabs with Chrome tab groups shown as colored sections. Close, switch, put background tabs to sleep, save the window as a workspace and restore it later. |
 | **Search everything** | Open tabs, apps, bookmarks (with folder paths), history and commands in one fuzzy-matched list, plus web search. |
 | **Status cards** | GitHub reviews and notifications, Vercel deployments, unread Gmail. Faded until something changes, then marked new; the rail glows. |
-| **Link rules** | Send links for chosen sites to a mini window, or reuse a tab that's already open. |
-| **New tab page** | Search box, apps, a speed dial of saved sites and your stacks. |
+| **Link rules** | Send links for chosen sites to the sidebar (that site's app, while the sidebar is open), a mini window, or a tab that's already open. |
+| **New tab page** | A desk of widgets on one grid: clock (with an optional second time zone), weather, calendar, a focus timer with twelve weeks of focus history, to-dos, notes, bookmarks with folders, reading list, open tabs and a calculator. Search and Ask share one box; an optional day summary joins the greeting. |
 | **Your edition** | Every new tab carries a short, finite issue of articles, videos, podcasts, books, music and discussions picked from your interests, not from what keeps people scrolling. Your AI fills in your interests: one click types a prompt into Claude, ChatGPT or Gemini in the sidebar, and sidegig reads back only that JSON reply. Save what you like, wave off what you don't, and the next edition learns from both (interests from your AI or your saves fade over 60 days unless renewed; yours never do). A Saved shelf keeps your own curation, and right-click → “Save to your reading list” works on any page. Sources are free and keyless: Hacker News, Substack, Google News, YouTube, Apple Podcasts, Apple Music (opens in YouTube Music), Open Library, arXiv and Reddit. Where Chrome's built-in model is available, it reviews each edition on your computer and writes a one-line “why this is here” for every pick. |
 | **Theme engine** | Base tint, accent and contrast generate the whole palette in OKLCH. Light, dark, system, or Page (match each site). Corner radius and custom CSS too. |
 
@@ -113,7 +115,7 @@ test/                  node:test unit tests
 
 ## Design system
 
-- **Type:** Google Sans Flex (SIL OFL), Latin subset, 36 KB, bundled.
+- **Type:** the system font (SF Pro on a Mac, Segoe UI on Windows); Barlow Condensed and IBM Plex Mono (SIL OFL) for the studio looks.
 - **Icons:** Material Symbols Rounded (Apache-2.0), fetched by `scripts/fetch-assets.mjs`.
 - **Color:** three inputs to an OKLCH palette, Linear-style; Google blue `#0b57d0` by default; neutral surfaces; contrast tested (body text ≥ 7:1, secondary ≥ 4.5:1).
 - **Shape and motion:** 10 px radius, bounded surfaces without drop shadows, 120–220 ms transitions, respects reduced motion.
