@@ -57,7 +57,7 @@ npm run build:chrome    # prints: built chrome -> dist/chrome
 
 Then open `chrome://extensions`, turn on Developer mode, choose Load unpacked and select `dist/chrome`. A short setup opens. Refresh pages that were open before.
 
-No release is published yet. When a version tag is pushed, the release workflow attaches `sidegig-chrome.zip`, `sidegig-opera.zip`, `sidegig-firefox.zip` and `sidegig-safari.zip` to a [GitHub release](https://github.com/neerajbhargav/sidegig/releases). To install from a zip, follow [INSTALL.md](INSTALL.md). `npm run zip` builds the same four zips locally.
+The [latest release](https://github.com/neerajbhargav/sidegig/releases/latest) (v0.4.1, 2026-10-23) has `sidegig-chrome.zip`, `sidegig-opera.zip`, `sidegig-firefox.zip`, `sidegig-safari.zip` and a `SHA256SUMS` file. Each `v*` tag on `main` publishes the next release through the release workflow. To install from a zip, follow [INSTALL.md](INSTALL.md). `npm run zip` builds the same four zips locally.
 
 ## How it works
 
