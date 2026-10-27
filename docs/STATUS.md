@@ -1,11 +1,13 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-23 17:30 (`main` at the 0.4.1 release commit: PR #1 merged as `dfb184a` on top of 0.4.0 and the Arc redesign; changelog regenerated; tag `v0.4.1` publishes the four zips through release.yml).
+Last updated: 2026-10-27 16:17 (branch `docs/polish-2026-10-27`: the README release line only. `main` is still the 0.4.1 release commit: PR #1 merged as `dfb184a` on top of 0.4.0 and the Arc redesign; changelog regenerated; tag `v0.4.1` published the four zips through release.yml).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**README release line, 2026-10-27 (branch `docs/polish-2026-10-27`, not merged):** the Quickstart said "No release is published yet", but release `v0.4.1` (2026-10-23) has the four zips and `SHA256SUMS`. The line now links the latest release. No code changed.
 
 **Merged and tagged, 2026-10-23 17:30 (owner: "push updates over the latest main branch of sidegig do not discard the work done"):** PR #1 (`upgrade/oct-2026`: personal-data scrub, sign-in code eval and detector, prompt-injection defenses and the opt-in ask-before-sending gate, the injection eval, Playwright checks, Biome, the release workflow) merged into `main` as `dfb184a` with a merge commit, so the Arc redesign and every branch commit are kept. Version 0.4.1, changelog regenerated, tag `v0.4.1`. Not checked live in Aside yet: the drawer port fix and the ask-before-sending setting (reload the unpacked extension from a fresh `node scripts/build.mjs chrome`).
 
