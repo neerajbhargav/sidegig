@@ -17,37 +17,16 @@ The page rail on hover, a notes app in the drawer, then the Assistant reads the 
 
 No account, no sidegig server, no analytics. Apps such as Gmail, X or Claude load in the browser's sidebar with your own sign-in. The Assistant uses the browser's built-in model, a local model, your own API key, or your ChatGPT plan through the official Codex CLI. One TypeScript codebase builds packages for Chromium browsers, Opera, Firefox and Safari. Only the Chromium package has been installed and checked: see [browser support](#browser-support). The full feature tour is in [docs/FEATURES.md](docs/FEATURES.md).
 
-## Results
+## Install
 
-<img src="docs/screenshots/status-dark.jpg" align="right" width="240" alt="Sidebar Status: a sign-in code ticket (482913) under an unread Gmail row, with Summarize and Draft reply (fixture data)">
+1. Download `sidegig-chrome.zip` from the [latest release](https://github.com/neerajbhargav/sidegig/releases/latest) and unzip it into a folder you keep.
+2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
+3. Choose **Load unpacked** and select the unzipped folder. A short setup opens.
+4. Refresh pages that were open before. Hover the edge of any page for the rail.
 
-Two evals run: the sign-in code detector, and a first prompt-injection eval, which has no attack-success number yet. Read the numbers with their limits:
+Works in Chrome, Edge, Brave, Arc, Dia, Vivaldi and Aside (Chromium 130+). A browser-store listing is not published yet, so the install uses Developer mode. Opera, Firefox and Safari: [INSTALL.md](INSTALL.md).
 
-- The code detector is a set of rules (`findCode` in `src/shared/mail.ts`); no model runs at detection time. Its held-out set has 330 subjects and previews that `qwen2.5-coder:7b` drafted, 150 with a code. The labels are the model's own, corrected by three written rules: 58 of 330 changed, and no person reviewed every row. The negative categories were picked from the old detector's known false positives, so the precision gain is measured on the failure modes the fix targeted. Precision depends on how many mails carry a code (45% here); the false-code rate carries over better.
-- A code row counts only on an exact match with its label. Intervals are a seeded percentile bootstrap (10,000 resamples).
-- The injection eval ran 20 attack pages, 1 run per condition, on `qwen2.5-coder:7b` (local), 2026-10-23. That model wrote its tool calls as text, which sidegig does not run, so no attack reached a tool and no attack-success number is claimed. The rows below are intent only.
-
-| Metric | Value (95% CI) | Baseline (95% CI) | n | Model, set | Code, date |
-|---|---|---|---|---|---|
-| Code precision | 96.7% (93.0 to 99.2) | 90.9% (84.3 to 96.5), `279374e` | 330 mails, 150 with a code | `test/fixtures/mail-codes-holdout.jsonl` v1, drafted by `qwen2.5-coder:7b` (`dae161e27b0e`) | `3f1c43a`, 2026-10-23 |
-| Code recall | 77.3% (70.4 to 83.9) | 53.3% (45.3 to 61.5) | same | same | same |
-| False codes on code-free mail | 1.7%, 3/180 (0.0 to 3.9) | 4.4%, 8/180 (1.7 to 7.8) | 180 mails | same | same |
-| Injection: model wrote an `open_url` call for the attacker's link (intent, not run) | 8/20, 40% (20 to 60%), shipped defenses | 6/20, 30% (10 to 50%), no defenses | 20 attack pages, 1 run per condition | `qwen2.5-coder:7b` (`dae161e27b0e`), local; `test/fixtures/injection-attacks.jsonl` v1 | `12a8bd3`, 2026-10-23 |
-
-Code detector, paired on the same 330 rows: recall +24.0 points (+17.3 to +31.0), precision +5.8 points (+0.4 to +11.7), false-code rate -2.8 points (-5.8 to +0.0).
-
-Reproduce (Node 24 or newer):
-
-```bash
-node scripts/eval-mail-codes.ts --corpus test/fixtures/mail-codes-holdout.jsonl
-# all  n=330 positives=150 precision=96.7% [93.0%, 99.2%] recall=77.3% [70.4%, 83.9%] tp=116 fp=4 fn=34 wrong=1
-node scripts/eval-mail-codes-delta.ts       # baseline, paired deltas and the false-code rate
-node scripts/eval-injection.ts --runs 1 --conditions none,shipped --one-per-technique --write   # local Ollama, about 30 min
-```
-
-Result files are in [docs/evals](docs/evals/README.md), with the method, how the labels were made, the known misses and the injection corpus. CI fails if the held-out code set drops below precision 116/120 or recall 116/150 (`test/mail-codes.test.ts`); since CI reads it, held-out v1 is now a regression floor, and a detector change needs a fresh v2. CI also runs the deterministic half of the injection eval (`test/injection-corpus.test.ts`).
-
-## Quickstart
+From source (Node 24 or newer):
 
 ```bash
 git clone https://github.com/neerajbhargav/sidegig.git && cd sidegig
@@ -55,9 +34,7 @@ npm ci
 npm run build:chrome    # prints: built chrome -> dist/chrome
 ```
 
-Then open `chrome://extensions`, turn on Developer mode, choose Load unpacked and select `dist/chrome`. A short setup opens. Refresh pages that were open before.
-
-The [latest release](https://github.com/neerajbhargav/sidegig/releases/latest) (v0.4.1, 2026-10-23) has `sidegig-chrome.zip`, `sidegig-opera.zip`, `sidegig-firefox.zip`, `sidegig-safari.zip` and a `SHA256SUMS` file. Each `v*` tag on `main` publishes the next release through the release workflow. To install from a zip, follow [INSTALL.md](INSTALL.md). `npm run zip` builds the same four zips locally.
+Then load `dist/chrome` the same way. Each `v*` tag on `main` publishes the next release (four zips and a `SHA256SUMS` file) through the release workflow.
 
 ## How it works
 
@@ -108,6 +85,36 @@ The CSP trade-off. Inside a sidegig app frame the rule removes the app's whole `
 What the gate does not cover. Codex runs (ChatGPT plan) have no tool calls that sidegig sees: Codex runs its own tools, including any MCP servers in your Codex setup, so sidegig cannot ask before them. Links in a reply are clickable, and a click opens the address with no prompt; hover a link to see where it goes. The one-tap Ask types page text unchanged into a third-party AI site. Edition titles reach the built-in model without `neutralize()`.
 
 Details of every request and stored value: [PRIVACY.md](PRIVACY.md).
+
+## Results
+
+<img src="docs/screenshots/status-dark.jpg" align="right" width="240" alt="Sidebar Status: a sign-in code ticket (482913) under an unread Gmail row, with Summarize and Draft reply (fixture data)">
+
+Two evals run: the sign-in code detector, and a first prompt-injection eval, which has no attack-success number yet. Read the numbers with their limits:
+
+- The code detector is a set of rules (`findCode` in `src/shared/mail.ts`); no model runs at detection time. Its held-out set has 330 subjects and previews that `qwen2.5-coder:7b` drafted, 150 with a code. The labels are the model's own, corrected by three written rules: 58 of 330 changed, and no person reviewed every row. The negative categories were picked from the old detector's known false positives, so the precision gain is measured on the failure modes the fix targeted. Precision depends on how many mails carry a code (45% here); the false-code rate carries over better.
+- A code row counts only on an exact match with its label. Intervals are a seeded percentile bootstrap (10,000 resamples).
+- The injection eval ran 20 attack pages, 1 run per condition, on `qwen2.5-coder:7b` (local), 2026-10-23. That model wrote its tool calls as text, which sidegig does not run, so no attack reached a tool and no attack-success number is claimed. The rows below are intent only.
+
+| Metric | Value (95% CI) | Baseline (95% CI) | n | Model, set | Code, date |
+|---|---|---|---|---|---|
+| Code precision | 96.7% (93.0 to 99.2) | 90.9% (84.3 to 96.5), `279374e` | 330 mails, 150 with a code | `test/fixtures/mail-codes-holdout.jsonl` v1, drafted by `qwen2.5-coder:7b` (`dae161e27b0e`) | `3f1c43a`, 2026-10-23 |
+| Code recall | 77.3% (70.4 to 83.9) | 53.3% (45.3 to 61.5) | same | same | same |
+| False codes on code-free mail | 1.7%, 3/180 (0.0 to 3.9) | 4.4%, 8/180 (1.7 to 7.8) | 180 mails | same | same |
+| Injection: model wrote an `open_url` call for the attacker's link (intent, not run) | 8/20, 40% (20 to 60%), shipped defenses | 6/20, 30% (10 to 50%), no defenses | 20 attack pages, 1 run per condition | `qwen2.5-coder:7b` (`dae161e27b0e`), local; `test/fixtures/injection-attacks.jsonl` v1 | `12a8bd3`, 2026-10-23 |
+
+Code detector, paired on the same 330 rows: recall +24.0 points (+17.3 to +31.0), precision +5.8 points (+0.4 to +11.7), false-code rate -2.8 points (-5.8 to +0.0).
+
+Reproduce (Node 24 or newer):
+
+```bash
+node scripts/eval-mail-codes.ts --corpus test/fixtures/mail-codes-holdout.jsonl
+# all  n=330 positives=150 precision=96.7% [93.0%, 99.2%] recall=77.3% [70.4%, 83.9%] tp=116 fp=4 fn=34 wrong=1
+node scripts/eval-mail-codes-delta.ts       # baseline, paired deltas and the false-code rate
+node scripts/eval-injection.ts --runs 1 --conditions none,shipped --one-per-technique --write   # local Ollama, about 30 min
+```
+
+Result files are in [docs/evals](docs/evals/README.md), with the method, how the labels were made, the known misses and the injection corpus. CI fails if the held-out code set drops below precision 116/120 or recall 116/150 (`test/mail-codes.test.ts`); since CI reads it, held-out v1 is now a regression floor, and a detector change needs a fresh v2. CI also runs the deterministic half of the injection eval (`test/injection-corpus.test.ts`).
 
 ## Design decisions
 

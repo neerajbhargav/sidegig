@@ -10,11 +10,12 @@ import { card } from './ntdash.ts';
 
 export function calculatorCard(): HTMLElement {
   const input = h('input', { class: 'text-input calc-input', 'aria-label': 'Calculation', placeholder: '(24 + 18) / 3', inputmode: 'decimal', maxlength: 200 });
-  const output = h('output', { class: 'calc-result', 'aria-live': 'polite' }, '0');
+  // A no-break space keeps the line height; a bare "0" next to the placeholder read as a wrong answer.
+  const output = h('output', { class: 'calc-result', 'aria-live': 'polite' }, '\u00a0');
   const run = () => { try { output.textContent = String(calculate(input.value)); } catch (e) { output.textContent = (e as Error).message; } };
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); run(); } });
   const keys = h('div', { class: 'calc-keys' }, ['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','=','+'].map((key) => h('button', { type: 'button', class: 'nt-chip', onclick: () => { if (key === '=') run(); else { input.value += key; input.focus(); } } }, key)));
-  return card('nt-extra', 'Calculator', [iconButton('undo', 'Clear calculation', () => { input.value = ''; output.textContent = '0'; input.focus(); })], h('div', { class: 'calc-body' }, input, output, keys));
+  return card('nt-extra', 'Calculator', [iconButton('undo', 'Clear calculation', () => { input.value = ''; output.textContent = '\u00a0'; input.focus(); })], h('div', { class: 'calc-body' }, input, output, keys));
 }
 
 export function readingCard(ctx: Ctx): HTMLElement {

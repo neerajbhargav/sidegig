@@ -208,3 +208,9 @@ Commit `706beab` on branch `upgrade/oct-2026` (plus uncommitted work).
 Change in commit `ce44957`, captured at `58bbfdc` on branch `upgrade/oct-2026`.
 
 <img src="2026-10-23-06-settings-ask-ai-ask-before-sending-page.jpg" width="49%" alt="Settings, Ask AI: Ask before sending page data out is now kept on this device and never syncs (fixture preview)">
+
+## 2026-10-31: Merge pull request #3 from neerajbhargav/docs/polish-2026-10-27
+
+Commit `cc0ff13` on branch `launch/consumer-ready` (plus uncommitted work).
+
+<img src="2026-10-31-01-calculator-starts-blank-instead-of-showi.jpg" width="49%" alt="Calculator starts blank instead of showing 0 under its example (fixture preview)">

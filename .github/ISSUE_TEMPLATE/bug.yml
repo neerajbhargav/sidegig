@@ -1,0 +1,25 @@
+name: Bug report
+description: Something in sidegig does not work.
+labels: [bug]
+body:
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 155, Arc 1.x, Edge 140
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: sidegig version
+      placeholder: 0.4.1 (shown on chrome://extensions)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps, expected and actual
+      description: Remove email text, codes and other private data from screenshots.
+    validations:
+      required: true

@@ -1,11 +1,18 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-27 16:17 (branch `docs/polish-2026-10-27`: the README release line only. `main` is still the 0.4.1 release commit: PR #1 merged as `dfb184a` on top of 0.4.0 and the Arc redesign; changelog regenerated; tag `v0.4.1` published the four zips through release.yml).
+Last updated: 2026-10-31 19:45 (branch `launch/consumer-ready`, not pushed: X-launch readiness pass. `main` is still `cc0ff13`, release v0.4.1).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**X-launch readiness, 2026-10-31 (branch `launch/consumer-ready`, not pushed; owner: "check if it is worth releasing as an opensource project on X? if not, find gaps and make it consumer ready"):**
+- README leads with a 4-step install from the release zip; the eval tables moved below How it works and Security model. No content was cut.
+- The calculator result starts blank: a bare `0` under the `(24 + 18) / 3` placeholder read as a wrong answer in the README hero. The hero `docs/screenshots/newtab.jpg` is recaptured from `qa-newtab.html`.
+- `SECURITY.md` (private report form) and issue templates (`.github/ISSUE_TEMPLATE/`). The repo's private vulnerability reporting is OFF (`gh api .../private-vulnerability-reporting` = false), so the SECURITY.md link fails until the owner turns it on (Settings → Security).
+- `docs/screenshots/social-preview.jpg` (1280x640) for Settings → Social preview; GitHub has no API for that upload.
+- Launch blockers only the owner can clear: a Chrome Web Store listing (consumers will not use Developer mode); the name decision (sidegig, Ledge or Edgewise) before any public post; whether to rewrite history to drop the old personal-data images, now that a post will bring traffic; the live checks in item 4.
 
 **README release line, 2026-10-27 (branch `docs/polish-2026-10-27`, not merged):** the Quickstart said "No release is published yet", but release `v0.4.1` (2026-10-23) has the four zips and `SHA256SUMS`. The line now links the latest release. No code changed.
 
