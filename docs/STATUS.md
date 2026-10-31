@@ -1,6 +1,6 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-31 19:45 (branch `launch/consumer-ready`: X-launch readiness pass, version 0.4.2. `main` is still `cc0ff13`, release v0.4.1).
+Last updated: 2026-10-31 19:45 (`main`, release v0.4.2: X-launch readiness pass and history rewrite. `main` is still `cc0ff13`, release v0.4.1).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
@@ -14,7 +14,7 @@ Full build-session transcript, owner requests verbatim, and test tools: `context
 - Chrome Web Store kit in `docs/store/`: `LISTING.md` (summary, description, privacy answers, a reason for each of the 16 permissions, reviewer notes) and five 1280x800 screenshots plus the 440x280 promo tile from `node scripts/store-shots.mjs`. `docs/screenshots/social-preview.jpg` is for GitHub Settings → Social preview (no API).
 - `scripts/readme-gif.mjs`: `--mp4 <file>` writes a video for X; the last frame's hold was dropped by ffmpeg's concat demuxer (the GIF ended mid-answer), now kept. `tour.gif` re-recorded. The recorder is flaky on its first run after a build (timeout waiting for the chat box); a second run passes.
 - Local only (`context/launch-2026-10-31/`): the X thread draft and `sidegig-tour.mp4`.
-- Public history still holds the employer name and home city (old test fixtures), a STATUS line listing the private search terms, and the old unblurred images; the first revision of the PR #1 body (visible under "edited") lists the same terms. A rewritten copy is prepared (see the owner question in this session); it needs the owner's yes because it replaces the public repo.
+- **History rewritten 2026-10-31 (owner chose "Swap repos"):** the old public repo is now private `neerajbhargav/sidegig-archive` (with PRs #1 to #3 and the original hashes). The new public `neerajbhargav/sidegig` has the same code with the employer name, home city, private search terms and personal email removed from every commit, and every past image replaced by its current, cleaned version. Commit hashes written before this date, here and in `docs/evolution`, point into the archive. Full pre-rewrite backup: `/tmp/sidegig-backup-2026-10-31.bundle` (move it somewhere durable). Never push an old local branch to the new repo: they carry the old history.
 - Owner only: submit to the Chrome Web Store ($5 developer account) with `docs/store/`; upload the social preview; post on X.
 
 **README release line, 2026-10-27 (branch `docs/polish-2026-10-27`, not merged):** the Quickstart said "No release is published yet", but release `v0.4.1` (2026-10-23) has the four zips and `SHA256SUMS`. The line now links the latest release. No code changed.
