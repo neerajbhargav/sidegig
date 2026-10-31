@@ -2,6 +2,7 @@
 // a fixture app in the drawer, then the Assistant reads the page (a scripted model, nothing online).
 // Needs ffmpeg. Run `npm run preview`, serve dist/ on 127.0.0.1:8765, then:
 //   node scripts/readme-gif.mjs            (E2E_CHANNEL=chrome uses an installed Google Chrome)
+//   node scripts/readme-gif.mjs --mp4 <file>   also writes an H.264 MP4 (900x560) (for X and other sites that take video)
 import { chromium } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -90,10 +91,16 @@ const list = frames.slice(0, -1).map((f, i) => {
   writeFileSync(file, Buffer.from(f.data, 'base64'));
   return `file '${file}'\nduration ${(frames[i + 1].t - f.t).toFixed(3)}`;
 });
-writeFileSync(path.join(dir, 'list.txt'), `${list.join('\n')}\n`);
+// The concat demuxer ignores the last entry's duration: name the last frame once more so its hold is kept.
+writeFileSync(path.join(dir, 'list.txt'), `${list.join('\n')}\n${list.at(-1).split('\n')[0]}\n`);
 // Two passes: a palette from the whole clip, then the GIF at 12 fps and 900 px wide.
 const concat = ['-f', 'concat', '-safe', '0', '-i', path.join(dir, 'list.txt')];
 const filters = 'fps=12,scale=900:-1:flags=lanczos';
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...concat, '-vf', `${filters},palettegen=stats_mode=diff`, path.join(dir, 'p.png')]);
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...concat, '-i', path.join(dir, 'p.png'), '-lavfi', `${filters}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle`, OUT]);
 console.log(`wrote ${path.relative(process.cwd(), OUT)}`);
+const mp4 = process.argv[process.argv.indexOf('--mp4') + 1];
+if (process.argv.includes('--mp4') && mp4) {
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...concat, '-vf', 'fps=30,format=yuv420p', '-c:v', 'libx264', '-crf', '20', '-movflags', '+faststart', mp4]);
+  console.log(`wrote ${mp4}`);
+}

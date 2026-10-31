@@ -1,18 +1,21 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-31 19:45 (branch `launch/consumer-ready`, not pushed: X-launch readiness pass. `main` is still `cc0ff13`, release v0.4.1).
+Last updated: 2026-10-31 19:45 (branch `launch/consumer-ready`: X-launch readiness pass, version 0.4.2. `main` is still `cc0ff13`, release v0.4.1).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
 
-**X-launch readiness, 2026-10-31 (branch `launch/consumer-ready`, not pushed; owner: "check if it is worth releasing as an opensource project on X? if not, find gaps and make it consumer ready"):**
+**X-launch readiness, 2026-10-31 (branch `launch/consumer-ready`, version 0.4.2; owner: "check if it is worth releasing as an opensource project on X? if not, find gaps and make it consumer ready", then "fix everything and make it public post worthy"):**
 - README leads with a 4-step install from the release zip; the eval tables moved below How it works and Security model. No content was cut.
-- The calculator result starts blank: a bare `0` under the `(24 + 18) / 3` placeholder read as a wrong answer in the README hero. The hero `docs/screenshots/newtab.jpg` is recaptured from `qa-newtab.html`.
-- `SECURITY.md` (private report form) and issue templates (`.github/ISSUE_TEMPLATE/`). The repo's private vulnerability reporting is OFF (`gh api .../private-vulnerability-reporting` = false), so the SECURITY.md link fails until the owner turns it on (Settings → Security).
-- `docs/screenshots/social-preview.jpg` (1280x640) for Settings → Social preview; GitHub has no API for that upload.
-- Launch blockers only the owner can clear: a Chrome Web Store listing (consumers will not use Developer mode); the name decision (sidegig, Ledge or Edgewise) before any public post; whether to rewrite history to drop the old personal-data images, now that a post will bring traffic; the live checks in item 4.
+- The calculator result starts blank: a bare `0` under the `(24 + 18) / 3` placeholder read as a wrong answer in the README hero. `docs/screenshots/newtab.jpg` is recaptured from `qa-newtab.html`.
+- `SECURITY.md` and issue templates. Private vulnerability reporting is now ON for the repo (turned on 2026-10-31 through the API).
+- Chrome Web Store kit in `docs/store/`: `LISTING.md` (summary, description, privacy answers, a reason for each of the 16 permissions, reviewer notes) and five 1280x800 screenshots plus the 440x280 promo tile from `node scripts/store-shots.mjs`. `docs/screenshots/social-preview.jpg` is for GitHub Settings → Social preview (no API).
+- `scripts/readme-gif.mjs`: `--mp4 <file>` writes a video for X; the last frame's hold was dropped by ffmpeg's concat demuxer (the GIF ended mid-answer), now kept. `tour.gif` re-recorded. The recorder is flaky on its first run after a build (timeout waiting for the chat box); a second run passes.
+- Local only (`context/launch-2026-10-31/`): the X thread draft and `sidegig-tour.mp4`.
+- Public history still holds the employer name and home city (old test fixtures), a STATUS line listing the private search terms, and the old unblurred images; the first revision of the PR #1 body (visible under "edited") lists the same terms. A rewritten copy is prepared (see the owner question in this session); it needs the owner's yes because it replaces the public repo.
+- Owner only: submit to the Chrome Web Store ($5 developer account) with `docs/store/`; upload the social preview; post on X.
 
 **README release line, 2026-10-27 (branch `docs/polish-2026-10-27`, not merged):** the Quickstart said "No release is published yet", but release `v0.4.1` (2026-10-23) has the four zips and `SHA256SUMS`. The line now links the latest release. No code changed.
 
