@@ -2666,6 +2666,8 @@ body:is(.ctx-panel, .ctx-drawer, .ctx-options)::before, html[data-look="space"] 
 
 /* The open app is the content card, inset in the frame like Arc's page. */
 .frames { margin: 0 calc(8px * var(--ui-s, 1)) calc(8px * var(--ui-s, 1)); border-radius: var(--r-2); overflow: hidden; background: var(--m-bg); box-shadow: 0 0 0 1px var(--sp-line); }
+/* In the browser's own sidebar the browser already draws a frame: the app runs edge to edge (owner, 2026-10-31: "too much thick bezels"). */
+.ctx-panel .frames { margin: 0; border-radius: 0; box-shadow: -1px 0 0 var(--sp-line); }
 
 /* Floating layers lift. */
 .toast { border-radius: var(--r-3); background: var(--m-fg); color: var(--m-bg); box-shadow: var(--lift-2); padding: calc(8px * var(--ui-s, 1)) calc(14px * var(--ui-s, 1)); font-weight: 500; }
