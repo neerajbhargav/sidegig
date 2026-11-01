@@ -37,12 +37,12 @@ export async function configurePreview(outdir) {
     ] }] }],
   };
   await writeFile(path.join(outdir, 'qa-newtab.html'), html.replace('<script src="shim.js">', `<script>window.__SIDEGIG_FIXTURES__=${JSON.stringify(scene)};window.__SIDEGIG_FIXTURES__.sync.settings.newtab.look=new URLSearchParams(location.search).get('look')||'auto';</script><script src="shim.js">`));
-  const fixture = { persist: false, sync: { settings: { version: 10, newtab: { widgets: { feed: false, weather: false } }, edition: { enabled: false } } }, local: { ntChoiceMade: true, aiKeys: { local: 'http://fixture.invalid' } } };
+  const fixture = { persist: false, sync: { settings: { version: 10, newtab: { widgets: { feed: false, weather: false } }, edition: { enabled: false } } }, local: { ntChoiceMade: true, aiKeys: { openai: 'fixture-key' } } };
   const offline = `<script>
 window.__SIDEGIG_FIXTURES__=${JSON.stringify(fixture)};
 window.LanguageModel=undefined;
 const realFetch=window.fetch;
-window.fetch=(url,init)=>String(url).includes('fixture.invalid')?new Promise((resolve,reject)=>{
+window.fetch=(url,init)=>String(url).includes('api.openai.com')?new Promise((resolve,reject)=>{
   window.releaseOffline=()=>reject(new Error('Fixture offline'));
   init?.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});
 }):realFetch(url,init);

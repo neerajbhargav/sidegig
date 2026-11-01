@@ -42,7 +42,7 @@ test('OpenAI-style: request carries tools, results and effort; stream decodes te
   assert.equal(b.messages[2].tool_calls[0].function.name, 'read_tab');
   assert.equal(b.messages[3].role, 'tool');
   assert.deepEqual((openaiBody(REQ, 'openrouter') as any).reasoning, { effort: 'high' });
-  assert.equal((openaiBody({ ...REQ, effort: 'auto' }, 'local') as any).reasoning_effort, undefined);
+  assert.equal((openaiBody({ ...REQ, effort: 'auto' }, 'openrouter') as any).reasoning_effort, undefined);
   const out = run(openaiDecoder(), [
     sse({ choices: [{ delta: { reasoning: 'Thinking…' } }] }),
     sse({ choices: [{ delta: { content: 'It is ' } }] }),

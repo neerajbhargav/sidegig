@@ -11,6 +11,10 @@ import { needsFix, firstGuess, correct, type DockSide, type Box } from '../share
 
 const ATTR = 'data-sidegig-dock';
 
+/** The viewport's width without its scrollbar. On a page with no doctype (quirks mode, like
+ *  Hacker News) that is body's clientWidth, and html's is only html's own box, minus the dock's margin. */
+export const viewportWidth = () => (document.scrollingElement ?? document.documentElement).clientWidth;
+
 export class Dock {
   private style = document.createElement('style');
   private width = 0;
@@ -159,7 +163,7 @@ export class Dock {
   private incremental() {
     this.dirty = false;
     if (!this.active) return;
-    const vw = document.documentElement.clientWidth;
+    const vw = viewportWidth();
     const current = this.fixedElements();
     const set = new Set(current);
     for (const el of [...this.fixes.keys()]) {
@@ -195,7 +199,7 @@ export class Dock {
 
   /** Move or narrow the given elements so none of them sits under the rail. */
   private place(els: Element[]) {
-    const vw = document.documentElement.clientWidth;
+    const vw = viewportWidth();
     const w = this.width;
     const natural = els.map((el) => [el, this.box(el)] as const);
     const placed: { el: Element; target: number | null }[] = [];

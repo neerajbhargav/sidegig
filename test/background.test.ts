@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRules, localModelRule, AUTH_HOSTS, MOBILE_UA } from '../src/background/dnr.ts';
+import { buildRules, AUTH_HOSTS, MOBILE_UA } from '../src/background/dnr.ts';
 import { parseGmailFeed } from '../src/background/status.ts';
 import { isRestricted } from '../src/shared/rules.ts';
 import { appFromCatalog } from '../src/shared/defaults.ts';
@@ -93,13 +93,10 @@ test("frames the drawer opens from its random URL get the same rules as the exte
   assert.ok(nav.condition.initiatorDomains!.includes('drawer-session-guid'));
 });
 
-// Ollama answers 403 to an Origin it doesn't list, and lists no extension origins by default
-// (seen live on 2026-10-31). sidegig's own requests to this computer go without an Origin.
-test('local model rule: drops Origin only on sidegig\'s own requests to this computer', () => {
-  const r = localModelRule([EXT]);
-  assert.deepEqual(r.action.requestHeaders, [{ header: 'origin', operation: 'remove' }]);
-  assert.deepEqual(r.condition.initiatorDomains, [EXT], 'never for requests a web page starts');
-  assert.deepEqual(r.condition.requestDomains, ['localhost', '127.0.0.1']);
-  assert.deepEqual(r.condition.resourceTypes, ['xmlhttprequest']);
-  assert.ok(!buildRules([appFromCatalog('claude')], [EXT]).some((x) => x.id === r.id), 'its id never collides with the frame rules');
+test('a new tab that isn’t sidegig’s opens desk.html, only when sidegig’s new tab is on', async () => {
+  const { takesNewTab } = await import('../src/background/desk.ts');
+  assert.equal(takesNewTab('chrome://newtab/', true, 0), true, 'Aside showed its own page');
+  assert.equal(takesNewTab('chrome://newtab/', true, 1), false, 'sidegig’s page is already there (Chrome)');
+  assert.equal(takesNewTab('chrome://newtab/', false, 0), false, 'you turned sidegig’s new tab off');
+  assert.equal(takesNewTab('https://example.com/', true, 0), false);
 });

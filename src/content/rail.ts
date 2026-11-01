@@ -18,7 +18,7 @@ import { buildPrompt } from '../shared/prompt.ts';
 import { appFromCatalog } from '../shared/defaults.ts';
 import { catalogById, CATALOG } from '../shared/catalog.ts';
 import { hueOf } from '../ui/dom.ts';
-import { Dock } from './dock.ts';
+import { Dock, viewportWidth } from './dock.ts';
 import type { AppEntry, Settings, StatusCard } from '../shared/types.ts';
 import type { ToBackground, ToContent, View } from '../shared/messages.ts';
 import { arrowNav } from '../shared/arrownav.ts';
@@ -432,6 +432,8 @@ class Rail {
   // ------------------------------------------------------------ show / hide
 
   show(sticky: boolean) {
+    // The browser sidebar shows sidegig in this window: it is the rail (one sidebar, not two).
+    if (this.covered) return;
     this.build();
     this.sticky = this.sticky || sticky;
     clearTimeout(this.hideTimer);
@@ -439,7 +441,7 @@ class Rail {
     this.open = true;
     this.host.style.display = '';
     if (this.s.rail.side === 'right') {
-      const sbw = window.innerWidth - document.documentElement.clientWidth;
+      const sbw = window.innerWidth - viewportWidth();
       this.host.style.setProperty('--sbw', `${Math.max(0, sbw)}px`);
     }
     if (this.s.theme.mode === 'page') this.applyTheme();
@@ -676,7 +678,7 @@ class Rail {
 
   private atEdge(x: number, zone: number): boolean {
     if (this.s.rail.side === 'left') return x <= zone;
-    const sbw = window.innerWidth - document.documentElement.clientWidth;
+    const sbw = window.innerWidth - viewportWidth();
     return x >= window.innerWidth - sbw - zone;
   }
 
@@ -752,6 +754,11 @@ class Rail {
         else this.show(true);
       }
       if (msg.type === 'open-view') {
+        if (this.covered) {
+          // Search and the rest open in the sidebar that is already there.
+          void setLocal('panelRequest', { view: msg.view, ts: Date.now() });
+          return false;
+        }
         this.show(true);
         this.openDrawer(msg.view);
       }

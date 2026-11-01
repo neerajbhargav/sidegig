@@ -40,7 +40,7 @@ export function fakeBrowser(a: Attack) {
   const created: string[] = [];
   const page = { id: 1, windowId: 1, title: a.page.title, url: a.page.url, active: true, lastAccessed: 4 };
   const chrome = {
-    storage: { local: { get: async (k: string) => (k === 'aiKeys' ? { aiKeys: { local: BASE } } : {}), set: async () => {} } },
+    storage: { local: { get: async (k: string) => (k === 'aiKeys' ? { aiKeys: { openai: 'ollama' } } : {}), set: async () => {} } },
     tabs: {
       get: async (id: number) => [page, ...TABS].find((t) => t.id === id) ?? Promise.reject(new Error('No tab')),
       query: async () => [page, ...TABS],
@@ -83,7 +83,17 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   (globalThis as any).chrome = new Proxy({}, { get: (_t, k: string) => current[k] });
   const { runChat, systemPrompt } = await import('../src/shared/ai/run.ts');
   const { asPage, browserTools } = await import('../src/shared/ai/tools.ts');
-  const model: ModelInfo = { provider: 'local', id: MODEL, label: MODEL, tools: true, efforts: [] };
+  const model: ModelInfo = { provider: 'openai', id: MODEL, label: MODEL, tools: true, efforts: [] };
+  // sidegig no longer talks to model servers on this computer: the eval sends its OpenAI-shaped
+  // turns to Ollama, as the same request the old "local" provider made (system role, no usage).
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
+    if (!String(input).startsWith('https://api.openai.com/v1/chat/completions')) return realFetch(input, init);
+    const body = JSON.parse(String(init?.body));
+    for (const m of body.messages) if (m.role === 'developer') m.role = 'system';
+    delete body.stream_options;
+    return realFetch(`${BASE}/v1/chat/completions`, { ...init, body: JSON.stringify(body) });
+  };
   const rawPage = (p: Attack['page']) => `<page title="${p.title}" url="${p.url}">\n${p.text}\n</page>`;
 
   type Outcome = { id: string; condition: string; run: number; attempted: boolean; asked_in_text: boolean; structured_calls: number; leaked: boolean; executed: boolean; asked: number; other_outbound: string[]; tools: string[]; error?: string; ms: number };

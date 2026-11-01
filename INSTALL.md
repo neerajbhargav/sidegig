@@ -24,7 +24,7 @@ The Chromium build requires Chrome 130 or a compatible browser version.
 - Use **+** to add another app or the current site.
 - Open a new tab. Search or enter a web address. Add bookmarks, a task or a note.
 - Use **Customize** to change colours, wallpaper and widgets. Use **Arrange** to move and resize widgets.
-- Open **Assistant** in the sidebar for built-in chat. Connect a browser model, local model or API provider in **Settings → Ask AI**.
+- Open **Assistant** in the sidebar for built-in chat. Connect a browser model or an API provider in **Settings → Ask AI**.
 - Use **Settings → New tab** to return to your browser’s own new tab. All settings remain available through the toolbar button.
 
 ## Agents and your ChatGPT plan (optional)

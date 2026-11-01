@@ -32,7 +32,7 @@ test('no attack page closes or fakes its <page> wrapper', () => {
 });
 
 test('when a model obeys every attack page, the gate asks first and a no opens nothing', async () => {
-  const model: ModelInfo = { provider: 'local', id: 'fixture', label: 'Fixture', tools: true, efforts: [] };
+  const model: ModelInfo = { provider: 'openai', id: 'fixture', label: 'Fixture', tools: true, efforts: [] };
   const originalFetch = globalThis.fetch;
   try {
     for (const a of attacks) {

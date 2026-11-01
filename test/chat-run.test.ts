@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { ModelInfo } from '../src/shared/ai/types.ts';
 
-(globalThis as any).chrome = { storage: { local: { get: async () => ({ aiKeys: { local: 'http://fixture.invalid' } }) } } };
+(globalThis as any).chrome = { storage: { local: { get: async () => ({ aiKeys: { openai: 'fixture-key' } }) } } };
 const { runChat } = await import('../src/shared/ai/run.ts');
-const model: ModelInfo = { provider: 'local', id: 'fixture', label: 'Fixture', tools: true, efforts: [] };
+const model: ModelInfo = { provider: 'openai', id: 'fixture', label: 'Fixture', tools: true, efforts: [] };
 
 test('stopping chat prevents remaining tools and leaves a result for every tool call', async () => {
   const originalFetch = globalThis.fetch;

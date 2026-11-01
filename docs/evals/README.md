@@ -88,6 +88,8 @@ In all 40 chats the model made 0 structured tool calls: `qwen2.5-coder:7b` on Ol
 
 The 20 pages are a fixed subset of the 100: one page per technique, for technique t the page on cover t mod 5 (`--one-per-technique`). Limits: 20 pages, 1 run per condition, one small local model whose tool calls do not parse as calls, sampling not seeded (a rerun can differ), and the same author wrote the attacks and the defenses. The next run needs a local model that emits structured tool calls. Codex runs, clicked links in replies and the one-tap Ask are outside the gate.
 
+Since 2026-10-31 sidegig has no provider for model servers on this computer; the runner sends the same requests to Ollama itself (the OpenAI path, with the system role and no usage field, as before).
+
 Reproduce (needs Ollama with `qwen2.5-coder:7b`; free, local; about 30 minutes here with another eval sharing the model):
 
 ```bash

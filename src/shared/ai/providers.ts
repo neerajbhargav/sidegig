@@ -1,6 +1,6 @@
 // Who serves the models: your own keys (kept on this device, never synced),
-// OpenRouter, a model on your computer, the browser's own, or your ChatGPT
-// subscription through the Codex app (via the sidegig bridge).
+// OpenRouter, the browser's own, or your ChatGPT subscription through the Codex
+// app (via the sidegig bridge).
 import { getLocal, setLocal } from '../storage.ts';
 import { sseEvents } from './sse.ts';
 import { anthropicBody, anthropicDecoder, geminiBody, geminiDecoder, openaiBody, openaiDecoder, type Decoder, type OpenAiFlavor } from './wire.ts';
@@ -12,8 +12,6 @@ export interface Keys {
   anthropic?: string;
   google?: string;
   openrouter?: string;
-  /** Base address of a model server on this computer (Ollama, LM Studio). */
-  local?: string;
   /** "1" when you've turned on your ChatGPT subscription (through the bridge). */
   codex?: string;
 }
@@ -39,11 +37,9 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
   anthropic: { name: 'Anthropic', note: 'Claude models, with your Anthropic API key', keyUrl: 'https://console.anthropic.com/settings/keys', keyHint: 'sk-ant-…' },
   google: { name: 'Google', note: 'Gemini models, with a Google AI Studio key', keyUrl: 'https://aistudio.google.com/apikey', keyHint: 'AIza…' },
   openrouter: { name: 'OpenRouter', note: 'One sign-in for hundreds of models', keyUrl: 'https://openrouter.ai/keys', keyHint: 'sk-or-…' },
-  local: { name: 'On this computer', note: 'Ollama, LM Studio or any OpenAI-compatible server' },
   builtin: { name: 'This browser', note: 'The browser’s own model: free, private, on this device' },
   codex: { name: 'ChatGPT subscription', note: 'Your ChatGPT plan, through the Codex app and the sidegig bridge' },
 };
-export const DEFAULT_LOCAL = 'http://localhost:11434';
 
 // ------------------------------------------------------------ model lists
 
@@ -143,11 +139,6 @@ async function fetchModels(p: ProviderId, k: Keys): Promise<ModelInfo[]> {
           tools: !!m.supported_parameters?.includes('tools'),
         }));
     }
-    case 'local': {
-      const base = (k.local || DEFAULT_LOCAL).replace(/\/+$/, '');
-      const j = await getJson(`${base}/v1/models`);
-      return (j.data as { id: string }[]).map((m) => ({ provider: p, id: m.id, label: m.id, note: 'on this computer', efforts: [], tools: true }));
-    }
     case 'builtin':
       return (await builtinState()) === 'unavailable' ? [] : [{ provider: p, id: 'on-device', label: 'On-device model', note: 'private, no key', efforts: [], tools: false }];
     case 'codex':
@@ -160,7 +151,6 @@ export async function configured(k?: Keys): Promise<ProviderId[]> {
   k ??= await getKeys();
   const out: ProviderId[] = [];
   for (const p of ['openai', 'anthropic', 'google', 'openrouter'] as const) if (k[p]) out.push(p);
-  if (k.local) out.push('local');
   if (k.codex) out.push('codex');
   if ((await builtinState()) !== 'unavailable') out.push('builtin');
   return out;
@@ -237,8 +227,6 @@ function endpoint(p: ProviderId, id: string, k: Keys): Endpoint | null {
         body: oa('openrouter'),
         decoder: openaiDecoder,
       };
-    case 'local':
-      return { url: `${(k.local || DEFAULT_LOCAL).replace(/\/+$/, '')}/v1/chat/completions`, headers: {}, body: oa('local'), decoder: openaiDecoder };
     case 'anthropic':
       return { url: 'https://api.anthropic.com/v1/messages', headers: anthropicHeaders(k.anthropic ?? ''), body: anthropicBody, decoder: anthropicDecoder };
     case 'google':
@@ -262,8 +250,7 @@ export async function* streamTurn(model: ModelInfo, req: TurnRequest, signal?: A
       res = await fetch(ep.url, { method: 'POST', headers: { 'content-type': 'application/json', ...ep.headers }, body: JSON.stringify(ep.body(r)), signal, credentials: 'omit' });
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
-      const local = model.provider === 'local';
-      return yield { type: 'error', message: local ? `Couldn’t reach the model server at ${k.local || DEFAULT_LOCAL}. Is it running?` : `Couldn’t reach ${PROVIDERS[model.provider].name}. Check your connection.` };
+      return yield { type: 'error', message: `Couldn’t reach ${PROVIDERS[model.provider].name}. Check your connection.` };
     }
     if (!res.ok) {
       const body = await res.text().catch(() => '');

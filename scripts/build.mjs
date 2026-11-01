@@ -61,6 +61,9 @@ async function copyStatic(outdir) {
   for (const f of await readdir(path.join(root, 'src/pages'))) {
     await cp(path.join(root, 'src/pages', f), path.join(outdir, f));
   }
+  // Aside sends every extension's newtab.html to its own new tab: the same page
+  // under another name is what sidegig opens there (src/background/desk.ts).
+  await cp(path.join(root, 'src/pages/newtab.html'), path.join(outdir, 'desk.html'));
   await cp(path.join(root, 'src/ui/ui.css'), path.join(outdir, 'ui.css'));
   await cp(path.join(root, 'src/assets/icons'), path.join(outdir, 'icons'), { recursive: true });
   await cp(path.join(root, 'src/assets/fonts'), path.join(outdir, 'fonts'), { recursive: true });

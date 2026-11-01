@@ -21,7 +21,7 @@ sidegig puts your apps beside the page you are reading.
 Hover the edge of any web page and a slim rail slides in. Open Gmail, WhatsApp, Claude, ChatGPT, Notion or any site in the browser's sidebar, signed in as you. Close it and the page is yours again.
 
 • Apps beside any page: pin any website to the rail. Unread badges for the apps that show them.
-• An AI assistant that can read the page: ask about the page, a tab or your bookmarks. Use the browser's built-in model, a local model (Ollama), your own API key (OpenAI, Anthropic, Gemini, OpenRouter) or your ChatGPT plan through the official Codex CLI.
+• An AI assistant that can read the page: ask about the page, a tab or your bookmarks. Use the browser's built-in model, your own API key (OpenAI, Anthropic, Gemini, OpenRouter) or your ChatGPT plan through the official Codex CLI.
 • Sign-in codes: with the Gmail card on, a new sign-in code shows as a ticket you copy in one click. Found on your device by rules, no AI needed.
 • Bookmark stacks, tab groups and saved workspaces in one sidebar.
 • An optional new tab: clock, search, calendar, to-dos, notes, a focus timer and your shortcuts on one grid, with wallpapers and an Arc-style space colour.

@@ -15,7 +15,7 @@ The page rail on hover, a notes app in the drawer, then the Assistant reads the 
 <img src="docs/screenshots/newtab.jpg" width="66%" alt="The new tab in the Space look: white widget cards on the space colour">
 </p>
 
-No account, no sidegig server, no analytics. Apps such as Gmail, X or Claude load in the browser's sidebar with your own sign-in. The Assistant uses the browser's built-in model, a local model, your own API key, or your ChatGPT plan through the official Codex CLI. One TypeScript codebase builds packages for Chromium browsers, Opera, Firefox and Safari. Only the Chromium package has been installed and checked: see [browser support](#browser-support). The full feature tour is in [docs/FEATURES.md](docs/FEATURES.md).
+No account, no sidegig server, no analytics. Apps such as Gmail, X or Claude load in the browser's sidebar with your own sign-in. The Assistant uses the browser's built-in model, your own API key, or your ChatGPT plan through the official Codex CLI. One TypeScript codebase builds packages for Chromium browsers, Opera, Firefox and Safari. Only the Chromium package has been installed and checked: see [browser support](#browser-support). The full feature tour is in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Install
 
@@ -47,7 +47,7 @@ flowchart LR
   ui["Side panel, new tab, settings<br/>extension pages"]
   sw["Service worker<br/>message router, sender trust table,<br/>network rules, alarms, status cards"]
   apps["App frames<br/>Gmail, X, Claude, any site"]
-  llm["Model providers<br/>OpenAI, Anthropic, Gemini,<br/>OpenRouter, Ollama, browser model"]
+  llm["Model providers<br/>OpenAI, Anthropic, Gemini,<br/>OpenRouter, browser model"]
   bridge["sidegig-bridge<br/>127.0.0.1:47617"]
   agents["Claude Code, Codex, Cursor"]
   rail <-->|private MessageChannel| drawer

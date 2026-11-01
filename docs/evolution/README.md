@@ -220,3 +220,22 @@ Commit `cc0ff13` on branch `launch/consumer-ready` (plus uncommitted work).
 Commit `a22b632` on branch `main` (plus uncommitted work).
 
 <img src="2026-10-31-02-aside-154-the-assistant-hides-the-built.jpg" width="49%" alt="Aside 154: the Assistant hides the built-in model that only echoes, and offers real models instead">
+
+## 2026-10-31: Settings: a grouped menu with Apps first; each app on two clean lines
+
+Commit `c226e22` on branch `fix/aside-live-report` (plus uncommitted work).
+
+<img src="2026-10-31-03-sidebar-the-app-runs-edge-to-edge-in-the.jpg" width="49%" alt="Sidebar: the app runs edge to edge in the browser's own sidebar (no inset card)">
+<img src="2026-10-31-04-settings-grouped-menu-sidebar-assistant.jpg" width="49%" alt="Settings: grouped menu (Sidebar, Assistant, New tab, General) opening on Apps; each app on two lines">
+
+## 2026-10-31: Remove local model support (Ollama, LM Studio, servers on this computer)
+
+Commit `38baea7` on branch `fix/aside-live-report` (plus uncommitted work).
+
+<img src="2026-10-31-05-connect-a-model-no-local-model-option-ch.jpg" width="49%" alt="Connect a model: no local model option (ChatGPT plan, OpenRouter, API key)">
+
+## 2026-10-31: Rail and fixed headers sit at the right edges on pages with no doctype
+
+Commit `cd7b4ea` on branch `fix/aside-live-report` (plus uncommitted work).
+
+<img src="2026-10-31-06-rail-docked-right-on-a-page-with-no-doct.jpg" width="49%" alt="Rail docked right on a page with no doctype (quirks mode, like Hacker News): at the window edge, fixed header ends at its strip">

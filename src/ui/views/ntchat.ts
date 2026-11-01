@@ -8,7 +8,7 @@ import { h, ico, toast, favicon } from '../dom.ts';
 import { play } from '../sound.ts';
 import { openOptions, type Ctx } from '../ctx.ts';
 import { md } from '../../shared/ai/md.ts';
-import { DEFAULT_LOCAL, PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter, streamTurn } from '../../shared/ai/providers.ts';
+import { PROVIDERS, builtinState, checkKey, getKeys, listModels, setKeys, signInOpenRouter, streamTurn } from '../../shared/ai/providers.ts';
 import { ASK_BEFORE_SENDING, askText, runChat, systemPrompt, titleFor, type RunEvent } from '../../shared/ai/run.ts';
 import { asPage, browserTools, combine, likelyTab, readTab, type ToolSet } from '../../shared/ai/tools.ts';
 import { mcpTools, type McpServer, type McpStatus } from '../../shared/ai/mcp.ts';
@@ -149,7 +149,6 @@ const providerIcon = (p: ProviderId) =>
     google: favicon('https://gemini.google.com', 'Google', 'fav xs', 'gemini'),
     openrouter: favicon('https://openrouter.ai', 'OpenRouter', 'fav xs'),
     codex: favicon('https://chatgpt.com', 'ChatGPT', 'fav xs', 'chatgpt'),
-    local: ico('window', 16),
     builtin: ico('globe', 16),
   })[p];
 
@@ -182,7 +181,7 @@ function modelMenu(picks: Picks, anchor: HTMLElement, onSetup: () => void) {
     const kids: HTMLElement[] = [];
     const recent = picks.recent.map((k) => picks.models.find((m) => modelKey(m) === k)).filter((m): m is ModelInfo => !!m && match(m));
     if (recent.length && !q) kids.push(h('div', { class: 'cc-group' }, 'Recent'), ...recent.map(row));
-    const order: ProviderId[] = ['codex', 'anthropic', 'openai', 'google', 'openrouter', 'local', 'builtin'];
+    const order: ProviderId[] = ['codex', 'anthropic', 'openai', 'google', 'openrouter', 'builtin'];
     for (const p of order) {
       const ms = picks.models.filter((m) => m.provider === p && match(m));
       if (!ms.length) continue;
@@ -282,25 +281,6 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
     onDone();
   });
 
-  // A server on this computer.
-  const url = h('input', { class: 'text-input', type: 'url', value: keys.local || DEFAULT_LOCAL, 'aria-label': 'Model server address' });
-  const localForm = h(
-    'form',
-    { class: 'ai-keyform', hidden: true },
-    h('div', { class: 'ai-row' }, url, h('button', { type: 'submit', class: 'btn primary' }, 'Connect')),
-    h('p', { class: 'ai-note' }, 'Ollama listens on port 11434 and LM Studio on 1234. Anything that speaks the OpenAI API works.'),
-  );
-  localForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    say('Looking for models…');
-    const r = await checkKey('local', { local: url.value.trim() });
-    if (!r.ok) return say(`Couldn’t reach ${url.value.trim()}. Is it running? ${r.message ?? ''}`);
-    await setKeys({ local: url.value.trim() });
-    play('confirm');
-    say(`Found ${r.count} models on this computer.`);
-    onDone();
-  });
-
   // Your ChatGPT plan, through Codex and the bridge.
   const pairCode = h('input', { class: 'text-input', placeholder: 'Pairing code, like K7QM-2XRP', 'aria-label': 'Bridge pairing code', autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
   void getLocal<string>('bridgeCode', '').then((c) => (pairCode.value = c));
@@ -341,7 +321,7 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
       'Connect',
     ),
   );
-  const forms = [keyForm, localForm, bridgeHelp];
+  const forms = [keyForm, bridgeHelp];
   const show = (f: HTMLElement) => {
     for (const x of forms) x.hidden = x !== f || !x.hidden;
     (f.querySelector('input') as HTMLInputElement | null)?.focus();
@@ -367,7 +347,6 @@ export async function aiSetup(onDone: () => void): Promise<HTMLElement> {
         }
       }, !!keys.openrouter),
       choice(ico('key', 20), 'An API key', 'OpenAI, Anthropic, Google or OpenRouter', () => show(keyForm), !!(keys.openai || keys.anthropic || keys.google)),
-      choice(ico('window', 20), 'A model on this computer', 'Ollama, LM Studio', () => show(localForm), !!keys.local),
       builtin !== 'unavailable'
         ? choice(ico('globe', 20), 'This browser’s own model', builtin === 'available' ? 'Ready: private, free, on this device' : 'Downloads once, then works offline', async () => {
             say(builtin === 'available' ? 'Ready.' : 'It will download the first time you ask something.');
@@ -442,7 +421,7 @@ export async function chatUi(ctx: Ctx, o: { where: 'newtab' | 'panel'; hostTabId
         if (picks.models.length) { setupHost.hidden = true; void paintEmpty(); }
         else void showSetup();
       } }, 'Try again');
-      setupHost.prepend(h('div', { class: 'cv-connection-error', role: 'status' }, h('p', {}, `Could not connect to ${picks.failed.map((p) => p === 'local' ? 'your local model server' : PROVIDERS[p].name).join(', ')}. Your connection settings are still saved.`), retry));
+      setupHost.prepend(h('div', { class: 'cv-connection-error', role: 'status' }, h('p', {}, `Could not connect to ${picks.failed.map((p) => PROVIDERS[p].name).join(', ')}. Your connection settings are still saved.`), retry));
     }
     setupHost.hidden = false;
     thread.hidden = true;

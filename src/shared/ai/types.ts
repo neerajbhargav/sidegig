@@ -1,6 +1,6 @@
 // sidegig's AI engine: one shape for every model, whichever company serves it.
 
-export type ProviderId = 'openai' | 'anthropic' | 'google' | 'openrouter' | 'local' | 'builtin' | 'codex';
+export type ProviderId = 'openai' | 'anthropic' | 'google' | 'openrouter' | 'builtin' | 'codex';
 
 /** How hard the model thinks. Auto sends nothing and lets the model decide. */
 export type Effort = 'auto' | 'off' | 'low' | 'medium' | 'high';
