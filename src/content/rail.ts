@@ -18,7 +18,7 @@ import { buildPrompt } from '../shared/prompt.ts';
 import { appFromCatalog } from '../shared/defaults.ts';
 import { catalogById, CATALOG } from '../shared/catalog.ts';
 import { hueOf } from '../ui/dom.ts';
-import { Dock } from './dock.ts';
+import { Dock, viewportWidth } from './dock.ts';
 import type { AppEntry, Settings, StatusCard } from '../shared/types.ts';
 import type { ToBackground, ToContent, View } from '../shared/messages.ts';
 import { arrowNav } from '../shared/arrownav.ts';
@@ -441,7 +441,7 @@ class Rail {
     this.open = true;
     this.host.style.display = '';
     if (this.s.rail.side === 'right') {
-      const sbw = window.innerWidth - document.documentElement.clientWidth;
+      const sbw = window.innerWidth - viewportWidth();
       this.host.style.setProperty('--sbw', `${Math.max(0, sbw)}px`);
     }
     if (this.s.theme.mode === 'page') this.applyTheme();
@@ -678,7 +678,7 @@ class Rail {
 
   private atEdge(x: number, zone: number): boolean {
     if (this.s.rail.side === 'left') return x <= zone;
-    const sbw = window.innerWidth - document.documentElement.clientWidth;
+    const sbw = window.innerWidth - viewportWidth();
     return x >= window.innerWidth - sbw - zone;
   }
 
