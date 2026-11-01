@@ -103,3 +103,11 @@ test('local model rule: drops Origin only on sidegig\'s own requests to this com
   assert.deepEqual(r.condition.resourceTypes, ['xmlhttprequest']);
   assert.ok(!buildRules([appFromCatalog('claude')], [EXT]).some((x) => x.id === r.id), 'its id never collides with the frame rules');
 });
+
+test('a new tab that isn’t sidegig’s opens desk.html, only when sidegig’s new tab is on', async () => {
+  const { takesNewTab } = await import('../src/background/desk.ts');
+  assert.equal(takesNewTab('chrome://newtab/', true, 0), true, 'Aside showed its own page');
+  assert.equal(takesNewTab('chrome://newtab/', true, 1), false, 'sidegig’s page is already there (Chrome)');
+  assert.equal(takesNewTab('chrome://newtab/', false, 0), false, 'you turned sidegig’s new tab off');
+  assert.equal(takesNewTab('https://example.com/', true, 0), false);
+});

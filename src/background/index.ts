@@ -18,11 +18,13 @@ import { backupNow, scheduleBackup } from './backup.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
 import { buildEdition, scheduleEdition, buildIfStale, importFromAi, saveLink } from './edition.ts';
 import { trackPanels } from './panels.ts';
+import { deskOnNewTabs } from './desk.ts';
 import { trustSender } from './trust.ts';
 import { checkFavicons } from './favicons.ts';
 import { findCollection, readPool, refreshPool, REFRESH_MS } from '../shared/collect.ts';
 
 trackPanels();
+deskOnNewTabs();
 
 let cache: Settings | null = null;
 const now = () => cache ?? defaultSettings();
