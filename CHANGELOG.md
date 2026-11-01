@@ -5,6 +5,19 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-31
 
+- `9dc959f` Merge fix/aside-live-report: the owner's six live reports, local model support removed, quirks-mode rail
+- `89b440e` Evolution: the rail and a fixed header on a quirks-mode page
+- `cd7b4ea` Rail and fixed headers sit at the right edges on pages with no doctype
+- `e5a57ca` Evolution: Connect a model without the local option
+- `38baea7` Remove local model support (Ollama, LM Studio, servers on this computer)
+- `effd011` STATUS and evolution: the owner's six live reports fixed; fresh-Chrome findings open
+- `c226e22` Settings: a grouped menu with Apps first; each app on two clean lines
+- `1887042` The page rail stays away while the browser sidebar shows sidegig, even on hover
+- `8ab50c6` Switch Google accounts in Gmail and Calendar from the app bar
+- `68bfb2c` Sidebar apps run edge to edge; Spotify asks for its phone layout
+- `d0e4ba3` New tab works in Aside: open the desk when the browser shows its own page
+- `52531a0` Apps refused because of a cached service worker now load: clear it and retry once
+- `3b64c4f` Release 0.4.3: changelog
 - `a237f30` Fix two Assistant bugs found live: hide a built-in model that only echoes, let Ollama accept sidegig
 - `278dd3b` STATUS: v0.4.2 published, backup location
 - `ada492e` Release 0.4.2: changelog and STATUS after the history rewrite
