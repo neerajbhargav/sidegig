@@ -5,6 +5,9 @@ Screenshots of each milestone: [docs/evolution](docs/evolution/README.md). Curre
 
 ## 2026-10-31
 
+- `a237f30` Fix two Assistant bugs found live: hide a built-in model that only echoes, let Ollama accept sidegig
+- `278dd3b` STATUS: v0.4.2 published, backup location
+- `ada492e` Release 0.4.2: changelog and STATUS after the history rewrite
 - `249b4b4` 0.4.2: store listing kit, MP4 tour for X, full-length tour GIF
 - `c419c2d` Launch readiness: install-first README, blank calculator start, SECURITY.md, issue templates, social preview
 
