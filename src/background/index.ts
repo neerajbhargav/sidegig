@@ -12,7 +12,7 @@ import type { ToBackground, ToContent } from '../shared/messages.ts';
 import { applyRules, setDrawerTabs, setSideTabs } from './dnr.ts';
 import { pageCookies } from './framecookies.ts';
 import { openApp, openPanel, openMiniWindow, forgetPopup, rememberSideWidth } from './open.ts';
-import { mailThread, refreshStatus } from './status.ts';
+import { googleAccounts, mailThread, refreshStatus } from './status.ts';
 import { agentLink, stopAgents } from './agent.ts';
 import { backupNow, scheduleBackup } from './backup.ts';
 import { saveWorkspace, restoreWorkspace, sleepTabs } from './workspaces.ts';
@@ -355,6 +355,9 @@ ext.runtime.onMessage.addListener((msg: ToBackground, sender, sendResponse) => {
       return false;
     case 'mail-thread':
       mailThread(msg.mid).then(sendResponse, () => sendResponse(null));
+      return true;
+    case 'google-accounts':
+      googleAccounts().then(sendResponse, () => sendResponse([]));
       return true;
     case 'edition-build':
       buildEdition().then(sendResponse, () => sendResponse(null));

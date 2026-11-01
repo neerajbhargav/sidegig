@@ -5,6 +5,7 @@ import type { OpenIn, Side } from './types.ts';
 export type ToBackground =
   | { type: 'open-app'; appId: string; url: string; openIn: OpenIn; side: Side }
   | { type: 'clear-sw'; url: string }
+  | { type: 'google-accounts' }
   | { type: 'frame-cookies' }
   | { type: 'ask-ai'; appId: string; url: string; openIn: OpenIn; side: Side; prompt: string; autoSend: boolean }
   | { type: 'badge'; count: number }

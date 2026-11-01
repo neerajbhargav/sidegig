@@ -10,6 +10,7 @@ import { h, iconButton, appFavicon } from '../dom.ts';
 import { type Ctx, send } from '../ctx.ts';
 import { NO_FRAME } from '../../shared/catalog.ts';
 import { keepsRunning } from '../../shared/defaults.ts';
+import { accountIndex, withAccount } from '../../shared/google.ts';
 
 const SLEEP_MS = 30 * 60_000;
 const frames = new Map<string, { el: HTMLIFrameElement; lastShown: number; ready: boolean }>();
@@ -128,6 +129,37 @@ export function showFrames(show: boolean) {
   framesHost.hidden = !show;
 }
 
+/** Gmail, Calendar…: switch between the Google accounts signed in to this browser. */
+function accountPicker(app: AppEntry): HTMLElement {
+  const current = accountIndex(app.url) ?? 0;
+  const pick = h('select', { class: 'text-input acct', 'aria-label': 'Google account', hidden: true }) as HTMLSelectElement;
+  void (send({ type: 'google-accounts' }) as Promise<{ index: number; email: string }[] | undefined>)
+    .then((accounts) => {
+      if (!accounts || accounts.length < 2) return;
+      pick.replaceChildren(...accounts.map((a) => h('option', { value: String(a.index), selected: a.index === current }, a.email)), h('option', { value: 'add' }, 'Add another account…'));
+      pick.hidden = false;
+    })
+    .catch(() => undefined);
+  pick.addEventListener('change', async () => {
+    if (pick.value === 'add') {
+      pick.value = String(current);
+      return void ext.tabs.create({ url: 'https://accounts.google.com/AddSession' });
+    }
+    const url = withAccount(app.url, Number(pick.value));
+    await updateSettings((s) => {
+      const x = s.apps.find((a) => a.id === app.id);
+      if (x) x.url = url;
+    });
+    const f = frames.get(app.id);
+    if (!f) return;
+    // A new account is a new load: clear the site's worker first, as the first load did.
+    f.ready = false;
+    greeted.delete(app.id);
+    void send({ type: 'clear-sw', url }).catch(() => undefined).finally(() => (f.el.src = url));
+  });
+  return pick;
+}
+
 /** Returns the app bar and brings the app's frame to the front. */
 /** `url`: a page of this app to show (a link rule sent it here). */
 export async function appBar(ctx: Ctx, appId?: string, url?: string): Promise<HTMLElement> {
@@ -140,6 +172,7 @@ export async function appBar(ctx: Ctx, appId?: string, url?: string): Promise<HT
   const bar = h('div', { class: 'appbar' });
   // The rail (or the panel's own buttons list) already lists the apps: just name this one.
   bar.append(appFavicon(app, 'fav sm'), h('span', { class: 'app-title' }, app.name));
+  if (accountIndex(app.url) !== null) bar.append(accountPicker(app));
   bar.append(
     h('span', { style: { flex: '1' } }),
     iconButton('refresh', 'Reload', () => reload(app)),

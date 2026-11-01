@@ -3,6 +3,7 @@
 import { loadSecrets, loadSettings, setLocal } from '../shared/storage.ts';
 import type { StatusCard } from '../shared/types.ts';
 import { findCode, parseGmailPrint, type MailThread } from '../shared/mail.ts';
+import { feedAccount } from '../shared/google.ts';
 
 const ago = (ms: number) => {
   const m = Math.round((Date.now() - ms) / 60000);
@@ -115,6 +116,23 @@ export async function gmailCard(): Promise<StatusCard> {
     signature: entries.map((e) => e.id).join(','),
     updatedAt: Date.now(),
   };
+}
+
+/** The Google accounts signed in to this browser, by their /u/N/ index: each inbox feed names its account. */
+let accounts: { at: number; list: { index: number; email: string }[] } | null = null;
+export async function googleAccounts(): Promise<{ index: number; email: string }[]> {
+  if (accounts && Date.now() - accounts.at < 10 * 60_000) return accounts.list;
+  const out: { index: number; email: string }[] = [];
+  // One feed request per account (Google allows up to 10 sign-ins; 20 leaves room).
+  for (let index = 0; index < 20; index++) {
+    const res = await fetch(`https://mail.google.com/mail/u/${index}/feed/atom`, { credentials: 'include' }).catch(() => null);
+    const email = res?.ok ? feedAccount(await res.text()) : null;
+    // Past the last account Google answers with the first one again.
+    if (!email || out.some((a) => a.email === email)) break;
+    out.push({ index, email });
+  }
+  accounts = { at: Date.now(), list: out };
+  return out;
 }
 
 /** A whole thread, from Gmail's print view, with this browser's Gmail session. */
