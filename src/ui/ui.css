@@ -233,6 +233,7 @@ body.ctx-options { overflow: auto; }
 .opts nav a { color: var(--m-fg-muted); padding: calc(8px * var(--ui-s, 1)) calc(12px * var(--ui-s, 1)); border-radius: var(--r-4); font-weight: 500; }
 .opts nav a:hover { background: var(--m-hover); color: var(--m-fg); }
 .opts nav a.on { background: var(--m-accent-soft); color: var(--m-accent); }
+.opts nav .opts-group { margin: calc(14px * var(--ui-s, 1)) calc(12px * var(--ui-s, 1)) calc(4px * var(--ui-s, 1)); font-size: var(--t-1); font-weight: 600; color: var(--m-fg-subtle); }
 .brand { display: flex; align-items: center; gap: calc(10px * var(--ui-s, 1)); margin: 0 0 calc(18px * var(--ui-s, 1)) calc(8px * var(--ui-s, 1)); }
 .brand b { font-size: var(--t-4); letter-spacing: -0.02em; }
 @media (max-width: 860px) { .opts { grid-template-columns: minmax(0, 1fr); } .opts nav { display: none; } }
@@ -1654,6 +1655,14 @@ body.ctx-options { font-size: var(--t-3); line-height: 1.5; }
 .ctx-options :is(button, a, input, select, textarea, .chip):focus-visible { outline: calc(2px * var(--ui-s, 1)) solid var(--m-accent); outline-offset: calc(2px * var(--ui-s, 1)); }
 @media (max-width: 860px) { .ctx-options .opts { grid-template-columns: minmax(0, 1fr); padding: 0 calc(20px * var(--ui-s, 1)) calc(96px * var(--ui-s, 1)); } .opts-head { flex-wrap: wrap; } .opts-find { max-width: none; order: 3; flex-basis: 100%; } }
 .ctx-options .opt + .opt { border-top: 0; }
+/* An app in settings: what it is and where it opens on one line, its switches under it. */
+.ctx-options .opt.app-opt { flex-direction: column; align-items: stretch; gap: calc(10px * var(--ui-s, 1)); }
+.app-line { display: flex; align-items: center; gap: calc(8px * var(--ui-s, 1)); min-width: 0; }
+.app-line .app-name { flex: 0 1 calc(140px * var(--ui-s, 1)); min-width: calc(80px * var(--ui-s, 1)); }
+.app-line .app-url { flex: 1 1 calc(200px * var(--ui-s, 1)); min-width: 0; }
+.app-line select { flex: none; width: auto; }
+.app-flags { display: flex; flex-wrap: wrap; gap: calc(8px * var(--ui-s, 1)) calc(24px * var(--ui-s, 1)); padding-inline-start: calc(36px * var(--ui-s, 1)); }
+.app-flag { display: inline-flex; align-items: center; gap: calc(10px * var(--ui-s, 1)); }
 .ctx-options .opt:not([hidden]) ~ .opt:not([hidden]) { border-top: 1px solid var(--m-border); }
 .opts-search:not(:placeholder-shown) + kbd { display: none; }
 

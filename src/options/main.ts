@@ -26,20 +26,16 @@ import { welcomeView } from './welcome.ts';
 let s: Settings;
 const themeStyle = h('style');
 const page = h('div', { class: 'opts' });
-const NAV: [string, string][] = [
-  ['appearance', 'Appearance'],
-  ['rail', 'Rail'],
-  ['apps', 'Apps'],
-  ['stacks', 'Stacks and spaces'],
-  ['ai', 'Ask AI'],
-  ['status', 'Status cards'],
-  ['rules', 'Link rules'],
-  ['tabs', 'Tab sleep'],
-  ['newtab', 'New tab'],
-  ['edition', 'New tab edition'],
-  ['backup', 'Setups'],
-  ['privacy', 'Privacy'],
+// Grouped by what you are setting up, the things you use most first (owner, 2026-10-31:
+// "settings page is not well laid out or organized").
+const GROUPS: [string, [string, string][]][] = [
+  ['Sidebar', [['apps', 'Apps'], ['rail', 'Rail'], ['stacks', 'Stacks and spaces'], ['status', 'Status cards'], ['rules', 'Link rules'], ['tabs', 'Tab sleep']]],
+  ['Assistant', [['ai', 'Ask AI']]],
+  ['New tab', [['newtab', 'New tab'], ['edition', 'Edition']]],
+  ['General', [['appearance', 'Appearance'], ['backup', 'Setups'], ['privacy', 'Privacy']]],
 ];
+const NAV = GROUPS.flatMap(([, items]) => items);
+const FIRST = NAV[0][0];
 
 const saved = h('span', { class: 'opts-saved', role: 'status', 'aria-live': 'polite' });
 let savedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -102,34 +98,36 @@ function appRow(app: AppEntry, i: number): HTMLElement {
     { class: 'text-input', onchange: (e: Event) => commit((x) => void (x.apps[i].openIn = (e.target as HTMLSelectElement).value as OpenIn)) },
     OPEN_IN.map(([v, label]) => h('option', { value: v, selected: v === app.openIn }, label)),
   );
+  // Each switch keeps its label beside it; they sit on their own line, so they never wrap apart.
+  const flag = (label: string, el: HTMLElement) => h('span', { class: 'app-flag' }, h('span', { class: 'subtle' }, label), el);
   return h(
     'div',
-    { class: 'opt', style: { flexWrap: 'wrap', padding: '6px 0' } },
-    favicon(app.url, app.name),
+    { class: 'opt app-opt' },
     h(
       'div',
-      { class: 'text', style: { display: 'flex', gap: '6px', flexWrap: 'wrap' } },
-      textInput(app.name, (v) => commit((x) => void (x.apps[i].name = v.trim() || x.apps[i].name)), { style: { width: '130px' }, 'aria-label': 'Name' }),
+      { class: 'app-line' },
+      favicon(app.url, app.name),
+      textInput(app.name, (v) => commit((x) => void (x.apps[i].name = v.trim() || x.apps[i].name)), { class: 'text-input app-name', 'aria-label': 'Name' }),
       textInput(app.url, (v) => commit((x) => {
         try {
           x.apps[i].url = new URL(v.trim()).toString();
         } catch {
           toast('That URL doesn’t look right');
         }
-      }), { style: { flex: '1', minWidth: '180px' }, 'aria-label': 'URL' }),
+      }), { class: 'text-input app-url', 'aria-label': 'URL' }),
+      select,
+      iconButton('up', 'Move up', () => void move(-1)),
+      iconButton('down', 'Move down', () => void move(1)),
+      iconButton('trash', 'Remove', () => void commit((x) => void x.apps.splice(i, 1))),
     ),
-    select,
-    h('span', { class: 'subtle' }, 'Mobile'),
-    toggle(app.mobile, (v) => commit((x) => void (x.apps[i].mobile = v)), `Mobile layout for ${app.name}`),
-    h('span', { class: 'subtle' }, 'Badge'),
-    toggle(app.badge, (v) => commit((x) => void (x.apps[i].badge = v)), `Unread badge for ${app.name}`),
-    h('span', { class: 'subtle' }, 'Keep running'),
-    toggle(keepsRunning(app), (v) => commit((x) => void (x.apps[i].keepAlive = v)), `Keep ${app.name} running while hidden`),
-    h('span', { class: 'subtle' }, 'Mute'),
-    toggle(!!app.muted, (v) => commit((x) => void (x.apps[i].muted = v)), `No notifications from ${app.name}`),
-    iconButton('up', 'Move up', () => void move(-1)),
-    iconButton('down', 'Move down', () => void move(1)),
-    iconButton('trash', 'Remove', () => void commit((x) => void x.apps.splice(i, 1))),
+    h(
+      'div',
+      { class: 'app-flags' },
+      flag('Mobile layout', toggle(app.mobile, (v) => commit((x) => void (x.apps[i].mobile = v)), `Mobile layout for ${app.name}`)),
+      flag('Unread badge', toggle(app.badge, (v) => commit((x) => void (x.apps[i].badge = v)), `Unread badge for ${app.name}`)),
+      flag('Keep running', toggle(keepsRunning(app), (v) => commit((x) => void (x.apps[i].keepAlive = v)), `Keep ${app.name} running while hidden`)),
+      flag('Mute', toggle(!!app.muted, (v) => commit((x) => void (x.apps[i].muted = v)), `No notifications from ${app.name}`)),
+    ),
   );
 }
 
@@ -1027,7 +1025,7 @@ const none = h('p', { class: 'opt-none', hidden: true }, 'No settings match. Try
 /** Show only the settings that match what you typed (rows, and whole sections by name). */
 function filter() {
   const q = search.value.trim().toLowerCase();
-  const active = NAV.some(([id]) => location.hash === `#${id}`) ? location.hash.slice(1) : 'appearance';
+  const active = NAV.some(([id]) => location.hash === `#${id}`) ? location.hash.slice(1) : FIRST;
   let any = false;
   document.querySelectorAll<HTMLElement>('main section.opt-sec').forEach((sec) => {
     const visible = q ? (sec.textContent ?? '').toLowerCase().includes(q) : sec.id === active;
@@ -1062,17 +1060,17 @@ async function render() {
   const parts: (HTMLElement | null)[] = [
     head,
     h('p', { class: 'opt-lede' }, 'Changes save automatically.'),
-    h('select', { class: 'text-input opts-section-select', 'aria-label': 'Settings section', onchange: (e: Event) => { search.value = ''; location.hash = (e.target as HTMLSelectElement).value; } }, NAV.map(([id, label]) => h('option', { value: `#${id}`, selected: location.hash === `#${id}` }, label))),
-    appearanceSection(),
-    railSection(),
+    h('select', { class: 'text-input opts-section-select', 'aria-label': 'Settings section', onchange: (e: Event) => { search.value = ''; location.hash = (e.target as HTMLSelectElement).value; } }, GROUPS.map(([group, items]) => h('optgroup', { label: group }, items.map(([id, label]) => h('option', { value: `#${id}`, selected: location.hash === `#${id}` }, label))))),
     appsSection(),
+    railSection(),
     await stacksSection(),
-    await aiSection(),
     await statusSection(),
     rulesSection(),
     tabsSection(),
+    await aiSection(),
     newtabSection(),
     editionSection(),
+    appearanceSection(),
     await setupsSection(),
     section(
       'privacy',
@@ -1090,7 +1088,7 @@ async function render() {
     'nav',
     { 'aria-label': 'Settings sections' },
     h('div', { class: 'brand' }, h('img', { src: 'icons/32.png', width: '24', height: '24', alt: '' }), h('b', {}, 'sidegig')),
-    NAV.map(([id, label]) => h('a', { href: `#${id}`, 'data-id': id }, label)),
+    GROUPS.flatMap(([group, items]) => [h('div', { class: 'opts-group' }, group), ...items.map(([id, label]) => h('a', { href: `#${id}`, 'data-id': id }, label))]),
     h('a', { href: '#welcome', class: 'opts-guide' }, 'Setup guide'),
   );
   main.append(none);
@@ -1100,7 +1098,7 @@ async function render() {
 }
 
 function highlightNav() {
-  const current = NAV.some(([id]) => location.hash === `#${id}`) ? location.hash.slice(1) : 'appearance';
+  const current = NAV.some(([id]) => location.hash === `#${id}`) ? location.hash.slice(1) : FIRST;
   document.querySelectorAll<HTMLElement>('.opts nav a').forEach((a) => {
     const on = !search.value && a.dataset.id === current;
     a.classList.toggle('on', on);
