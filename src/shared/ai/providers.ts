@@ -60,12 +60,37 @@ const anthropicHeaders = (key: string) => ({ 'x-api-key': key, 'anthropic-versio
 const ALL: Effort[] = ['off', 'low', 'medium', 'high'];
 const THINKS: Effort[] = ['low', 'medium', 'high'];
 
-/** The browser's own model, when it has one (Chrome's Prompt API). */
-export async function builtinState(): Promise<'available' | 'downloadable' | 'downloading' | 'unavailable'> {
-  const LM = (globalThis as { LanguageModel?: { availability: () => Promise<string> } }).LanguageModel;
+type BuiltinLM = { availability: (o?: object) => Promise<string>; create: (o?: object) => Promise<{ prompt: (t: string) => Promise<string>; destroy: () => void }> };
+const builtinChecks = new WeakMap<object, Promise<boolean>>();
+
+/** Whether the browser's model really answers. Some browsers report "available" but ship a stub
+ *  that echoes the prompt back (Aside 154: "CPU backend…User: <prompt> End.Model: "). Asked once per page. */
+export function builtinWorks(LM: BuiltinLM): Promise<boolean> {
+  let check = builtinChecks.get(LM);
+  if (!check) {
+    const ask = 'Reply with the single word: ok';
+    check = LM.create()
+      .then(async (s) => {
+        try {
+          return !(await s.prompt(ask)).includes(ask);
+        } finally {
+          s.destroy();
+        }
+      })
+      .catch(() => false);
+    builtinChecks.set(LM, check);
+  }
+  return check;
+}
+
+/** The browser's own model, when it has one (Chrome's Prompt API) and it works. */
+export async function builtinState(opts?: object): Promise<'available' | 'downloadable' | 'downloading' | 'unavailable'> {
+  const LM = (globalThis as { LanguageModel?: BuiltinLM }).LanguageModel;
   if (!LM) return 'unavailable';
   try {
-    return (await LM.availability()) as 'available';
+    const state = (await LM.availability(opts)) as 'available';
+    // Only probe a model that is already on disk: create() on a downloadable one starts a download.
+    return state === 'available' && !(await builtinWorks(LM)) ? 'unavailable' : state;
   } catch {
     return 'unavailable';
   }
@@ -266,6 +291,9 @@ async function* builtinTurn(req: TurnRequest, signal?: AbortSignal): AsyncGenera
   type Session = { promptStreaming: (t: string, o?: object) => AsyncIterable<string>; destroy: () => void };
   const LM = (globalThis as { LanguageModel?: { create: (o: object) => Promise<Session> } }).LanguageModel;
   if (!LM) return yield { type: 'error', message: 'This browser doesn’t have a built-in model.' };
+  // A chat saved with the on-device model can outlive a working one: check before answering.
+  if ((await builtinState()) === 'unavailable')
+    return yield { type: 'error', message: 'This browser’s built-in model isn’t working (it repeats the question back). Choose another model, or connect one in Settings → Ask AI.' };
   const turns = req.messages.filter((m) => m.role !== 'tool' && m.content.trim());
   const last = turns.pop();
   if (!last) return yield { type: 'done', stop: 'end' };

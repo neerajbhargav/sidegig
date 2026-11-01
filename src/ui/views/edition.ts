@@ -5,6 +5,7 @@ import { getLocal, setLocal, onLocalChanged, updateSettings } from '../../shared
 import { CATALOG, catalogById } from '../../shared/catalog.ts';
 import { appFromCatalog } from '../../shared/defaults.ts';
 import type { AppEntry, PendingPrompt } from '../../shared/types.ts';
+import { builtinState } from '../../shared/ai/providers.ts';
 import type { EdItem, EdKind, Edition, Interest, Profile, SavedItem } from '../../shared/edition/types.ts';
 import { ED_KINDS, KIND_LABEL } from '../../shared/edition/types.ts';
 import {
@@ -69,15 +70,7 @@ const setProfile = (p: Profile) => setLocal('edProfile', p);
 const LM = () => (globalThis as any).LanguageModel as any | undefined;
 const LM_OPTS = { expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] };
 
-async function aiAvailability(): Promise<'available' | 'downloadable' | 'downloading' | 'unavailable'> {
-  const lm = LM();
-  if (!lm?.availability) return 'unavailable';
-  try {
-    return await lm.availability(LM_OPTS);
-  } catch {
-    return 'unavailable';
-  }
-}
+const aiAvailability = () => builtinState(LM_OPTS);
 
 /**
  * Let the on-device model look over the picks: drop the ones that don't fit,

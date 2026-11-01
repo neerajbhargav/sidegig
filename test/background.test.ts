@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRules, AUTH_HOSTS, MOBILE_UA } from '../src/background/dnr.ts';
+import { buildRules, localModelRule, AUTH_HOSTS, MOBILE_UA } from '../src/background/dnr.ts';
 import { parseGmailFeed } from '../src/background/status.ts';
 import { isRestricted } from '../src/shared/rules.ts';
 import { appFromCatalog } from '../src/shared/defaults.ts';
@@ -91,4 +91,15 @@ test("frames the drawer opens from its random URL get the same rules as the exte
   const [mine, nav] = buildRules([appFromCatalog('claude')], [EXT, 'drawer-session-guid']);
   assert.deepEqual(mine.condition.initiatorDomains, [EXT, 'drawer-session-guid']);
   assert.ok(nav.condition.initiatorDomains!.includes('drawer-session-guid'));
+});
+
+// Ollama answers 403 to an Origin it doesn't list, and lists no extension origins by default
+// (seen live on 2026-10-31). sidegig's own requests to this computer go without an Origin.
+test('local model rule: drops Origin only on sidegig\'s own requests to this computer', () => {
+  const r = localModelRule([EXT]);
+  assert.deepEqual(r.action.requestHeaders, [{ header: 'origin', operation: 'remove' }]);
+  assert.deepEqual(r.condition.initiatorDomains, [EXT], 'never for requests a web page starts');
+  assert.deepEqual(r.condition.requestDomains, ['localhost', '127.0.0.1']);
+  assert.deepEqual(r.condition.resourceTypes, ['xmlhttprequest']);
+  assert.ok(!buildRules([appFromCatalog('claude')], [EXT]).some((x) => x.id === r.id), 'its id never collides with the frame rules');
 });

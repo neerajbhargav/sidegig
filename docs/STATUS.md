@@ -1,11 +1,18 @@
 # sidegig status and handoff
 
-Last updated: 2026-10-31 19:45 (`main`, release v0.4.2: X-launch readiness pass and history rewrite. `main` is still `cc0ff13`, release v0.4.1).
+Last updated: 2026-10-31 20:40 (`main`, release v0.4.3: two bugs found live in the owner's Aside, fixed and checked there).
 Update this file when you stop work. Keep "Where work stopped" true.
 History: [CHANGELOG.md](../CHANGELOG.md) (regenerated on `main` after each merge) and [evolution](evolution/README.md) (screenshots of every milestone).
 Full build-session transcript, owner requests verbatim, and test tools: `context/README.md` (local only, not in git).
 
 ## Where work stopped
+
+**Live check in the owner's Aside, 2026-10-31 (owner: "I don't think it works as advertised yet"; then asked for a test in the real signed-in Aside):** 0.4.3 loaded into Aside over CDP (`Extensions.loadUnpacked`, port 9222 answered).
+- Works, observed: the rail on Wikipedia, GitHub, YouTube and Hacker News (fresh Chrome 156); Gmail (inbox, signed in), Claude (signed in) and Gemini (signed in) in sidebar frames; the Gmail unread badge. ChatGPT and WhatsApp showed their sign-in pages, but they are signed out in plain Aside tabs too.
+- **Bug 1, fixed:** Aside 154's Prompt API says "available" but only echoes the prompt ("CPU backendFastest inference…User: <prompt> End.Model: "), and the Assistant used it by default, so "Sum up this page" answered "CPU backend". `builtinWorks()` in `src/shared/ai/providers.ts` asks it once per page and hides a model that repeats the question; the edition's on-device review uses the same check. Test: `test/browserai.test.ts`. Live: a new chat now shows "Connect a model".
+- **Bug 2, fixed:** Ollama answers 403 to extension origins by default, so "A model on this computer" could never connect. `localModelRule()` in `src/background/dnr.ts` drops `Origin` on sidegig's own requests to localhost and 127.0.0.1. Test: `test/background.test.ts`. Live: Connect listed `qwen2.5-coder:7b`, and "Sum up this page" on Wikipedia's Bicycle article answered from the page (the 7B model ignored "a few bullet points").
+- Known, documented in the README: Claude's sign-in page refuses to load in a frame for a signed-out user (seen in a fresh Chrome profile); sign in in a tab first.
+- Not checked live: a hosted API key, OpenRouter sign-in, the ChatGPT plan through Codex, install from the zip through the browser's own "Load unpacked" button, the first-run page in Aside.
 
 **X-launch readiness, 2026-10-31 (branch `launch/consumer-ready`, version 0.4.2; owner: "check if it is worth releasing as an opensource project on X? if not, find gaps and make it consumer ready", then "fix everything and make it public post worthy"):**
 - README leads with a 4-step install from the release zip; the eval tables moved below How it works and Security model. No content was cut.

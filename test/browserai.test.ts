@@ -30,3 +30,22 @@ test('ask URLs carry the question; Aside goes to its own new chat', () => {
   assert.equal(PROVIDERS.gemini.ask, undefined, 'Gemini has no ask URL: sidegig types it in');
   assert.equal(PROVIDERS.gemini.appId, 'gemini');
 });
+
+// Aside 154 ships a stub Prompt API: "available", but it answers with debug text and the prompt itself
+// ("CPU backendFastest inference…User: <prompt> End.Model: "). Seen live on 2026-10-31.
+test('built-in model: a stub that echoes the prompt counts as unavailable, a working one as available', async () => {
+  const { builtinState } = await import('../src/shared/ai/providers.ts');
+  const g = globalThis as { LanguageModel?: unknown };
+  const fake = (reply: (p: string) => string) => ({
+    availability: async () => 'available',
+    create: async () => ({ prompt: async (p: string) => reply(p), destroy: () => undefined }),
+  });
+  try {
+    g.LanguageModel = fake((p) => `CPU backendFastest inferenceTopK: 64, Temp: 1User: ${p} End.Model: `);
+    assert.equal(await builtinState(), 'unavailable');
+    g.LanguageModel = fake(() => 'ok');
+    assert.equal(await builtinState(), 'available');
+  } finally {
+    delete g.LanguageModel;
+  }
+});

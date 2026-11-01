@@ -107,6 +107,20 @@ export function buildRules(apps: AppEntry[], extensionHosts: string[], sideTabs:
   return rules;
 }
 
+/**
+ * A model on this computer (Ollama, LM Studio): Ollama refuses an Origin it doesn't list, and its
+ * default list has no extension origins, so sidegig's own requests to localhost go without one.
+ * Extension pages with host access don't need CORS headers back. A fixed id above the frame rules.
+ */
+export function localModelRule(extensionHosts: string[]): Rule {
+  return {
+    id: 1000,
+    priority: 1,
+    action: { type: 'modifyHeaders' as chrome.declarativeNetRequest.RuleActionType, requestHeaders: [{ header: 'origin', operation: 'remove' as chrome.declarativeNetRequest.HeaderOperation }] },
+    condition: { resourceTypes: ['xmlhttprequest' as chrome.declarativeNetRequest.ResourceType], requestDomains: ['localhost', '127.0.0.1'], initiatorDomains: extensionHosts },
+  };
+}
+
 let lastApps: AppEntry[] = [];
 let sideTabs: number[] = [];
 let drawerTabs: number[] = [];
@@ -130,6 +144,6 @@ export async function applyRules(apps: AppEntry[]): Promise<void> {
   const existing = await dnr.getSessionRules();
   await dnr.updateSessionRules({
     removeRuleIds: existing.map((r: Rule) => r.id),
-    addRules: buildRules(apps, hosts, sideTabs, drawerTabs),
+    addRules: [...buildRules(apps, hosts, sideTabs, drawerTabs), localModelRule(hosts)],
   });
 }

@@ -142,6 +142,8 @@ As of 2026-10-23. Only the Chromium package has been loaded in a browser. The ma
 
 - Some sites refuse every frame. Open those as a mini window or a tab.
 - A few sites keep a separate sign-in inside the sidebar. Signing in once there fixes it.
+- Sign in to Claude in a normal tab first: its sign-in page refuses to load inside the sidebar ("This page can't run in an embedded view"). Once signed in, Claude works in the sidebar.
+- The Assistant hides the browser's built-in model when it doesn't really answer. Aside 154 reports one as available, but it only repeats the question back.
 - The rail cannot appear on browser-internal pages, extension stores or the PDF viewer.
 - Two accounts of the same app side by side need Firefox containers (planned).
 - A page can carry hidden instructions for the Assistant. The wrappers and the opt-in gate limit what it can do with them, but how often an attack works is not measured yet (see [Results](#results)). The gate does not cover Codex runs or links you click in a reply.

@@ -214,3 +214,9 @@ Change in commit `ce44957`, captured at `58bbfdc` on branch `upgrade/oct-2026`.
 Commit `cc0ff13` on branch `launch/consumer-ready` (plus uncommitted work).
 
 <img src="2026-10-31-01-calculator-starts-blank-instead-of-showi.jpg" width="49%" alt="Calculator starts blank instead of showing 0 under its example (fixture preview)">
+
+## 2026-10-31: Fix two Assistant bugs found live: hide a built-in model that only echoes, let Ollama accept sidegig
+
+Commit `a22b632` on branch `main` (plus uncommitted work).
+
+<img src="2026-10-31-02-aside-154-the-assistant-hides-the-built.jpg" width="49%" alt="Aside 154: the Assistant hides the built-in model that only echoes, and offers real models instead">
