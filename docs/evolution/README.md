@@ -220,3 +220,10 @@ Commit `cc0ff13` on branch `launch/consumer-ready` (plus uncommitted work).
 Commit `a22b632` on branch `main` (plus uncommitted work).
 
 <img src="2026-10-31-02-aside-154-the-assistant-hides-the-built.jpg" width="49%" alt="Aside 154: the Assistant hides the built-in model that only echoes, and offers real models instead">
+
+## 2026-10-31: Settings: a grouped menu with Apps first; each app on two clean lines
+
+Commit `c226e22` on branch `fix/aside-live-report` (plus uncommitted work).
+
+<img src="2026-10-31-03-sidebar-the-app-runs-edge-to-edge-in-the.jpg" width="49%" alt="Sidebar: the app runs edge to edge in the browser's own sidebar (no inset card)">
+<img src="2026-10-31-04-settings-grouped-menu-sidebar-assistant.jpg" width="49%" alt="Settings: grouped menu (Sidebar, Assistant, New tab, General) opening on Apps; each app on two lines">
