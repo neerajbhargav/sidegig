@@ -99,7 +99,7 @@ async function railBox(context: BrowserContext, page: Page) {
   return { x1, x2 };
 }
 
-test('on a page with no doctype (quirks mode) the rail and fixed headers still sit at the right edges', async ({ context, extension, site }) => {
+test('on a page with no doctype (quirks mode) the rail and fixed headers still sit at the right edges', async ({ context, extension, site }, info) => {
   expect(extension.id).toBeTruthy();
   const page = await context.newPage();
   await page.goto(`${site}/quirks`);
@@ -115,6 +115,7 @@ test('on a page with no doctype (quirks mode) the rail and fixed headers still s
   else expect(x2).toBeLessThanOrEqual(margin + 1);
   // A full-width fixed header ends where the rail's strip begins, not short of it.
   await expect.poll(() => page.evaluate(() => Math.round((document.getElementById('bar') as HTMLElement).getBoundingClientRect().right))).toBe(side === 'right' ? vw - margin : vw);
+  await page.screenshot({ path: info.outputPath('quirks.png') });
 });
 
 test('the rail appears on a web page, and the page makes room for it', async ({ context, extension, site }, info) => {

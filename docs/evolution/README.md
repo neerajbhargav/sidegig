@@ -233,3 +233,9 @@ Commit `c226e22` on branch `fix/aside-live-report` (plus uncommitted work).
 Commit `38baea7` on branch `fix/aside-live-report` (plus uncommitted work).
 
 <img src="2026-10-31-05-connect-a-model-no-local-model-option-ch.jpg" width="49%" alt="Connect a model: no local model option (ChatGPT plan, OpenRouter, API key)">
+
+## 2026-10-31: Rail and fixed headers sit at the right edges on pages with no doctype
+
+Commit `cd7b4ea` on branch `fix/aside-live-report` (plus uncommitted work).
+
+<img src="2026-10-31-06-rail-docked-right-on-a-page-with-no-doct.jpg" width="49%" alt="Rail docked right on a page with no doctype (quirks mode, like Hacker News): at the window edge, fixed header ends at its strip">
