@@ -432,6 +432,8 @@ class Rail {
   // ------------------------------------------------------------ show / hide
 
   show(sticky: boolean) {
+    // The browser sidebar shows sidegig in this window: it is the rail (one sidebar, not two).
+    if (this.covered) return;
     this.build();
     this.sticky = this.sticky || sticky;
     clearTimeout(this.hideTimer);
@@ -752,6 +754,11 @@ class Rail {
         else this.show(true);
       }
       if (msg.type === 'open-view') {
+        if (this.covered) {
+          // Search and the rest open in the sidebar that is already there.
+          void setLocal('panelRequest', { view: msg.view, ts: Date.now() });
+          return false;
+        }
         this.show(true);
         this.openDrawer(msg.view);
       }

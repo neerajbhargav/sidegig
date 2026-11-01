@@ -107,6 +107,39 @@ test('the rail appears on a web page, and the page makes room for it', async ({ 
   await page.screenshot({ path: info.outputPath('rail.png') });
 });
 
+test('while the browser sidebar shows sidegig, hovering the edge does not bring the page rail back', async ({ context, extension, site }) => {
+  const page = await context.newPage();
+  await page.goto(`${site}/page`);
+  await expect(page.locator('sidegig-rail')).toBeAttached();
+  const display = () => page.evaluate(() => (document.querySelector('sidegig-rail') as HTMLElement).style.display);
+  // The rail on hover, and the native panel open in this page's window (its heartbeat, as panels.ts writes it).
+  await extension.worker.evaluate(async (url) => {
+    const { settings } = (await chrome.storage.local.get('settings')) as { settings: { rail: { mode: string }; savedAt: number } };
+    settings.rail.mode = 'hover';
+    settings.savedAt = Date.now() + 1000;
+    await chrome.storage.local.set({ settings });
+    await chrome.storage.sync.set({ settings });
+    const [tab] = await chrome.tabs.query({ url });
+    await chrome.storage.local.set({ panelOpen: { [String(tab.windowId)]: { side: 'left', ts: Date.now() } } });
+  }, `${site}/page`);
+  await expect.poll(display).toBe('none');
+  // The hover check runs on animation frames, which a background tab doesn't get (the welcome page opens in front).
+  await page.bringToFront();
+  const edge = (await page.evaluate(() => (document.querySelector('sidegig-rail') as HTMLElement).dataset.side)) === 'left' ? 1 : 1278;
+  const hoverEdge = async () => {
+    await page.mouse.move(640, 300);
+    await page.mouse.move(edge, 301);
+    await page.waitForTimeout(800);
+  };
+  // Owner, 2026-10-31: "the sidebar repeats on hover again after opening an app on sidebar".
+  await hoverEdge();
+  expect(await display()).toBe('none');
+  // Control: once the panel closes, the same hover brings the rail in.
+  await extension.worker.evaluate(() => chrome.storage.local.set({ panelOpen: {} }));
+  await hoverEdge();
+  expect(await page.evaluate(() => (document.querySelector('sidegig-rail') as HTMLElement).dataset.open)).toBe('');
+});
+
 test('the drawer opens and closes over the private channel; the page sees no messages', async ({ context, extension, site }, info) => {
   const page = await context.newPage();
   await page.goto(`${site}/page`);
