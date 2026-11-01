@@ -10,7 +10,7 @@ import type { ModelInfo, Msg, ToolCall } from '../src/shared/ai/types.ts';
 // The extension API handle is read once at import, so the fake goes first. Tests swap the
 // tab, history and bookmark functions on this same object.
 const fake: any = {
-  storage: { local: { get: async () => ({ aiKeys: { local: 'http://fixture.invalid' } }), set: async () => {} } },
+  storage: { local: { get: async () => ({ aiKeys: { openai: 'fixture-key' } }), set: async () => {} } },
   tabs: {},
   history: {},
   bookmarks: {},
@@ -90,7 +90,7 @@ test('what the bridge hands an agent from browser_read cannot close <page>', () 
 
 // ---- the confirmation gate in the real chat runner, against a scripted model
 
-const model: ModelInfo = { provider: 'local', id: 'fixture', label: 'Fixture', tools: true, efforts: [] };
+const model: ModelInfo = { provider: 'openai', id: 'fixture', label: 'Fixture', tools: true, efforts: [] };
 const sse = (calls: { name: string; args: object }[]) =>
   new Response(
     [

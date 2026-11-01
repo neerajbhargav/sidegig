@@ -31,7 +31,7 @@ export interface Decoder {
 
 // ------------------------------------------------------------ OpenAI-style
 
-export type OpenAiFlavor = 'openai' | 'openrouter' | 'local';
+export type OpenAiFlavor = 'openai' | 'openrouter';
 
 export function openaiBody(req: TurnRequest, flavor: OpenAiFlavor): Record<string, unknown> {
   const messages: Record<string, unknown>[] = [{ role: flavor === 'openai' ? 'developer' : 'system', content: req.system }];
@@ -46,7 +46,7 @@ export function openaiBody(req: TurnRequest, flavor: OpenAiFlavor): Record<strin
   }
   const body: Record<string, unknown> = { model: req.model, messages, stream: true };
   if (req.tools.length) body.tools = req.tools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.schema } }));
-  if (flavor !== 'local') body.stream_options = { include_usage: true };
+  body.stream_options = { include_usage: true };
   if (req.effort !== 'auto') {
     if (flavor === 'openai') body.reasoning_effort = req.effort === 'off' ? 'minimal' : req.effort;
     else if (flavor === 'openrouter') body.reasoning = req.effort === 'off' ? { enabled: false } : { effort: req.effort };
