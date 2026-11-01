@@ -227,3 +227,9 @@ Commit `c226e22` on branch `fix/aside-live-report` (plus uncommitted work).
 
 <img src="2026-10-31-03-sidebar-the-app-runs-edge-to-edge-in-the.jpg" width="49%" alt="Sidebar: the app runs edge to edge in the browser's own sidebar (no inset card)">
 <img src="2026-10-31-04-settings-grouped-menu-sidebar-assistant.jpg" width="49%" alt="Settings: grouped menu (Sidebar, Assistant, New tab, General) opening on Apps; each app on two lines">
+
+## 2026-10-31: Remove local model support (Ollama, LM Studio, servers on this computer)
+
+Commit `38baea7` on branch `fix/aside-live-report` (plus uncommitted work).
+
+<img src="2026-10-31-05-connect-a-model-no-local-model-option-ch.jpg" width="49%" alt="Connect a model: no local model option (ChatGPT plan, OpenRouter, API key)">
