@@ -64,11 +64,23 @@ function frameFor(ctx: Ctx, app: AppEntry): HTMLIFrameElement {
     f = { el, lastShown: Date.now(), ready: false };
     frames.set(app.id, f);
     framesHost.append(el);
-    el.addEventListener('load', () => frameReady(app.id));
+    // A frame that loads without its helper saying hello (at DOMContentLoaded) is the
+    // browser's "refused to connect" page. Usually the site's service worker answered
+    // with "don't frame me" before sidegig's header rule could see it (Telegram,
+    // Perplexity after you use them in a tab): clear the worker and try once more.
+    let retried = false;
+    el.addEventListener('load', () => {
+      frameReady(app.id);
+      if (retried || !/^https:/.test(app.url)) return;
+      setTimeout(() => {
+        if (greeted.has(app.id) || frames.get(app.id)?.el !== el) return;
+        retried = true;
+        void send({ type: 'clear-sw', url: app.url }).catch(() => undefined).finally(() => (el.src = app.url));
+      }, 500);
+    });
     // Some apps never finish loading every resource: don't keep the splash up forever.
     setTimeout(() => frameReady(app.id), 12_000);
-    // Sites with service workers (Gmail, X) answer from them with "don't frame me";
-    // clear the worker first, then load. Others load straight away.
+    // Gmail and X are known to answer from their workers: clear first, then load.
     if (NO_FRAME.has(app.catalogId ?? '')) void send({ type: 'clear-sw', url: app.url }).catch(() => undefined).finally(() => (el.src = app.url));
     else el.src = app.url;
   }
